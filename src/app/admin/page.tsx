@@ -46,6 +46,12 @@ import {
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
 import { useDialog } from "@/components/Dialog";
 import {
+  isValidName,
+  isValidPhone,
+  isValidEmail,
+  isValidPassword,
+} from "@/lib/validation";
+import {
   Users,
   BookOpen,
   Calendar,
@@ -72,7 +78,6 @@ import {
   UserGear,
   CheckCircle,
   XCircle,
-  Key,
 } from "@phosphor-icons/react";
 
 const ADMIN_I18N = {
@@ -131,7 +136,6 @@ const ADMIN_I18N = {
     cancelBtn: "रद्द गर्नुहोस्",
     closeBtn: "बन्द गर्नुहोस्",
     // Admin User Access specific
-    superadminTag: "सुपर एडमिन (वातावरण चर .env मा कन्फिगर गरिएको)",
     superadminOnlyNotice: "केवल सुपर एडमिनले मात्र प्रशासक प्रयोगकर्ताहरू थप्न, सक्रिय/निष्क्रिय गर्न वा मेटाउन सक्छ।",
     addAdminUser: "प्रशासक थप्नुहोस्",
     addUserModalTitle: "नयाँ प्रशासक खाता दर्ता",
@@ -207,7 +211,6 @@ const ADMIN_I18N = {
     cancelBtn: "Cancel",
     closeBtn: "Close",
     // Admin User Access specific
-    superadminTag: "Superadmin (Configured in .env environment)",
     superadminOnlyNotice: "Only the superadmin configured in the environment file can add, deactivate, or remove administrator accounts.",
     addAdminUser: "Add Administrator",
     addUserModalTitle: "Register New Administrator",
@@ -399,6 +402,22 @@ export default function AdminPage() {
 
   const handleSaveHero = (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      !heroState.titleNe.trim() ||
+      !heroState.titleEn.trim() ||
+      !heroState.descriptionNe.trim() ||
+      !heroState.descriptionEn.trim()
+    ) {
+      dialogAlert({
+        title: lang === "ne" ? "विवरण अपूर्ण छ" : "Incomplete Details",
+        description:
+          lang === "ne"
+            ? "कृपया ब्यानरको मुख्य शीर्षक र विवरण दुवै भाषामा अनिवार्य भर्नुहोस्।"
+            : "Please fill both Nepali and English titles and descriptions for the Hero banner.",
+        type: "warning",
+      });
+      return;
+    }
     saveStoredHeroContent(heroState);
     dialogAlert({
       title: lang === "ne" ? "ब्यानर सम्पादन भयो" : "Hero Banner Updated",
@@ -412,20 +431,60 @@ export default function AdminPage() {
 
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!memberForm.nameEn || !memberForm.nameNe || !memberForm.roleEn || !memberForm.roleNe) {
+    if (!isValidName(memberForm.nameNe) || !isValidName(memberForm.nameEn)) {
       dialogAlert({
-        title: lang === "ne" ? "अपूर्ण विवरण" : "Missing Information",
+        title: lang === "ne" ? "नाम अमान्य वा अपूर्ण" : "Invalid Name",
         description:
           lang === "ne"
-            ? "कृपया नाम र पद दुवै भाषामा अनिवार्य भर्नुहोस्।"
-            : "Please fill all required bilingual name and role fields.",
+            ? "कृपया सदस्यको नाम दुवै भाषामा (कम्तिमा २ अक्षर) शुद्धसँग लेख्नुहोस्।"
+            : "Please enter valid member names in both languages (min 2 characters).",
         type: "warning",
       });
       return;
     }
+    if (!memberForm.roleNe.trim() || !memberForm.roleEn.trim()) {
+      dialogAlert({
+        title: lang === "ne" ? "पद आवश्यक" : "Role Required",
+        description:
+          lang === "ne"
+            ? "कृपया सदस्यको पद (Role/Designation) दुवै भाषामा अनिवार्य भर्नुहोस्।"
+            : "Please enter the member role/designation in both languages.",
+        type: "warning",
+      });
+      return;
+    }
+    if (memberForm.phone.trim() && !isValidPhone(memberForm.phone)) {
+      dialogAlert({
+        title: lang === "ne" ? "अमान्य फोन नम्बर" : "Invalid Phone Number",
+        description:
+          lang === "ne"
+            ? "कृपया मान्य फोन नम्बर प्रविष्ट गर्नुहोस् (उदा. +977 9851012345)।"
+            : "Please enter a valid phone number format.",
+        type: "warning",
+      });
+      return;
+    }
+    if (memberForm.email.trim() && !isValidEmail(memberForm.email)) {
+      dialogAlert({
+        title: lang === "ne" ? "अमान्य इमेल ठेगाना" : "Invalid Email Address",
+        description:
+          lang === "ne"
+            ? "कृपया मान्य इमेल ठेगाना प्रविष्ट गर्नुहोस् (उदा. member@example.com)।"
+            : "Please enter a valid email address.",
+        type: "warning",
+      });
+      return;
+    }
+
     const newMember: Member = {
       id: `m-${Date.now()}`,
       ...memberForm,
+      nameNe: memberForm.nameNe.trim(),
+      nameEn: memberForm.nameEn.trim(),
+      roleNe: memberForm.roleNe.trim(),
+      roleEn: memberForm.roleEn.trim(),
+      phone: memberForm.phone.trim(),
+      email: memberForm.email.trim(),
     };
     const updated = [newMember, ...membersList];
     setMembersList(updated);
@@ -490,17 +549,36 @@ export default function AdminPage() {
 
   const handleAddPub = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pubForm.titleEn || !pubForm.titleNe) {
+    if (!pubForm.titleNe.trim() || !pubForm.titleEn.trim()) {
       dialogAlert({
         title: lang === "ne" ? "शीर्षक आवश्यक" : "Title Required",
-        description: lang === "ne" ? "कृपया प्रकाशनको शीर्षक प्रविष्ट गर्नुहोस्।" : "Please enter publication title.",
+        description:
+          lang === "ne"
+            ? "कृपया प्रकाशनको शीर्षक दुवै भाषामा अनिवार्य भर्नुहोस्।"
+            : "Please enter publication titles in both languages.",
         type: "warning",
       });
       return;
     }
+    if (!pubForm.pdfUrl.trim()) {
+      dialogAlert({
+        title: lang === "ne" ? "PDF दस्तावेज आवश्यक" : "PDF Document Required",
+        description:
+          lang === "ne"
+            ? "कृपया क्लाउडिनरी मार्फत आधिकारिक PDF दस्तावेज अपलोड गर्नुहोस्।"
+            : "Please upload an official PDF document via the Cloudinary uploader.",
+        type: "warning",
+      });
+      return;
+    }
+
     const newPub: Publication = {
       id: `p-${Date.now()}`,
       ...pubForm,
+      titleNe: pubForm.titleNe.trim(),
+      titleEn: pubForm.titleEn.trim(),
+      categoryNe: pubForm.categoryNe.trim(),
+      categoryEn: pubForm.categoryEn.trim(),
     };
     const updated = [newPub, ...pubList];
     setPubList(updated);
@@ -540,17 +618,49 @@ export default function AdminPage() {
 
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eventForm.titleEn || !eventForm.titleNe) {
+    if (!eventForm.titleNe.trim() || !eventForm.titleEn.trim()) {
       dialogAlert({
         title: lang === "ne" ? "शीर्षक आवश्यक" : "Title Required",
-        description: lang === "ne" ? "कृपया कार्यक्रमको शीर्षक भर्नुहोस्।" : "Please enter event title.",
+        description:
+          lang === "ne"
+            ? "कृपया कार्यक्रमको शीर्षक दुवै भाषामा भर्नुहोस्।"
+            : "Please enter event titles in both languages.",
         type: "warning",
       });
       return;
     }
+    if (!eventForm.dateNe.trim() || !eventForm.dateEn.trim()) {
+      dialogAlert({
+        title: lang === "ne" ? "मिति आवश्यक" : "Date Required",
+        description:
+          lang === "ne"
+            ? "कृपया कार्यक्रमको मिति दुवै भाषामा भर्नुहोस्।"
+            : "Please enter event dates in both languages.",
+        type: "warning",
+      });
+      return;
+    }
+    if (!eventForm.locationNe.trim() || !eventForm.locationEn.trim()) {
+      dialogAlert({
+        title: lang === "ne" ? "स्थान आवश्यक" : "Location Required",
+        description:
+          lang === "ne"
+            ? "कृपया कार्यक्रम हुने स्थान दुवै भाषामा भर्नुहोस्।"
+            : "Please enter event locations in both languages.",
+        type: "warning",
+      });
+      return;
+    }
+
     const newEv: EventItem = {
       id: `e-${Date.now()}`,
       ...eventForm,
+      titleNe: eventForm.titleNe.trim(),
+      titleEn: eventForm.titleEn.trim(),
+      dateNe: eventForm.dateNe.trim(),
+      dateEn: eventForm.dateEn.trim(),
+      locationNe: eventForm.locationNe.trim(),
+      locationEn: eventForm.locationEn.trim(),
     };
     const updated = [newEv, ...eventsList];
     setEventsList(updated);
@@ -584,17 +694,34 @@ export default function AdminPage() {
 
   const handleAddGallery = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!galleryForm.titleEn || !galleryForm.titleNe) {
+    if (!galleryForm.titleNe.trim() || !galleryForm.titleEn.trim()) {
       dialogAlert({
         title: lang === "ne" ? "विवरण आवश्यक" : "Caption Required",
-        description: lang === "ne" ? "कृपया तस्बिरको विवरण भर्नुहोस्।" : "Please enter photo caption.",
+        description:
+          lang === "ne"
+            ? "कृपया तस्बिरको शीर्षक/क्याप्सन दुवै भाषामा भर्नुहोस्।"
+            : "Please enter photo captions in both languages.",
         type: "warning",
       });
       return;
     }
+    if (!galleryForm.imageUrl.trim()) {
+      dialogAlert({
+        title: lang === "ne" ? "तस्बिर आवश्यक" : "Image Required",
+        description:
+          lang === "ne"
+            ? "कृपया क्लाउडिनरी मार्फत तस्बिर अपलोड गर्नुहोस्।"
+            : "Please upload an image via Cloudinary uploader.",
+        type: "warning",
+      });
+      return;
+    }
+
     const newG: GalleryItem = {
       id: `g-${Date.now()}`,
       ...galleryForm,
+      titleNe: galleryForm.titleNe.trim(),
+      titleEn: galleryForm.titleEn.trim(),
     };
     const updated = [newG, ...galleryList];
     setGalleryList(updated);
@@ -652,18 +779,41 @@ export default function AdminPage() {
       });
       return;
     }
-    if (!userForm.name || !userForm.email || !userForm.password) {
+    if (!isValidName(userForm.name)) {
       dialogAlert({
-        title: lang === "ne" ? "अपूर्ण विवरण" : "Missing Details",
-        description: lang === "ne" ? "कृपया नाम, इमेल र पासवर्ड प्रविष्ट गर्नुहोस्।" : "Please fill name, email, and password.",
+        title: lang === "ne" ? "अमान्य नाम" : "Invalid Name",
+        description:
+          lang === "ne"
+            ? "कृपया प्रशासकको पूरा नाम (कम्तिमा २ अक्षर) लेख्नुहोस्।"
+            : "Please enter a valid administrator name (min 2 characters).",
+        type: "warning",
+      });
+      return;
+    }
+    if (!isValidEmail(userForm.email)) {
+      dialogAlert({
+        title: lang === "ne" ? "अमान्य इमेल" : "Invalid Email",
+        description:
+          lang === "ne"
+            ? "कृपया मान्य आधिकारिक इमेल ठेगाना लेख्नुहोस्।"
+            : "Please enter a valid official email address.",
+        type: "warning",
+      });
+      return;
+    }
+    const passCheck = isValidPassword(userForm.password);
+    if (!passCheck.isValid) {
+      dialogAlert({
+        title: lang === "ne" ? "कमजोर पासवर्ड" : "Weak Password",
+        description: lang === "ne" ? passCheck.errorNe : passCheck.errorEn,
         type: "warning",
       });
       return;
     }
 
     const created = addAdminUser({
-      name: userForm.name,
-      email: userForm.email,
+      name: userForm.name.trim(),
+      email: userForm.email.trim(),
       role: userForm.role,
       password: userForm.password,
       addedBy: session.email,
@@ -2120,7 +2270,88 @@ export default function AdminPage() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  saveStoredContactSettings(contactSettingsState);
+                  if (
+                    !contactSettingsState.contactHeadingNe.trim() ||
+                    !contactSettingsState.contactHeadingEn.trim() ||
+                    !contactSettingsState.contactDescriptionNe.trim() ||
+                    !contactSettingsState.contactDescriptionEn.trim()
+                  ) {
+                    dialogAlert({
+                      title: lang === "ne" ? "सम्पर्क खण्ड विवरण अपूर्ण" : "Section Details Incomplete",
+                      description:
+                        lang === "ne"
+                          ? "कृपया सम्पर्क खण्डको शीर्षक र उप-विवरण दुवै भाषामा अनिवार्य भर्नुहोस्।"
+                          : "Please fill section headings and descriptions in both languages.",
+                      type: "warning",
+                    });
+                    return;
+                  }
+                  if (
+                    !contactSettingsState.kathmanduTitleNe.trim() ||
+                    !contactSettingsState.kathmanduTitleEn.trim() ||
+                    !contactSettingsState.kathmanduAddressNe.trim() ||
+                    !contactSettingsState.kathmanduAddressEn.trim()
+                  ) {
+                    dialogAlert({
+                      title: lang === "ne" ? "सचिवालय विवरण अपूर्ण" : "Secretariat Details Incomplete",
+                      description:
+                        lang === "ne"
+                          ? "कृपया काठमाडौँ सचिवालयको शीर्षक र ठेगाना दुवै भाषामा अनिवार्य भर्नुहोस्।"
+                          : "Please enter secretariat title and physical address in both languages.",
+                      type: "warning",
+                    });
+                    return;
+                  }
+                  if (contactSettingsState.phone1.trim() && !isValidPhone(contactSettingsState.phone1)) {
+                    dialogAlert({
+                      title: lang === "ne" ? "अमान्य फोन १" : "Invalid Phone 1",
+                      description:
+                        lang === "ne"
+                          ? "कृपया प्राथमिक फोन नम्बरको मान्य ढाँचा प्रविष्ट गर्नुहोस्।"
+                          : "Please enter a valid primary phone number format.",
+                      type: "warning",
+                    });
+                    return;
+                  }
+                  if (contactSettingsState.phone2.trim() && !isValidPhone(contactSettingsState.phone2)) {
+                    dialogAlert({
+                      title: lang === "ne" ? "अमान्य फोन २" : "Invalid Phone 2",
+                      description:
+                        lang === "ne"
+                          ? "कृपया दोस्रो फोन नम्बरको मान्य ढाँचा प्रविष्ट गर्नुहोस्।"
+                          : "Please enter a valid secondary phone number format.",
+                      type: "warning",
+                    });
+                    return;
+                  }
+                  if (contactSettingsState.email.trim() && !isValidEmail(contactSettingsState.email)) {
+                    dialogAlert({
+                      title: lang === "ne" ? "अमान्य इमेल ठेगाना" : "Invalid Email Address",
+                      description:
+                        lang === "ne"
+                          ? "कृपया मान्य आधिकारिक इमेल ठेगाना प्रविष्ट गर्नुहोस्।"
+                          : "Please enter a valid official email address format.",
+                      type: "warning",
+                    });
+                    return;
+                  }
+
+                  saveStoredContactSettings({
+                    ...contactSettingsState,
+                    contactHeadingNe: contactSettingsState.contactHeadingNe.trim(),
+                    contactHeadingEn: contactSettingsState.contactHeadingEn.trim(),
+                    contactDescriptionNe: contactSettingsState.contactDescriptionNe.trim(),
+                    contactDescriptionEn: contactSettingsState.contactDescriptionEn.trim(),
+                    kathmanduTitleNe: contactSettingsState.kathmanduTitleNe.trim(),
+                    kathmanduTitleEn: contactSettingsState.kathmanduTitleEn.trim(),
+                    kathmanduSubtitleNe: contactSettingsState.kathmanduSubtitleNe.trim(),
+                    kathmanduSubtitleEn: contactSettingsState.kathmanduSubtitleEn.trim(),
+                    kathmanduAddressNe: contactSettingsState.kathmanduAddressNe.trim(),
+                    kathmanduAddressEn: contactSettingsState.kathmanduAddressEn.trim(),
+                    phone1: contactSettingsState.phone1.trim(),
+                    phone2: contactSettingsState.phone2.trim(),
+                    email: contactSettingsState.email.trim(),
+                  });
                   dialogAlert({
                     title: lang === "ne" ? "सम्पर्क विवरण सुरक्षित भयो" : "Contact Settings Saved",
                     description:
@@ -2389,27 +2620,6 @@ export default function AdminPage() {
                     <span>{showAddUserModal ? t.closeBtn : t.addAdminUser}</span>
                   </button>
                 )}
-              </div>
-
-              {/* Superadmin Configuration Info Box */}
-              <div className="p-4 rounded-card border border-amber-500/30 bg-amber-500/10 space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-amber-600 font-bold">
-                  <Key size={16} />
-                  <span>{t.superadminTag}</span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-muted text-[11px]">
-                  <div>
-                    {lang === "ne" ? "अधिकृत सुपर एडमिन इमेल:" : "Configured Superadmin Email:"}{" "}
-                    <span className="font-mono text-fg font-bold bg-ground px-2 py-0.5 rounded border border-line">
-                      {SUPERADMIN_EMAIL}
-                    </span>
-                  </div>
-                  <div className="text-amber-700 dark:text-amber-400 font-medium">
-                    {session.isSuperadmin
-                      ? (lang === "ne" ? "तपाईं सुपर एडमिनको रूपमा लगइन हुनुहुन्छ।" : "You are signed in as Superadmin.")
-                      : t.superadminOnlyNotice}
-                  </div>
-                </div>
               </div>
 
               {/* Add User Modal / Form (Superadmin only) */}

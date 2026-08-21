@@ -30,6 +30,12 @@ import {
   getServerGallerySnapshot,
   addStoredInquiry,
 } from "@/data/mockData";
+import {
+  isValidName,
+  isValidPhone,
+  isValidEmail,
+  isValidMessage,
+} from "@/lib/validation";
 import { useDialog } from "@/components/Dialog";
 import {
   Users,
@@ -141,8 +147,81 @@ export default function MainPortal() {
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
   const [contactSubmitted, setContactSubmitted] = useState(false);
   const [inquiryForm, setInquiryForm] = useState({ name: "", phone: "", email: "", message: "" });
+  const [formErrors, setFormErrors] = useState<{ name?: string; phone?: string; email?: string; message?: string }>({});
+  const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean; message?: boolean }>({});
   const [committeeFilter, setCommitteeFilter] = useState<"current" | "advisor" | "all">("current");
   const { alert: dialogAlert } = useDialog();
+
+  const validateField = (field: "name" | "phone" | "email" | "message", value: string) => {
+    let error: string | undefined = undefined;
+    if (field === "name") {
+      if (!value.trim()) {
+        error = lang === "ne" ? "कृपया आफ्नो पूरा नाम लेख्नुहोस्।" : "Full name is required.";
+      } else if (!isValidName(value)) {
+        error = lang === "ne" ? "नाम कम्तिमा २ अक्षरको हुनुपर्छ।" : "Name must be at least 2 characters.";
+      }
+    } else if (field === "phone") {
+      if (!value.trim()) {
+        error = lang === "ne" ? "कृपया आफ्नो सम्पर्क नम्बर लेख्नुहोस्।" : "Phone number is required.";
+      } else if (!isValidPhone(value)) {
+        error = lang === "ne" ? "कृपया मान्य फोन नम्बर लेख्नुहोस् (उदा. 9851012345)।" : "Please enter a valid phone number.";
+      }
+    } else if (field === "email") {
+      if (value.trim() && !isValidEmail(value)) {
+        error = lang === "ne" ? "कृपया मान्य इमेल ठेगाना लेख्नुहोस् (उदा. name@example.com)।" : "Please enter a valid email address.";
+      }
+    } else if (field === "message") {
+      if (!value.trim()) {
+        error = lang === "ne" ? "कृपया आफ्नो सन्देश वा जिज्ञासा लेख्नुहोस्।" : "Message is required.";
+      } else if (!isValidMessage(value, 10)) {
+        error = lang === "ne" ? "सन्देश कम्तिमा १० अक्षरको हुनुपर्छ।" : "Message must be at least 10 characters long.";
+      }
+    }
+
+    setFormErrors((prev) => ({ ...prev, [field]: error }));
+    return error;
+  };
+
+  const handleInquirySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setTouched({ name: true, phone: true, email: true, message: true });
+
+    const errName = validateField("name", inquiryForm.name);
+    const errPhone = validateField("phone", inquiryForm.phone);
+    const errEmail = validateField("email", inquiryForm.email);
+    const errMessage = validateField("message", inquiryForm.message);
+
+    if (errName || errPhone || errEmail || errMessage) {
+      dialogAlert({
+        title: lang === "ne" ? "फाराम विवरण अपूर्ण छ" : "Incomplete Form Details",
+        description:
+          lang === "ne"
+            ? "कृपया फाराममा देखिएका त्रुटिहरू सच्याएर पुनः प्रयास गर्नुहोस्।"
+            : "Please correct the highlighted errors before submitting.",
+        type: "warning",
+      });
+      return;
+    }
+
+    addStoredInquiry({
+      name: inquiryForm.name.trim(),
+      phone: inquiryForm.phone.trim(),
+      email: inquiryForm.email.trim(),
+      message: inquiryForm.message.trim(),
+    });
+    setContactSubmitted(true);
+    setInquiryForm({ name: "", phone: "", email: "", message: "" });
+    setFormErrors({});
+    setTouched({});
+    dialogAlert({
+      title: lang === "ne" ? "सन्देश प्राप्त भयो" : "Inquiry Submitted",
+      description:
+        lang === "ne"
+          ? "तपाईंको सन्देश सचिवालयमा सफलतापूर्वक दर्ता भएको छ। हामी छिट्टै सम्पर्क गर्नेछौं।"
+          : "Your message has been registered with the secretariat. We will be in touch shortly.",
+      type: "success",
+    });
+  };
 
   // Filtered members for Executive Committee section
   const filteredCommitteeMembers = members.filter((m) => {
@@ -752,26 +831,8 @@ export default function MainPortal() {
                 </div>
               ) : (
                 <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!inquiryForm.name || !inquiryForm.phone || !inquiryForm.message) return;
-                    addStoredInquiry({
-                      name: inquiryForm.name,
-                      phone: inquiryForm.phone,
-                      email: inquiryForm.email,
-                      message: inquiryForm.message,
-                    });
-                    setContactSubmitted(true);
-                    setInquiryForm({ name: "", phone: "", email: "", message: "" });
-                    dialogAlert({
-                      title: lang === "ne" ? "सन्देश प्राप्त भयो" : "Inquiry Submitted",
-                      description:
-                        lang === "ne"
-                          ? "तपाईंको सन्देश सचिवालयमा सफलतापूर्वक दर्ता भएको छ। हामी छिट्टै सम्पर्क गर्नेछौं।"
-                          : "Your message has been registered with the secretariat. We will be in touch shortly.",
-                      type: "success",
-                    });
-                  }}
+                  onSubmit={handleInquirySubmit}
+                  noValidate
                   className="rounded-card border border-line bg-ground p-6 sm:p-8 space-y-5 shadow-sm"
                 >
                   <div className="text-sm font-bold text-fg border-b border-line pb-3 flex items-center justify-between">
@@ -781,63 +842,119 @@ export default function MainPortal() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-fg">
-                        {lang === "ne" ? "पूरा नाम" : "Full Name"} *
+                      <label className="text-xs font-semibold text-fg flex items-center justify-between">
+                        <span>{lang === "ne" ? "पूरा नाम" : "Full Name"} *</span>
                       </label>
                       <input
-                        required
                         type="text"
                         value={inquiryForm.name}
-                        onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
+                        onChange={(e) => {
+                          setInquiryForm({ ...inquiryForm, name: e.target.value });
+                          if (touched.name) validateField("name", e.target.value);
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, name: true }));
+                          validateField("name", inquiryForm.name);
+                        }}
                         placeholder={lang === "ne" ? "तपाईंको नाम" : "Your full name"}
-                        className="w-full px-3.5 py-2.5 rounded-control border border-line bg-surface text-fg text-xs focus:border-accent"
+                        className={`w-full px-3.5 py-2.5 rounded-control border bg-surface text-fg text-xs transition-colors focus:outline-none ${
+                          touched.name && formErrors.name
+                            ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                            : "border-line focus:border-accent"
+                        }`}
                       />
+                      {touched.name && formErrors.name && (
+                        <p className="text-[11px] text-red-500 font-medium">{formErrors.name}</p>
+                      )}
                     </div>
+
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-fg">
-                        {lang === "ne" ? "सम्पर्क नम्बर" : "Phone Number"} *
+                      <label className="text-xs font-semibold text-fg flex items-center justify-between">
+                        <span>{lang === "ne" ? "सम्पर्क नम्बर" : "Phone Number"} *</span>
                       </label>
                       <input
-                        required
                         type="tel"
                         value={inquiryForm.phone}
-                        onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
+                        onChange={(e) => {
+                          setInquiryForm({ ...inquiryForm, phone: e.target.value });
+                          if (touched.phone) validateField("phone", e.target.value);
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, phone: true }));
+                          validateField("phone", inquiryForm.phone);
+                        }}
                         placeholder="+977 98..."
-                        className="w-full px-3.5 py-2.5 rounded-control border border-line bg-surface text-fg text-xs focus:border-accent"
+                        className={`w-full px-3.5 py-2.5 rounded-control border bg-surface text-fg text-xs transition-colors focus:outline-none ${
+                          touched.phone && formErrors.phone
+                            ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                            : "border-line focus:border-accent"
+                        }`}
                       />
+                      {touched.phone && formErrors.phone && (
+                        <p className="text-[11px] text-red-500 font-medium">{formErrors.phone}</p>
+                      )}
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-fg">
-                      {lang === "ne" ? "इमेल ठेगाना" : "Email Address"}
+                    <label className="text-xs font-semibold text-fg flex items-center justify-between">
+                      <span>{lang === "ne" ? "इमेल ठेगाना" : "Email Address"}</span>
+                      <span className="text-[10px] text-muted font-normal">({lang === "ne" ? "ऐच्छिक" : "Optional"})</span>
                     </label>
                     <input
                       type="email"
                       value={inquiryForm.email}
-                      onChange={(e) => setInquiryForm({ ...inquiryForm, email: e.target.value })}
+                      onChange={(e) => {
+                        setInquiryForm({ ...inquiryForm, email: e.target.value });
+                        if (touched.email) validateField("email", e.target.value);
+                      }}
+                      onBlur={() => {
+                        setTouched((prev) => ({ ...prev, email: true }));
+                        validateField("email", inquiryForm.email);
+                      }}
                       placeholder="example@mail.com"
-                      className="w-full px-3.5 py-2.5 rounded-control border border-line bg-surface text-fg text-xs focus:border-accent"
+                      className={`w-full px-3.5 py-2.5 rounded-control border bg-surface text-fg text-xs transition-colors focus:outline-none ${
+                        touched.email && formErrors.email
+                          ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                          : "border-line focus:border-accent"
+                      }`}
                     />
+                    {touched.email && formErrors.email && (
+                      <p className="text-[11px] text-red-500 font-medium">{formErrors.email}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-fg">
-                      {lang === "ne" ? "सन्देश वा जिज्ञासा" : "Message / Query"} *
+                    <label className="text-xs font-semibold text-fg flex items-center justify-between">
+                      <span>{lang === "ne" ? "सन्देश वा जिज्ञासा" : "Message / Query"} *</span>
+                      <span className="text-[10px] text-muted font-mono">{inquiryForm.message.length}/10 {lang === "ne" ? "अक्षर न्यूनतम" : "min chars"}</span>
                     </label>
                     <textarea
-                      required
                       rows={4}
                       value={inquiryForm.message}
-                      onChange={(e) => setInquiryForm({ ...inquiryForm, message: e.target.value })}
-                      placeholder={lang === "ne" ? "तपाईंको जिज्ञासा यहाँ लेख्नुहोस्..." : "Write your query here..."}
-                      className="w-full px-3.5 py-2.5 rounded-control border border-line bg-surface text-fg text-xs focus:border-accent"
+                      onChange={(e) => {
+                        setInquiryForm({ ...inquiryForm, message: e.target.value });
+                        if (touched.message) validateField("message", e.target.value);
+                      }}
+                      onBlur={() => {
+                        setTouched((prev) => ({ ...prev, message: true }));
+                        validateField("message", inquiryForm.message);
+                      }}
+                      placeholder={lang === "ne" ? "तपाईंको जिज्ञासा यहाँ लेख्नुहोस् (कम्तिमा १० अक्षर)..." : "Write your query here (min 10 characters)..."}
+                      className={`w-full px-3.5 py-2.5 rounded-control border bg-surface text-fg text-xs transition-colors focus:outline-none ${
+                        touched.message && formErrors.message
+                          ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                          : "border-line focus:border-accent"
+                      }`}
                     />
+                    {touched.message && formErrors.message && (
+                      <p className="text-[11px] text-red-500 font-medium">{formErrors.message}</p>
+                    )}
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <EnvelopeSimple size={16} />
                     <span>{lang === "ne" ? "सन्देश पठाउनुहोस्" : "Submit Inquiry"}</span>
