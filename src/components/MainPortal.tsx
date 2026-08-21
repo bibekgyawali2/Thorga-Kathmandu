@@ -57,6 +57,7 @@ import {
   ShieldCheck,
   ArrowRight,
   Sparkle,
+  CircleNotch,
   X,
 } from "@phosphor-icons/react";
 
@@ -240,41 +241,41 @@ export default function MainPortal() {
     <div className="min-h-[100dvh] bg-ground text-fg font-sans selection:bg-accent selection:text-on-accent">
       <SiteHeader lang={lang} setLang={setLang} />
 
-      {/* SECTION 1: HERO WITH SCENIC BACKGROUND IMAGE */}
-      <section className="relative overflow-hidden min-h-[75vh] lg:min-h-[82vh] flex items-center border-b border-line bg-surface">
-        {/* Background Image Layer */}
+      {/* SECTION 1: HERO WITH CONSISTENT FULL BACKGROUND IMAGE & TEXT SHADOWS */}
+      <section className="relative overflow-hidden min-h-[75vh] lg:min-h-[85vh] flex items-center border-b border-line">
+        {/* Uniform Background Image - Consistent Left to Right with No Gradient */}
         {isValidImageSrc(heroContent.imageUrl) && (
-          <Image
-            src={heroContent.imageUrl}
-            alt={lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
-            fill
-            sizes="100vw"
-            className="object-cover object-center opacity-25 dark:opacity-40"
-            priority
-          />
+          <div className="absolute inset-0">
+            <Image
+              src={heroContent.imageUrl}
+              alt={lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
+              fill
+              sizes="100vw"
+              className="object-cover object-center"
+              priority
+            />
+            {/* Uniform subtle dark tint across entire image for text legibility */}
+            <div className="absolute inset-0 bg-black/45 dark:bg-black/60" />
+          </div>
         )}
 
-        {/* Dynamic Light / Dark Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-r from-ground/95 via-ground/85 to-ground/60 dark:from-ground/95 dark:via-ground/85 dark:to-ground/70" />
-        <div className="absolute inset-0 bg-gradient-to-t from-ground via-transparent to-ground/20 pointer-events-none" />
-
-        {/* Content Container */}
+        {/* Content Container (No Card - Direct on Background with Text Shadows) */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28 w-full">
           <div className="max-w-3xl space-y-6">
             {/* Top Pill / Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-chip bg-accent-soft text-accent text-xs font-semibold border border-accent/20 shadow-sm">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-chip bg-black/40 backdrop-blur-md border border-white/25 text-white text-xs font-semibold shadow-md">
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
               <Globe size={14} className="text-accent" />
               <span className="tracking-wide">{lang === "ne" ? heroContent.badgeNe : heroContent.badgeEn}</span>
             </div>
 
-            {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-fg leading-[1.15]">
+            {/* Main Headline with Text Shadow */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]">
               {lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
             </h1>
 
-            {/* Subtitle / Description */}
-            <p className="text-base sm:text-lg lg:text-xl max-w-[58ch] leading-relaxed text-muted font-normal">
+            {/* Subtitle / Description with Text Shadow */}
+            <p className="text-base sm:text-lg lg:text-xl max-w-[60ch] leading-relaxed text-white/95 font-medium drop-shadow-[0_1px_8px_rgba(0,0,0,0.85)]">
               {lang === "ne" ? heroContent.descriptionNe : heroContent.descriptionEn}
             </p>
 
@@ -282,21 +283,21 @@ export default function MainPortal() {
             <div className="flex flex-wrap items-center gap-4 pt-3">
               <Link
                 href="/committee"
-                className="px-6 py-3.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-sm transition-all flex items-center gap-2"
+                className="px-6 py-3.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-lg transition-all flex items-center gap-2"
               >
                 <Users size={18} />
                 <span>{lang === "ne" ? "कार्यसमिति सदस्यहरू" : "Executive Committee"}</span>
               </Link>
               <Link
                 href="/publications"
-                className="px-6 py-3.5 rounded-control bg-surface hover:bg-tint text-fg text-xs font-bold border border-line shadow-sm transition-all flex items-center gap-2"
+                className="px-6 py-3.5 rounded-control bg-black/40 hover:bg-black/60 backdrop-blur-md text-white text-xs font-bold border border-white/30 shadow-lg transition-all flex items-center gap-2"
               >
                 <BookOpen size={18} />
                 <span>{lang === "ne" ? "स्मारिका तथा प्रकाशन" : "Explore Publications"}</span>
               </Link>
               <a
                 href="#contact"
-                className="px-5 py-3.5 rounded-control text-muted hover:text-fg hover:bg-tint text-xs font-semibold transition-all flex items-center gap-1.5"
+                className="px-5 py-3.5 rounded-control text-white hover:text-accent text-xs font-semibold drop-shadow-[0_1px_6px_rgba(0,0,0,0.9)] transition-all flex items-center gap-1.5"
               >
                 <span>{lang === "ne" ? "सम्पर्क फाराम" : "Get in Touch"}</span>
                 <ArrowRight size={14} />

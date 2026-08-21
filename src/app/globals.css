@@ -115,3 +115,16 @@ body {
   background: var(--line);
   border-radius: 999px;
 }
+
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%) scaleX(0.2);
+  }
+  50% {
+    transform: translateX(20%) scaleX(0.7);
+  }
+  100% {
+    transform: translateX(100%) scaleX(1);
+  }
+}
+

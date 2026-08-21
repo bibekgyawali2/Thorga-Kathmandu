@@ -116,7 +116,9 @@ export function removeAdminUser(
   currentSessionEmail: string
 ): { success: boolean; message?: string } {
   const isSuperadmin =
-    currentSessionEmail.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase();
+    currentSessionEmail.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
+    currentSessionEmail.toLowerCase() === "admin@thorgaktm.org.np" ||
+    getAdminSession()?.isSuperadmin === true;
   if (!isSuperadmin) {
     return {
       success: false,
@@ -129,7 +131,10 @@ export function removeAdminUser(
   if (!target) {
     return { success: false, message: "User not found." };
   }
-  if (target.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase()) {
+  if (
+    target.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
+    target.id === "usr-superadmin"
+  ) {
     return {
       success: false,
       message:
@@ -147,7 +152,9 @@ export function toggleAdminUserStatus(
   currentSessionEmail: string
 ): { success: boolean; message?: string } {
   const isSuperadmin =
-    currentSessionEmail.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase();
+    currentSessionEmail.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
+    currentSessionEmail.toLowerCase() === "admin@thorgaktm.org.np" ||
+    getAdminSession()?.isSuperadmin === true;
   if (!isSuperadmin) {
     return {
       success: false,
@@ -160,7 +167,10 @@ export function toggleAdminUserStatus(
   if (!target) {
     return { success: false, message: "User not found." };
   }
-  if (target.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase()) {
+  if (
+    target.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
+    target.id === "usr-superadmin"
+  ) {
     return {
       success: false,
       message: "Cannot deactivate the primary superadmin account.",
@@ -184,6 +194,17 @@ export function getAdminSession(): AdminSession | null {
       sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
       return null;
     }
+    // Dynamically ensure superadmin status for environment credentials and superadmin roles
+    const isSuper =
+      session.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
+      session.email.toLowerCase() === "admin@thorgaktm.org.np" ||
+      session.username.toLowerCase() === DEFAULT_ADMIN_CONFIG.username.toLowerCase() ||
+      session.role === "superadmin";
+    if (isSuper && (!session.isSuperadmin || session.role !== "superadmin")) {
+      session.isSuperadmin = true;
+      session.role = "superadmin";
+      sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(session));
+    }
     return session;
   } catch {
     return null;
@@ -194,7 +215,9 @@ export function setAdminSession(user: AdminUser): void {
   if (typeof window === "undefined") return;
   const isSuper =
     user.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
-    user.role === "superadmin";
+    user.email.toLowerCase() === "admin@thorgaktm.org.np" ||
+    user.role === "superadmin" ||
+    user.id === "usr-superadmin";
   const session: AdminSession = {
     isAuthenticated: true,
     username: user.name,
@@ -229,12 +252,12 @@ export function verifyAdminCredentials(
         name:
           cleanId === SUPERADMIN_EMAIL.toLowerCase()
             ? "System Superadmin"
-            : "Forum Admin",
+            : "Forum Superadmin",
         email:
           cleanId === SUPERADMIN_EMAIL.toLowerCase()
             ? SUPERADMIN_EMAIL
             : "admin@thorgaktm.org.np",
-        role: cleanId === SUPERADMIN_EMAIL.toLowerCase() ? "superadmin" : "admin",
+        role: "superadmin",
         addedAt: "2026-08-01",
         addedBy: "System",
         isActive: true,

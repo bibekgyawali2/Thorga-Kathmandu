@@ -2683,6 +2683,7 @@ export default function AdminPage() {
                         onChange={(e) => setUserForm({ ...userForm, role: e.target.value as AdminRole })}
                         className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       >
+                        <option value="superadmin">{t.roleSuperadmin}</option>
                         <option value="admin">{t.roleAdmin}</option>
                         <option value="editor">{t.roleEditor}</option>
                       </select>
