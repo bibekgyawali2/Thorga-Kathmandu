@@ -7,10 +7,12 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import {
   Language,
+  EventItem,
   getStoredLanguage,
   subscribeEvents,
   getStoredEventsSnapshot,
   getServerEventsSnapshot,
+  saveStoredEvents,
 } from "@/data/mockData";
 import {
   Calendar,
@@ -20,6 +22,7 @@ import {
   CalendarCheck,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
+import { useRemoteData } from "@/hooks/useRemoteData";
 
 export default function EventsPage() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
@@ -28,6 +31,7 @@ export default function EventsPage() {
     getStoredEventsSnapshot,
     getServerEventsSnapshot
   );
+  useRemoteData<EventItem[]>("/api/events", saveStoredEvents);
   const [statusFilter, setStatusFilter] = useState<"upcoming" | "completed">("upcoming");
 
   const filteredEvents = events.filter((e) => e.status === statusFilter);

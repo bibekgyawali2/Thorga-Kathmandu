@@ -12,6 +12,7 @@ import {
   subscribeMembers,
   getStoredMembersSnapshot,
   getServerMembersSnapshot,
+  saveStoredMembers,
 } from "@/data/mockData";
 import {
   Users,
@@ -22,6 +23,7 @@ import {
   ShieldCheck,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
+import { useRemoteData } from "@/hooks/useRemoteData";
 
 function initials(name: string) {
   const parts = name
@@ -82,6 +84,7 @@ export default function CommitteePage() {
     getStoredMembersSnapshot,
     getServerMembersSnapshot
   );
+  useRemoteData<Member[]>("/api/members", saveStoredMembers);
   const [filter, setFilter] = useState<"current" | "advisor" | "all">("current");
   const [search, setSearch] = useState("");
 

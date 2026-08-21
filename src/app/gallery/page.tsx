@@ -12,6 +12,7 @@ import {
   subscribeGallery,
   getStoredGallerySnapshot,
   getServerGallerySnapshot,
+  saveStoredGallery,
 } from "@/data/mockData";
 import {
   Image as ImageIcon,
@@ -20,6 +21,7 @@ import {
   Camera,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
+import { useRemoteData } from "@/hooks/useRemoteData";
 
 export default function GalleryPage() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
@@ -28,6 +30,7 @@ export default function GalleryPage() {
     getStoredGallerySnapshot,
     getServerGallerySnapshot
   );
+  useRemoteData<GalleryItem[]>("/api/gallery", saveStoredGallery);
   const [category, setCategory] = useState("all");
   const [activePhoto, setActivePhoto] = useState<GalleryItem | null>(null);
 

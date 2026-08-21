@@ -12,6 +12,7 @@ import {
   subscribePublications,
   getStoredPublicationsSnapshot,
   getServerPublicationsSnapshot,
+  saveStoredPublications,
 } from "@/data/mockData";
 import {
   BookOpen,
@@ -23,6 +24,7 @@ import {
   MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
+import { useRemoteData } from "@/hooks/useRemoteData";
 
 export default function PublicationsPage() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
@@ -31,6 +33,7 @@ export default function PublicationsPage() {
     getStoredPublicationsSnapshot,
     getServerPublicationsSnapshot
   );
+  useRemoteData<Publication[]>("/api/publications", saveStoredPublications);
   const [search, setSearch] = useState("");
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
 

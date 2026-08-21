@@ -256,6 +256,22 @@ function getServerThemeSnapshot(): "light" | "dark" {
 
 const emptySubscribe = () => () => {};
 
+/** Fire-and-forget: bust the server cache tag after an admin mutation */
+async function revalidateCollection(
+  tag: "gallery" | "events" | "members" | "publications"
+) {
+  try {
+    const secret = process.env.NEXT_PUBLIC_REVALIDATE_SECRET ?? "";
+    await fetch(`/api/revalidate?tag=${tag}`, {
+      method: "POST",
+      headers: secret ? { "x-revalidate-secret": secret } : {},
+    });
+  } catch {
+    // Non-critical: localStorage is the source of truth; revalidation is best-effort
+  }
+}
+
+
 export default function AdminPage() {
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [session, setSession] = useState<AdminSession | null>(() => getAdminSession());
@@ -494,6 +510,7 @@ export default function AdminPage() {
     const updated = [newMember, ...membersList];
     setMembersList(updated);
     saveStoredMembers(updated);
+    revalidateCollection("members");
     setShowAddMemberModal(false);
     setMemberForm({
       nameEn: "",
@@ -549,6 +566,7 @@ export default function AdminPage() {
       const updated = membersList.filter((m) => m.id !== id);
       setMembersList(updated);
       saveStoredMembers(updated);
+      revalidateCollection("members");
     }
   };
 
@@ -588,6 +606,7 @@ export default function AdminPage() {
     const updated = [newPub, ...pubList];
     setPubList(updated);
     saveStoredPublications(updated);
+    revalidateCollection("publications");
     setShowAddPubModal(false);
     dialogAlert({
       title: lang === "ne" ? "प्रकाशन थपियो" : "Publication Uploaded",
@@ -618,6 +637,7 @@ export default function AdminPage() {
       const updated = pubList.filter((p) => p.id !== id);
       setPubList(updated);
       saveStoredPublications(updated);
+      revalidateCollection("publications");
     }
   };
 
@@ -670,6 +690,7 @@ export default function AdminPage() {
     const updated = [newEv, ...eventsList];
     setEventsList(updated);
     saveStoredEvents(updated);
+    revalidateCollection("events");
     setShowAddEventModal(false);
     dialogAlert({
       title: lang === "ne" ? "कार्यक्रम थपियो" : "Event Scheduled",
@@ -694,6 +715,7 @@ export default function AdminPage() {
       const updated = eventsList.filter((e) => e.id !== id);
       setEventsList(updated);
       saveStoredEvents(updated);
+      revalidateCollection("events");
     }
   };
 
@@ -731,6 +753,7 @@ export default function AdminPage() {
     const updated = [newG, ...galleryList];
     setGalleryList(updated);
     saveStoredGallery(updated);
+    revalidateCollection("gallery");
     setShowAddGalleryModal(false);
     dialogAlert({
       title: lang === "ne" ? "तस्बिर थपियो" : "Photo Added",
@@ -755,6 +778,7 @@ export default function AdminPage() {
       const updated = galleryList.filter((g) => g.id !== id);
       setGalleryList(updated);
       saveStoredGallery(updated);
+      revalidateCollection("gallery");
     }
   };
 
