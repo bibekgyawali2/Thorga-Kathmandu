@@ -105,11 +105,14 @@ export const initialHeroContent: HeroContent = {
 const HERO_STORAGE_KEY = "thorga_hero_content";
 
 let heroSubscribers: Array<() => void> = [];
+let _heroCacheRaw: string | null = undefined as unknown as string | null;
+let _heroCache: HeroContent = initialHeroContent;
 
 export function subscribeHeroContent(callback: () => void) {
   heroSubscribers.push(callback);
   const handleStorage = (e: StorageEvent) => {
     if (e.key === HERO_STORAGE_KEY) {
+      _heroCacheRaw = undefined as unknown as string | null; // invalidate cache
       callback();
     }
   };
@@ -129,7 +132,10 @@ export function getStoredHeroSnapshot(): HeroContent {
   try {
     const raw = localStorage.getItem(HERO_STORAGE_KEY);
     if (!raw) return initialHeroContent;
-    return JSON.parse(raw);
+    if (raw === _heroCacheRaw) return _heroCache;
+    _heroCacheRaw = raw;
+    _heroCache = JSON.parse(raw);
+    return _heroCache;
   } catch {
     return initialHeroContent;
   }
@@ -143,6 +149,7 @@ export function saveStoredHeroContent(content: HeroContent): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(HERO_STORAGE_KEY, JSON.stringify(content));
+    _heroCacheRaw = undefined as unknown as string | null; // invalidate cache
     heroSubscribers.forEach((s) => s());
   } catch {}
 }
@@ -182,11 +189,14 @@ export const initialContactSettings: ContactSettings = {
 const CONTACT_STORAGE_KEY = "thorga_contact_settings";
 
 let contactSubscribers: Array<() => void> = [];
+let _contactCacheRaw: string | null = undefined as unknown as string | null;
+let _contactCache: ContactSettings = initialContactSettings;
 
 export function subscribeContactSettings(callback: () => void) {
   contactSubscribers.push(callback);
   const handleStorage = (e: StorageEvent) => {
     if (e.key === CONTACT_STORAGE_KEY) {
+      _contactCacheRaw = undefined as unknown as string | null;
       callback();
     }
   };
@@ -206,7 +216,10 @@ export function getStoredContactSettingsSnapshot(): ContactSettings {
   try {
     const raw = localStorage.getItem(CONTACT_STORAGE_KEY);
     if (!raw) return initialContactSettings;
-    return JSON.parse(raw);
+    if (raw === _contactCacheRaw) return _contactCache;
+    _contactCacheRaw = raw;
+    _contactCache = JSON.parse(raw);
+    return _contactCache;
   } catch {
     return initialContactSettings;
   }
@@ -220,6 +233,7 @@ export function saveStoredContactSettings(settings: ContactSettings): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(CONTACT_STORAGE_KEY, JSON.stringify(settings));
+    _contactCacheRaw = undefined as unknown as string | null;
     contactSubscribers.forEach((s) => s());
   } catch {}
 }
@@ -266,11 +280,13 @@ export function saveStoredLanguage(lang: Language): void {
 // ==========================================
 const MEMBERS_STORAGE_KEY = "thorga_members_list";
 let membersSubscribers: Array<() => void> = [];
+let _membersCacheRaw: string | null = undefined as unknown as string | null;
+let _membersCache: Member[] = initialMembers;
 
 export function subscribeMembers(callback: () => void) {
   membersSubscribers.push(callback);
   const handleStorage = (e: StorageEvent) => {
-    if (e.key === MEMBERS_STORAGE_KEY) callback();
+    if (e.key === MEMBERS_STORAGE_KEY) { _membersCacheRaw = undefined as unknown as string | null; callback(); }
   };
   if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
   return () => {
@@ -284,7 +300,10 @@ export function getStoredMembersSnapshot(): Member[] {
   try {
     const raw = localStorage.getItem(MEMBERS_STORAGE_KEY);
     if (!raw) return initialMembers;
-    return JSON.parse(raw);
+    if (raw === _membersCacheRaw) return _membersCache;
+    _membersCacheRaw = raw;
+    _membersCache = JSON.parse(raw);
+    return _membersCache;
   } catch {
     return initialMembers;
   }
@@ -298,6 +317,7 @@ export function saveStoredMembers(members: Member[]): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(MEMBERS_STORAGE_KEY, JSON.stringify(members));
+    _membersCacheRaw = undefined as unknown as string | null;
     membersSubscribers.forEach((s) => s());
   } catch {}
 }
@@ -307,11 +327,13 @@ export function saveStoredMembers(members: Member[]): void {
 // ==========================================
 const EVENTS_STORAGE_KEY = "thorga_events_list";
 let eventsSubscribers: Array<() => void> = [];
+let _eventsCacheRaw: string | null = undefined as unknown as string | null;
+let _eventsCache: EventItem[] = initialEvents;
 
 export function subscribeEvents(callback: () => void) {
   eventsSubscribers.push(callback);
   const handleStorage = (e: StorageEvent) => {
-    if (e.key === EVENTS_STORAGE_KEY) callback();
+    if (e.key === EVENTS_STORAGE_KEY) { _eventsCacheRaw = undefined as unknown as string | null; callback(); }
   };
   if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
   return () => {
@@ -325,7 +347,10 @@ export function getStoredEventsSnapshot(): EventItem[] {
   try {
     const raw = localStorage.getItem(EVENTS_STORAGE_KEY);
     if (!raw) return initialEvents;
-    return JSON.parse(raw);
+    if (raw === _eventsCacheRaw) return _eventsCache;
+    _eventsCacheRaw = raw;
+    _eventsCache = JSON.parse(raw);
+    return _eventsCache;
   } catch {
     return initialEvents;
   }
@@ -339,6 +364,7 @@ export function saveStoredEvents(events: EventItem[]): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
+    _eventsCacheRaw = undefined as unknown as string | null;
     eventsSubscribers.forEach((s) => s());
   } catch {}
 }
@@ -348,11 +374,13 @@ export function saveStoredEvents(events: EventItem[]): void {
 // ==========================================
 const PUBLICATIONS_STORAGE_KEY = "thorga_publications_list";
 let pubSubscribers: Array<() => void> = [];
+let _pubCacheRaw: string | null = undefined as unknown as string | null;
+let _pubCache: Publication[] = initialPublications;
 
 export function subscribePublications(callback: () => void) {
   pubSubscribers.push(callback);
   const handleStorage = (e: StorageEvent) => {
-    if (e.key === PUBLICATIONS_STORAGE_KEY) callback();
+    if (e.key === PUBLICATIONS_STORAGE_KEY) { _pubCacheRaw = undefined as unknown as string | null; callback(); }
   };
   if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
   return () => {
@@ -366,7 +394,10 @@ export function getStoredPublicationsSnapshot(): Publication[] {
   try {
     const raw = localStorage.getItem(PUBLICATIONS_STORAGE_KEY);
     if (!raw) return initialPublications;
-    return JSON.parse(raw);
+    if (raw === _pubCacheRaw) return _pubCache;
+    _pubCacheRaw = raw;
+    _pubCache = JSON.parse(raw);
+    return _pubCache;
   } catch {
     return initialPublications;
   }
@@ -380,6 +411,7 @@ export function saveStoredPublications(publications: Publication[]): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(PUBLICATIONS_STORAGE_KEY, JSON.stringify(publications));
+    _pubCacheRaw = undefined as unknown as string | null;
     pubSubscribers.forEach((s) => s());
   } catch {}
 }
@@ -389,11 +421,13 @@ export function saveStoredPublications(publications: Publication[]): void {
 // ==========================================
 const GALLERY_STORAGE_KEY = "thorga_gallery_list";
 let gallerySubscribers: Array<() => void> = [];
+let _galleryCacheRaw: string | null = undefined as unknown as string | null;
+let _galleryCache: GalleryItem[] = initialGallery;
 
 export function subscribeGallery(callback: () => void) {
   gallerySubscribers.push(callback);
   const handleStorage = (e: StorageEvent) => {
-    if (e.key === GALLERY_STORAGE_KEY) callback();
+    if (e.key === GALLERY_STORAGE_KEY) { _galleryCacheRaw = undefined as unknown as string | null; callback(); }
   };
   if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
   return () => {
@@ -407,7 +441,10 @@ export function getStoredGallerySnapshot(): GalleryItem[] {
   try {
     const raw = localStorage.getItem(GALLERY_STORAGE_KEY);
     if (!raw) return initialGallery;
-    return JSON.parse(raw);
+    if (raw === _galleryCacheRaw) return _galleryCache;
+    _galleryCacheRaw = raw;
+    _galleryCache = JSON.parse(raw);
+    return _galleryCache;
   } catch {
     return initialGallery;
   }
@@ -421,6 +458,7 @@ export function saveStoredGallery(gallery: GalleryItem[]): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(gallery));
+    _galleryCacheRaw = undefined as unknown as string | null;
     gallerySubscribers.forEach((s) => s());
   } catch {}
 }
@@ -442,11 +480,13 @@ export const initialInquiries: Inquiry[] = [];
 
 const INQUIRIES_STORAGE_KEY = "thorga_inquiries_list";
 let inquiriesSubscribers: Array<() => void> = [];
+let _inquiriesCacheRaw: string | null = undefined as unknown as string | null;
+let _inquiriesCache: Inquiry[] = initialInquiries;
 
 export function subscribeInquiries(callback: () => void) {
   inquiriesSubscribers.push(callback);
   const handleStorage = (e: StorageEvent) => {
-    if (e.key === INQUIRIES_STORAGE_KEY) callback();
+    if (e.key === INQUIRIES_STORAGE_KEY) { _inquiriesCacheRaw = undefined as unknown as string | null; callback(); }
   };
   if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
   return () => {
@@ -460,7 +500,10 @@ export function getStoredInquiriesSnapshot(): Inquiry[] {
   try {
     const raw = localStorage.getItem(INQUIRIES_STORAGE_KEY);
     if (!raw) return initialInquiries;
-    return JSON.parse(raw);
+    if (raw === _inquiriesCacheRaw) return _inquiriesCache;
+    _inquiriesCacheRaw = raw;
+    _inquiriesCache = JSON.parse(raw);
+    return _inquiriesCache;
   } catch {
     return initialInquiries;
   }
@@ -474,6 +517,7 @@ export function saveStoredInquiries(inquiries: Inquiry[]): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(INQUIRIES_STORAGE_KEY, JSON.stringify(inquiries));
+    _inquiriesCacheRaw = undefined as unknown as string | null;
     inquiriesSubscribers.forEach((s) => s());
   } catch {}
 }
