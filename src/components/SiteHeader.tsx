@@ -75,8 +75,8 @@ export function SiteHeader({
             <span className="w-2 h-2 rounded-full bg-accent" />
             <span className="font-medium text-fg text-xs sm:text-[13px]">
               {lang === "ne"
-                ? "नेपाल सरकार दर्ता नं. ४१२/०५८ | गुल्मी र काठमाडौँ सम्पर्क सञ्जाल"
-                : "Govt Regd No. 412/058 | Gulmi and Kathmandu Liaison"}
+                ? "गुल्मी र काठमाडौँ सम्पर्क सञ्जाल"
+                : "Gulmi and Kathmandu Liaison Network"}
             </span>
           </div>
           <div className="flex items-center gap-3 sm:gap-4 text-muted text-xs">
@@ -103,17 +103,12 @@ export function SiteHeader({
       <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* Brand Identity */}
-          <Link href="/" className="flex items-center gap-3.5 group">
-            <div className="w-12 h-12 rounded-card bg-accent text-on-accent flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform flex-shrink-0">
-              <Buildings size={26} weight="duotone" />
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-11 h-11 rounded-card bg-accent text-on-accent flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform flex-shrink-0">
+              <Buildings size={24} weight="duotone" />
             </div>
-            <div>
-              <div className="text-lg sm:text-xl font-bold tracking-tight text-fg leading-tight">
-                {lang === "ne" ? "थोर्गा काठमाडौं सम्पर्क तथा विकास मञ्च" : "Thorga Kathmandu Liaison Forum"}
-              </div>
-              <div className="text-xs sm:text-sm text-muted">
-                {lang === "ne" ? "स्थापना २०५८ (गैरनाफामूलक सामाजिक संस्था)" : "Est. 2001 (Non-Profit Community NGO)"}
-              </div>
+            <div className="text-lg sm:text-xl font-bold tracking-tight text-fg leading-tight">
+              {lang === "ne" ? "थोर्गा काठमाडौं सम्पर्क तथा विकास मञ्च" : "Thorga Kathmandu Liaison Forum"}
             </div>
           </Link>
 

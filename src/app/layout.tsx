@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Mukta, Geist, Geist_Mono } from "next/font/google";
+import { DialogProvider } from "@/components/Dialog";
 import "./globals.css";
 
 const mukta = Mukta({
@@ -42,7 +43,9 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <DialogProvider>{children}</DialogProvider>
+      </body>
     </html>
   );
 }

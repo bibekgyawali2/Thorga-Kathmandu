@@ -23,6 +23,7 @@ import {
   verifyAdminCredentials,
   DEFAULT_ADMIN_CONFIG,
 } from "@/lib/adminAuth";
+import { CloudinaryUploader } from "@/components/CloudinaryUploader";
 import {
   Users,
   BookOpen,
@@ -260,8 +261,25 @@ export default function AdminPage() {
     });
   };
 
+  const deleteCloudinaryAsset = async (url?: string) => {
+    if (!url || !url.includes("cloudinary.com")) return;
+    try {
+      await fetch("/api/upload", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+    } catch (err) {
+      console.error("Failed to delete Cloudinary asset:", err);
+    }
+  };
+
   const handleDeleteMember = (id: string) => {
+    const memberToDelete = membersList.find((m) => m.id === id);
     if (confirm("Remove this member from the roster?")) {
+      if (memberToDelete?.photoUrl) {
+        deleteCloudinaryAsset(memberToDelete.photoUrl);
+      }
       setMembersList(membersList.filter((m) => m.id !== id));
     }
   };
@@ -281,7 +299,14 @@ export default function AdminPage() {
   };
 
   const handleDeletePub = (id: string) => {
+    const pubToDelete = pubList.find((p) => p.id === id);
     if (confirm("Delete this publication?")) {
+      if (pubToDelete?.pdfUrl) {
+        deleteCloudinaryAsset(pubToDelete.pdfUrl);
+      }
+      if (pubToDelete?.coverImageUrl) {
+        deleteCloudinaryAsset(pubToDelete.coverImageUrl);
+      }
       setPubList(pubList.filter((p) => p.id !== id));
     }
   };
@@ -301,7 +326,11 @@ export default function AdminPage() {
   };
 
   const handleDeleteEvent = (id: string) => {
+    const eventToDelete = eventsList.find((e) => e.id === id);
     if (confirm("Delete this scheduled event?")) {
+      if (eventToDelete?.imageUrl) {
+        deleteCloudinaryAsset(eventToDelete.imageUrl);
+      }
       setEventsList(eventsList.filter((e) => e.id !== id));
     }
   };
@@ -321,7 +350,11 @@ export default function AdminPage() {
   };
 
   const handleDeleteGallery = (id: string) => {
+    const galleryToDelete = galleryList.find((g) => g.id === id);
     if (confirm("Delete this image?")) {
+      if (galleryToDelete?.imageUrl) {
+        deleteCloudinaryAsset(galleryToDelete.imageUrl);
+      }
       setGalleryList(galleryList.filter((g) => g.id !== id));
     }
   };
@@ -893,16 +926,14 @@ export default function AdminPage() {
                   <span>Landscape Visual Frame</span>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-fg">Image URL</label>
-                  <input
-                    required
-                    type="url"
-                    value={heroState.imageUrl}
-                    onChange={(e) => setHeroState({ ...heroState, imageUrl: e.target.value })}
-                    className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
-                  />
-                </div>
+                <CloudinaryUploader
+                  label="Hero Landscape Visual Image (Max 2MB)"
+                  description="High resolution photo for portal header"
+                  folder="hero"
+                  accept="image/*"
+                  value={heroState.imageUrl}
+                  onChange={(url) => setHeroState({ ...heroState, imageUrl: url })}
+                />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -1051,7 +1082,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-fg">Category</label>
                       <select
@@ -1079,17 +1110,16 @@ export default function AdminPage() {
                         className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-fg">Photo URL</label>
-                      <input
-                        type="url"
-                        value={memberForm.photoUrl}
-                        onChange={(e) => setMemberForm({ ...memberForm, photoUrl: e.target.value })}
-                        placeholder="https://..."
-                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
-                      />
-                    </div>
                   </div>
+
+                  <CloudinaryUploader
+                    label="Member Portrait Photo (Max 2MB)"
+                    description="Clear portrait photo"
+                    folder="members"
+                    accept="image/*"
+                    value={memberForm.photoUrl}
+                    onChange={(url) => setMemberForm({ ...memberForm, photoUrl: url })}
+                  />
 
                   <button
                     type="submit"
@@ -1250,7 +1280,7 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-fg">Category</label>
                       <input
@@ -1270,16 +1300,25 @@ export default function AdminPage() {
                         className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-fg">PDF URL</label>
-                      <input
-                        type="url"
-                        value={pubForm.pdfUrl}
-                        onChange={(e) => setPubForm({ ...pubForm, pdfUrl: e.target.value })}
-                        placeholder="https://..."
-                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
-                      />
-                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <CloudinaryUploader
+                      label="PDF Document File (Max 2MB)"
+                      description="Annual souvenir, bulletin or report PDF"
+                      folder="publications"
+                      accept="application/pdf"
+                      value={pubForm.pdfUrl}
+                      onChange={(url) => setPubForm({ ...pubForm, pdfUrl: url })}
+                    />
+                    <CloudinaryUploader
+                      label="Cover Image (Max 2MB)"
+                      description="Cover photo thumbnail"
+                      folder="publications/covers"
+                      accept="image/*"
+                      value={pubForm.coverImageUrl}
+                      onChange={(url) => setPubForm({ ...pubForm, coverImageUrl: url })}
+                    />
                   </div>
 
                   <button
@@ -1407,6 +1446,15 @@ export default function AdminPage() {
                     </div>
                   </div>
 
+                  <CloudinaryUploader
+                    label="Event Banner Image (Max 2MB)"
+                    description="Event promotional photo"
+                    folder="events"
+                    accept="image/*"
+                    value={eventForm.imageUrl}
+                    onChange={(url) => setEventForm({ ...eventForm, imageUrl: url })}
+                  />
+
                   <button
                     type="submit"
                     className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
@@ -1498,30 +1546,27 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-fg">Category</label>
-                      <select
-                        value={galleryForm.categoryEn}
-                        onChange={(e) => setGalleryForm({ ...galleryForm, categoryEn: e.target.value })}
-                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
-                      >
-                        <option value="Education">Education</option>
-                        <option value="Culture">Culture</option>
-                        <option value="Development">Development</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-fg">Image URL *</label>
-                      <input
-                        required
-                        type="url"
-                        value={galleryForm.imageUrl}
-                        onChange={(e) => setGalleryForm({ ...galleryForm, imageUrl: e.target.value })}
-                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
-                      />
-                    </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Category</label>
+                    <select
+                      value={galleryForm.categoryEn}
+                      onChange={(e) => setGalleryForm({ ...galleryForm, categoryEn: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
+                    >
+                      <option value="Education">Education</option>
+                      <option value="Culture">Culture</option>
+                      <option value="Development">Development</option>
+                    </select>
                   </div>
+
+                  <CloudinaryUploader
+                    label="Gallery Photo (Max 2MB)"
+                    description="Community activity image"
+                    folder="gallery"
+                    accept="image/*"
+                    value={galleryForm.imageUrl}
+                    onChange={(url) => setGalleryForm({ ...galleryForm, imageUrl: url })}
+                  />
 
                   <button
                     type="submit"

@@ -102,8 +102,8 @@ export function SiteFooter({ lang }: { lang: Language }) {
           <div>
             &copy; 2026 Thorga Kathmandu Samparka Tatha Bikash Manch. All rights reserved.
           </div>
-          <div>
-            {lang === "ne" ? "नेपाल सरकार दर्ता नं. ४१२/०५८" : "Govt Regd. No. 412/058"}
+          <div className="text-muted">
+            {lang === "ne" ? "गुल्मी र काठमाडौँ सम्पर्क सञ्जाल" : "Gulmi and Kathmandu Liaison Network"}
           </div>
         </div>
       </div>
