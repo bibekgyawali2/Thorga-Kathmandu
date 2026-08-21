@@ -9,6 +9,7 @@ import {
   Publication,
   GalleryItem,
   HeroContent,
+  ContactSettings,
   Language,
   initialMembers,
   initialEvents,
@@ -16,12 +17,21 @@ import {
   initialGallery,
   getStoredHeroSnapshot,
   saveStoredHeroContent,
+  getStoredContactSettingsSnapshot,
+  saveStoredContactSettings,
 } from "@/data/mockData";
 import {
+  AdminUser,
+  AdminRole,
+  SUPERADMIN_EMAIL,
   getAdminSession,
   setAdminSession,
   clearAdminSession,
   verifyAdminCredentials,
+  getAdminUsers,
+  addAdminUser,
+  removeAdminUser,
+  toggleAdminUserStatus,
   DEFAULT_ADMIN_CONFIG,
 } from "@/lib/adminAuth";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
@@ -49,6 +59,11 @@ import {
   X,
   Globe,
   Translate,
+  ShieldCheck,
+  UserGear,
+  CheckCircle,
+  XCircle,
+  Key,
 } from "@phosphor-icons/react";
 
 interface Inquiry {
@@ -94,6 +109,7 @@ const ADMIN_I18N = {
     gallery: "तस्बिरहरू",
     inquiries: "सम्पर्क सन्देश",
     settings: "सम्पर्क सेटिङ्स",
+    adminAccess: "प्रशासक व्यवस्थापन",
     publicPortal: "मुख्य वेबसाइट",
     quickActions: "द्रुत कार्यहरू",
     updateHero: "ब्यानर सम्पादन",
@@ -105,6 +121,7 @@ const ADMIN_I18N = {
     scheduleEvent: "कार्यक्रम तालिका",
     scheduleEventDesc: "भेला र बैठकहरू",
     addGallery: "तस्बिर थप्नुहोस्",
+    manageAccessDesc: "प्रशासक खाता तथा पहुँच नियन्त्रण",
     saveChanges: "परिवर्तन सुरक्षित गर्नुहोस्",
     savedSuccess: "सफलतापूर्वक सुरक्षित भयो।",
     logout: "लगआउट",
@@ -118,7 +135,7 @@ const ADMIN_I18N = {
     noInquiries: "इनबक्समा कुनै सन्देश छैन।",
     signInTitle: "प्रशासन लगइन",
     signInDesc: "वेबसाइटका सामग्री व्यवस्थापन गर्न आधिकारिक प्रमाण प्रविष्ट गर्नुहोस्।",
-    username: "प्रयोगकर्ता नाम",
+    username: "प्रयोगकर्ता नाम वा इमेल",
     password: "पासवर्ड",
     signInBtn: "लगइन गर्नुहोस्",
     loginError: "प्रयोगकर्ता नाम वा पासवर्ड मिलेन। कृपया पुनः प्रयास गर्नुहोस्।",
@@ -135,6 +152,27 @@ const ADMIN_I18N = {
     deleteBtn: "मेटाउनुहोस्",
     cancelBtn: "रद्द गर्नुहोस्",
     closeBtn: "बन्द गर्नुहोस्",
+    // Admin User Access specific
+    superadminTag: "सुपर एडमिन (वातावरण चर .env मा कन्फिगर गरिएको)",
+    superadminOnlyNotice: "केवल सुपर एडमिनले मात्र प्रशासक प्रयोगकर्ताहरू थप्न, सक्रिय/निष्क्रिय गर्न वा मेटाउन सक्छ।",
+    addAdminUser: "प्रशासक थप्नुहोस्",
+    addUserModalTitle: "नयाँ प्रशासक खाता दर्ता",
+    userName: "पूरा नाम",
+    userEmail: "आधिकारिक इमेल",
+    userRole: "भूमिका",
+    userPassword: "पासवर्ड",
+    roleSuperadmin: "सुपर एडमिन",
+    roleAdmin: "प्रशासक (Admin)",
+    roleEditor: "सम्पादक (Editor)",
+    activeStatus: "सक्रिय",
+    inactiveStatus: "निष्क्रिय",
+    deactivate: "निष्क्रिय गर्नुहोस्",
+    activate: "सक्रिय गर्नुहोस्",
+    removeUserConfirmTitle: "प्रशासक खाता हटाउने पुष्टि",
+    removeUserConfirmDesc: "के तपाईं यस प्रयोगकर्ताको प्रशासनिक पहुँच स्थायी रूपमा हटाउन निश्चित हुनुहुन्छ?",
+    userAddedSuccess: "नयाँ प्रशासक खाता सफलतापूर्वक सिर्जना गरियो।",
+    userRemovedSuccess: "प्रशासक खाता हटाइयो।",
+    userStatusChanged: "प्रशासकको पहुँच स्थिति परिवर्तन गरियो।",
   },
   en: {
     brandTitle: "Thorga Kathmandu Forum",
@@ -147,6 +185,7 @@ const ADMIN_I18N = {
     gallery: "Gallery",
     inquiries: "Inquiries",
     settings: "Settings",
+    adminAccess: "Admin Access",
     publicPortal: "Public Portal",
     quickActions: "Quick Actions",
     updateHero: "Update Hero Banner",
@@ -158,6 +197,7 @@ const ADMIN_I18N = {
     scheduleEvent: "Schedule Event",
     scheduleEventDesc: "Meetings and assemblies",
     addGallery: "Add Photo",
+    manageAccessDesc: "Manage administrator accounts and permissions",
     saveChanges: "Save Changes",
     savedSuccess: "Changes saved successfully.",
     logout: "Sign Out",
@@ -171,7 +211,7 @@ const ADMIN_I18N = {
     noInquiries: "No messages in inbox.",
     signInTitle: "Admin Sign In",
     signInDesc: "Enter administrative credentials to manage portal data and content.",
-    username: "Username",
+    username: "Username or Email",
     password: "Password",
     signInBtn: "Sign In",
     loginError: "Invalid username or password. Please try again.",
@@ -188,6 +228,27 @@ const ADMIN_I18N = {
     deleteBtn: "Delete",
     cancelBtn: "Cancel",
     closeBtn: "Close",
+    // Admin User Access specific
+    superadminTag: "Superadmin (Configured in .env environment)",
+    superadminOnlyNotice: "Only the superadmin configured in the environment file can add, deactivate, or remove administrator accounts.",
+    addAdminUser: "Add Administrator",
+    addUserModalTitle: "Register New Administrator",
+    userName: "Full Name",
+    userEmail: "Official Email",
+    userRole: "Role",
+    userPassword: "Password",
+    roleSuperadmin: "Superadmin",
+    roleAdmin: "Administrator",
+    roleEditor: "Editor",
+    activeStatus: "Active",
+    inactiveStatus: "Inactive",
+    deactivate: "Deactivate",
+    activate: "Activate",
+    removeUserConfirmTitle: "Remove Administrator",
+    removeUserConfirmDesc: "Are you sure you want to revoke administrative access for this user?",
+    userAddedSuccess: "Administrator account created successfully.",
+    userRemovedSuccess: "Administrator account removed successfully.",
+    userStatusChanged: "User access status updated.",
   },
 };
 
@@ -219,7 +280,7 @@ export default function AdminPage() {
   const t = ADMIN_I18N[lang];
 
   const [activeTab, setActiveTab] = useState<
-    "overview" | "hero" | "members" | "publications" | "events" | "gallery" | "inquiries" | "settings"
+    "overview" | "hero" | "members" | "publications" | "events" | "gallery" | "inquiries" | "settings" | "access"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -228,6 +289,7 @@ export default function AdminPage() {
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState(false);
+  const [loginErrorMessage, setLoginErrorMessage] = useState("");
 
   // Managed Data States
   const [heroState, setHeroState] = useState<HeroContent>(() => getStoredHeroSnapshot());
@@ -236,6 +298,7 @@ export default function AdminPage() {
   const [eventsList, setEventsList] = useState<EventItem[]>(initialEvents);
   const [galleryList, setGalleryList] = useState<GalleryItem[]>(initialGallery);
   const [inquiriesList, setInquiriesList] = useState<Inquiry[]>(mockInquiries);
+  const [adminUsersList, setAdminUsersList] = useState<AdminUser[]>(() => getAdminUsers());
 
   // Filter & Form States
   const [memberFilterCategory, setMemberFilterCategory] = useState<"all" | "current" | "advisor" | "past">("all");
@@ -244,6 +307,20 @@ export default function AdminPage() {
   const [showAddPubModal, setShowAddPubModal] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showAddGalleryModal, setShowAddGalleryModal] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+
+  // New Admin User Form
+  const [userForm, setUserForm] = useState({
+    name: "",
+    email: "",
+    role: "admin" as AdminRole,
+    password: "",
+  });
+
+  // Settings State (Contact & Secretariat)
+  const [contactSettingsState, setContactSettingsState] = useState<ContactSettings>(() =>
+    getStoredContactSettingsSnapshot()
+  );
 
   // New Member Form
   const [memberForm, setMemberForm] = useState({
@@ -307,14 +384,6 @@ export default function AdminPage() {
     imageUrl: "",
   });
 
-  // Settings State
-  const [settings, setSettings] = useState({
-    kathmanduAddress: "Shankhamul Marg, New Baneshwor, Kathmandu, Nepal",
-    thorgaAddress: "Thorga Bazaar, Ruru Kshetra-2, Gulmi, Lumbini Province",
-    contactPhone: "+977 01-4481234, 9851012345",
-    contactEmail: "info@thorgaktm.org.np",
-  });
-
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     if (typeof document !== "undefined") {
@@ -327,12 +396,15 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (verifyAdminCredentials(loginUser, loginPass)) {
-      setAdminSession(loginUser);
-      setSession({ username: loginUser, isAuthenticated: true, loginTime: Date.now() });
+    const result = verifyAdminCredentials(loginUser, loginPass);
+    if (result.success && result.user) {
+      setAdminSession(result.user);
+      setSession(getAdminSession());
       setLoginError(false);
+      setLoginErrorMessage("");
     } else {
       setLoginError(true);
+      setLoginErrorMessage(result.message || t.loginError);
     }
   };
 
@@ -567,6 +639,106 @@ export default function AdminPage() {
     }
   };
 
+  // --- Admin User Access Management Handlers ---
+  const handleAddAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.isSuperadmin) {
+      dialogAlert({
+        title: lang === "ne" ? "अनुमति अस्वीकृत" : "Permission Denied",
+        description: t.superadminOnlyNotice,
+        type: "danger",
+      });
+      return;
+    }
+    if (!userForm.name || !userForm.email || !userForm.password) {
+      dialogAlert({
+        title: lang === "ne" ? "अपूर्ण विवरण" : "Missing Details",
+        description: lang === "ne" ? "कृपया नाम, इमेल र पासवर्ड प्रविष्ट गर्नुहोस्।" : "Please fill name, email, and password.",
+        type: "warning",
+      });
+      return;
+    }
+
+    const created = addAdminUser({
+      name: userForm.name,
+      email: userForm.email,
+      role: userForm.role,
+      password: userForm.password,
+      addedBy: session.email,
+      isActive: true,
+    });
+
+    setAdminUsersList(getAdminUsers());
+    setShowAddUserModal(false);
+    setUserForm({ name: "", email: "", role: "admin", password: "" });
+    dialogAlert({
+      title: lang === "ne" ? "प्रशासक खाता सिर्जना भयो" : "Administrator Created",
+      description: `${created.name} (${created.email}) ${t.userAddedSuccess}`,
+      type: "success",
+    });
+  };
+
+  const handleToggleUser = (user: AdminUser) => {
+    if (!session?.isSuperadmin) {
+      dialogAlert({
+        title: lang === "ne" ? "अनुमति अस्वीकृत" : "Permission Denied",
+        description: t.superadminOnlyNotice,
+        type: "danger",
+      });
+      return;
+    }
+    const res = toggleAdminUserStatus(user.id, session.email);
+    if (res.success) {
+      setAdminUsersList(getAdminUsers());
+      dialogAlert({
+        title: lang === "ne" ? "स्थिति अद्यावधिक भयो" : "Status Updated",
+        description: `${user.name}: ${t.userStatusChanged}`,
+        type: "info",
+      });
+    } else {
+      dialogAlert({
+        title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+        description: res.message || "",
+        type: "warning",
+      });
+    }
+  };
+
+  const handleDeleteUser = async (user: AdminUser) => {
+    if (!session?.isSuperadmin) {
+      dialogAlert({
+        title: lang === "ne" ? "अनुमति अस्वीकृत" : "Permission Denied",
+        description: t.superadminOnlyNotice,
+        type: "danger",
+      });
+      return;
+    }
+    const confirmed = await dialogConfirm({
+      title: t.removeUserConfirmTitle,
+      description: `${t.removeUserConfirmDesc} (${user.name} - ${user.email})`,
+      type: "danger",
+      confirmText: t.deleteBtn,
+      cancelText: t.cancelBtn,
+    });
+    if (confirmed) {
+      const res = removeAdminUser(user.id, session.email);
+      if (res.success) {
+        setAdminUsersList(getAdminUsers());
+        dialogAlert({
+          title: lang === "ne" ? "प्रशासक हटाइयो" : "User Removed",
+          description: t.userRemovedSuccess,
+          type: "success",
+        });
+      } else {
+        dialogAlert({
+          title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+          description: res.message || "",
+          type: "warning",
+        });
+      }
+    }
+  };
+
   const filteredAdminMembers = membersList.filter((m) => {
     const matchesCategory = memberFilterCategory === "all" ? true : m.committeeType === memberFilterCategory;
     const term = memberSearchQuery.toLowerCase();
@@ -596,6 +768,8 @@ export default function AdminPage() {
         return t.inquiries;
       case "settings":
         return t.settings;
+      case "access":
+        return t.adminAccess;
       default:
         return t.overview;
     }
@@ -645,8 +819,8 @@ export default function AdminPage() {
             </div>
 
             {loginError && (
-              <div className="p-3 rounded-control border border-red-500/30 bg-red-500/10 text-red-500 text-xs text-center">
-                {t.loginError}
+              <div className="p-3 rounded-control border border-red-500/30 bg-red-500/10 text-red-500 text-xs text-center leading-relaxed">
+                {loginErrorMessage || t.loginError}
               </div>
             )}
 
@@ -658,7 +832,7 @@ export default function AdminPage() {
                   type="text"
                   value={loginUser}
                   onChange={(e) => setLoginUser(e.target.value)}
-                  placeholder="admin"
+                  placeholder="admin or email"
                   className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                 />
               </div>
@@ -683,8 +857,8 @@ export default function AdminPage() {
               </button>
             </form>
 
-            <div className="p-3 rounded-control border border-line bg-ground text-[11px] space-y-0.5 text-muted">
-              <div>Default user: <span className="font-mono text-fg font-medium">{DEFAULT_ADMIN_CONFIG.username}</span></div>
+            <div className="p-3 rounded-control border border-line bg-ground text-[11px] space-y-1 text-muted">
+              <div>Superadmin: <span className="font-mono text-fg font-medium">{SUPERADMIN_EMAIL}</span></div>
               <div>Default pass: <span className="font-mono text-fg font-medium">{DEFAULT_ADMIN_CONFIG.password}</span></div>
             </div>
           </div>
@@ -902,17 +1076,46 @@ export default function AdminPage() {
             <Database size={16} />
             <span>{t.settings}</span>
           </button>
+
+          {/* 9. ADMIN USER ACCESS (NEW) */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("access");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+              activeTab === "access"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <span className="flex items-center gap-2.5">
+              <ShieldCheck size={16} />
+              <span>{t.adminAccess}</span>
+            </span>
+            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
+              activeTab === "access" ? "bg-black/20 text-white" : "bg-tint text-muted"
+            }`}>
+              {adminUsersList.length}
+            </span>
+          </button>
         </div>
 
         {/* Pinned User Bar */}
         <div className="p-3 border-t border-line bg-surface flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-full bg-accent-soft text-accent font-bold text-xs flex items-center justify-center flex-shrink-0">
-              A
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+              session.isSuperadmin ? "bg-amber-500/20 text-amber-500" : "bg-accent-soft text-accent"
+            }`}>
+              {session.isSuperadmin ? "S" : "A"}
             </div>
             <div className="min-w-0">
               <div className="text-xs font-bold text-fg truncate">{session.username}</div>
-              <div className="text-[10px] text-muted">Admin</div>
+              <div className="text-[10px] text-muted flex items-center gap-1">
+                <span className="capitalize font-mono">{session.role}</span>
+                {session.isSuperadmin && <span className="text-[9px] px-1 bg-amber-500/20 text-amber-600 rounded">Super</span>}
+              </div>
             </div>
           </div>
 
@@ -981,7 +1184,7 @@ export default function AdminPage() {
           {activeTab === "overview" && (
             <div className="space-y-6">
               {/* Stat Metrics Row */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="p-4 rounded-card border border-line bg-surface space-y-1">
                   <div className="text-xs text-muted flex items-center justify-between">
                     <span>{t.members}</span>
@@ -1013,12 +1216,20 @@ export default function AdminPage() {
                   </div>
                   <div className="text-2xl font-bold font-mono text-fg">{inquiriesList.length}</div>
                 </div>
+
+                <div className="p-4 rounded-card border border-line bg-surface space-y-1">
+                  <div className="text-xs text-muted flex items-center justify-between">
+                    <span>{t.adminAccess}</span>
+                    <ShieldCheck size={16} className="text-amber-500" />
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-fg">{adminUsersList.length}</div>
+                </div>
               </div>
 
               {/* Action Triggers */}
               <div className="p-6 rounded-card border border-line bg-surface space-y-4">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-muted">{t.quickActions}</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <button
                     type="button"
                     onClick={() => setActiveTab("hero")}
@@ -1050,6 +1261,15 @@ export default function AdminPage() {
                   >
                     <div className="text-xs font-bold text-fg">{t.uploadPub}</div>
                     <div className="text-[11px] text-muted">{t.uploadPubDesc}</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("access")}
+                    className="p-4 rounded-control border border-line bg-ground hover:border-accent text-left transition-colors space-y-1"
+                  >
+                    <div className="text-xs font-bold text-fg">{t.adminAccess}</div>
+                    <div className="text-[11px] text-muted">{t.manageAccessDesc}</div>
                   </button>
                 </div>
               </div>
@@ -1883,74 +2103,459 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* 8. SETTINGS */}
+          {/* 8. SETTINGS & CONTACT CONFIGURATION */}
           {activeTab === "settings" && (
             <div className="space-y-6">
               <div>
                 <h2 className="text-base font-bold text-fg">{t.settings}</h2>
-                <p className="text-xs text-muted">{lang === "ne" ? "सम्पर्क फोन, इमेल तथा कार्यालय ठेगाना व्यवस्थापन" : "Contact details and office physical addresses."}</p>
+                <p className="text-xs text-muted">
+                  {lang === "ne"
+                    ? "मुख्य पृष्ठको सम्पर्क खण्ड, सचिवालय विवरण तथा फोन नम्बर सम्पादन गर्नुहोस्।"
+                    : "Edit landing page contact section text, secretariat liaison card details, and phone numbers."}
+                </p>
               </div>
 
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
+                  saveStoredContactSettings(contactSettingsState);
                   dialogAlert({
-                    title: lang === "ne" ? "सेटिङ्स सुरक्षित भयो" : "Settings Saved",
-                    description: t.savedSuccess,
+                    title: lang === "ne" ? "सम्पर्क विवरण सुरक्षित भयो" : "Contact Settings Saved",
+                    description:
+                      lang === "ne"
+                        ? "मुख्य पृष्ठको सम्पर्क खण्ड र सचिवालय विवरणहरू सफलतापूर्वक सुरक्षित गरियो।"
+                        : "Landing page contact section and liaison secretariat details updated live.",
                     type: "success",
                   });
                 }}
-                className="p-6 rounded-card border border-line bg-surface space-y-4"
+                className="space-y-6"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-fg">{lang === "ne" ? "सम्पर्क फोन" : "Phone"}</label>
-                    <input
-                      type="text"
-                      value={settings.contactPhone}
-                      onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
-                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
-                    />
+                {/* 1. Landing Page Section Header & Subtitle */}
+                <div className="p-6 rounded-card border border-line bg-surface space-y-4">
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">
+                    {lang === "ne" ? "१. सम्पर्क खण्ड शीर्षक र विवरण" : "1. Landing Page Section Title & Description"}
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-fg">{lang === "ne" ? "इमेल" : "Email"}</label>
-                    <input
-                      type="email"
-                      value={settings.contactEmail}
-                      onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
-                    />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "खण्डको मुख्य शीर्षक (नेपाली) *" : "Section Heading (Nepali) *"}
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={contactSettingsState.contactHeadingNe}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, contactHeadingNe: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "खण्डको मुख्य शीर्षक (English) *" : "Section Heading (English) *"}
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={contactSettingsState.contactHeadingEn}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, contactHeadingEn: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "खण्डको उप-विवरण (नेपाली) *" : "Section Description (Nepali) *"}
+                      </label>
+                      <textarea
+                        required
+                        rows={2}
+                        value={contactSettingsState.contactDescriptionNe}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, contactDescriptionNe: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "खण्डको उप-विवरण (English) *" : "Section Description (English) *"}
+                      </label>
+                      <textarea
+                        required
+                        rows={2}
+                        value={contactSettingsState.contactDescriptionEn}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, contactDescriptionEn: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-fg">{lang === "ne" ? "काठमाडौँ सम्पर्क सचिवालय ठेगाना" : "Kathmandu Secretariat Address"}</label>
-                    <input
-                      type="text"
-                      value={settings.kathmanduAddress}
-                      onChange={(e) => setSettings({ ...settings, kathmanduAddress: e.target.value })}
-                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
-                    />
+                {/* 2. Kathmandu Secretariat Liaison Info */}
+                <div className="p-6 rounded-card border border-line bg-surface space-y-4">
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">
+                    {lang === "ne" ? "२. काठमाडौँ सम्पर्क सचिवालय विवरण" : "2. Kathmandu Liaison Secretariat Card"}
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-fg">{lang === "ne" ? "थोर्गा गाउँ सम्पर्क केन्द्र ठेगाना" : "Thorga Village Center Address"}</label>
-                    <input
-                      type="text"
-                      value={settings.thorgaAddress}
-                      onChange={(e) => setSettings({ ...settings, thorgaAddress: e.target.value })}
-                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
-                    />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "सचिवालय शीर्षक (नेपाली)" : "Card Title (Nepali)"}
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={contactSettingsState.kathmanduTitleNe}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, kathmanduTitleNe: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "सचिवालय शीर्षक (English)" : "Card Title (English)"}
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={contactSettingsState.kathmanduTitleEn}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, kathmanduTitleEn: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "सचिवालय उपशीर्षक (नेपाली)" : "Card Subtitle (Nepali)"}
+                      </label>
+                      <input
+                        type="text"
+                        value={contactSettingsState.kathmanduSubtitleNe}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, kathmanduSubtitleNe: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "सचिवालय उपशीर्षक (English)" : "Card Subtitle (English)"}
+                      </label>
+                      <input
+                        type="text"
+                        value={contactSettingsState.kathmanduSubtitleEn}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, kathmanduSubtitleEn: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "सचिवालय ठेगाना (नेपाली)" : "Physical Address (Nepali)"}
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={contactSettingsState.kathmanduAddressNe}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, kathmanduAddressNe: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "सचिवालय ठेगाना (English)" : "Physical Address (English)"}
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        value={contactSettingsState.kathmanduAddressEn}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, kathmanduAddressEn: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
-                >
-                  {t.saveChanges}
-                </button>
+                {/* 3. Direct Contact Channels */}
+                <div className="p-6 rounded-card border border-line bg-surface space-y-4">
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">
+                    {lang === "ne" ? "३. फोन तथा इमेल सम्पर्क" : "3. Direct Phone & Email Channels"}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "सम्पर्क फोन १" : "Primary Phone"}
+                      </label>
+                      <input
+                        type="text"
+                        value={contactSettingsState.phone1}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, phone1: e.target.value })
+                        }
+                        placeholder="+977 01-4481234"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "सम्पर्क फोन २ (मोबाइल)" : "Secondary Phone"}
+                      </label>
+                      <input
+                        type="text"
+                        value={contactSettingsState.phone2}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, phone2: e.target.value })
+                        }
+                        placeholder="9851012345"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "आधिकारिक इमेल" : "Official Email"}
+                      </label>
+                      <input
+                        type="email"
+                        value={contactSettingsState.email}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, email: e.target.value })
+                        }
+                        placeholder="info@thorgaktm.org.np"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
+                  >
+                    {t.saveChanges}
+                  </button>
+                </div>
               </form>
+            </div>
+          )}
+
+          {/* 9. ADMIN ACCESS & USER MANAGEMENT */}
+          {activeTab === "access" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-bold text-fg flex items-center gap-2">
+                    <ShieldCheck size={20} className="text-accent" />
+                    <span>{t.adminAccess}</span>
+                  </h2>
+                  <p className="text-xs text-muted mt-0.5">
+                    {lang === "ne"
+                      ? "प्रशासन प्यानल प्रयोग गर्न सक्ने प्रयोगकर्ताहरूको सूची तथा भूमिका व्यवस्थापन।"
+                      : "Control who can access the admin panel, create accounts, and manage permissions."}
+                  </p>
+                </div>
+
+                {session.isSuperadmin && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddUserModal(!showAddUserModal)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors shadow-sm"
+                  >
+                    <Plus size={14} />
+                    <span>{showAddUserModal ? t.closeBtn : t.addAdminUser}</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Superadmin Configuration Info Box */}
+              <div className="p-4 rounded-card border border-amber-500/30 bg-amber-500/10 space-y-2 text-xs">
+                <div className="flex items-center gap-2 text-amber-600 font-bold">
+                  <Key size={16} />
+                  <span>{t.superadminTag}</span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-muted text-[11px]">
+                  <div>
+                    {lang === "ne" ? "अधिकृत सुपर एडमिन इमेल:" : "Configured Superadmin Email:"}{" "}
+                    <span className="font-mono text-fg font-bold bg-ground px-2 py-0.5 rounded border border-line">
+                      {SUPERADMIN_EMAIL}
+                    </span>
+                  </div>
+                  <div className="text-amber-700 dark:text-amber-400 font-medium">
+                    {session.isSuperadmin
+                      ? (lang === "ne" ? "तपाईं सुपर एडमिनको रूपमा लगइन हुनुहुन्छ।" : "You are signed in as Superadmin.")
+                      : t.superadminOnlyNotice}
+                  </div>
+                </div>
+              </div>
+
+              {/* Add User Modal / Form (Superadmin only) */}
+              {showAddUserModal && session.isSuperadmin && (
+                <form onSubmit={handleAddAdmin} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">{t.addUserModalTitle}</div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">{t.userName} *</label>
+                      <input
+                        required
+                        type="text"
+                        value={userForm.name}
+                        onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                        placeholder="Executive Secretary"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">{t.userEmail} *</label>
+                      <input
+                        required
+                        type="email"
+                        value={userForm.email}
+                        onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                        placeholder="secretary@thorgaktm.org.np"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">{t.userRole}</label>
+                      <select
+                        value={userForm.role}
+                        onChange={(e) => setUserForm({ ...userForm, role: e.target.value as AdminRole })}
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      >
+                        <option value="admin">{t.roleAdmin}</option>
+                        <option value="editor">{t.roleEditor}</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">{t.userPassword} *</label>
+                      <input
+                        required
+                        type="text"
+                        value={userForm.password}
+                        onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                        placeholder="••••••••"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                  >
+                    {t.addAdminUser}
+                  </button>
+                </form>
+              )}
+
+              {/* Authorized Admin Users Table */}
+              <div className="p-4 rounded-card border border-line bg-surface space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted px-2 py-1">
+                  {lang === "ne" ? "अधिकृत प्रशासक सूची" : "Authorized Administrators List"}
+                </div>
+
+                <div className="divide-y divide-line">
+                  {adminUsersList.map((user) => {
+                    const isUserSuperadmin =
+                      user.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
+                      user.role === "superadmin";
+
+                    return (
+                      <div key={user.id} className="py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-9 h-9 rounded-control flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+                            isUserSuperadmin
+                              ? "bg-amber-500/20 text-amber-600"
+                              : "bg-accent-soft text-accent"
+                          }`}>
+                            {isUserSuperadmin ? <ShieldCheck size={18} /> : <UserGear size={18} />}
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-fg truncate">{user.name}</span>
+                              {isUserSuperadmin ? (
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-chip bg-amber-500/20 text-amber-600 border border-amber-500/30">
+                                  {t.roleSuperadmin}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-chip bg-tint text-muted border border-line capitalize">
+                                  {user.role}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="text-[11px] text-muted flex items-center gap-2 mt-0.5">
+                              <span className="font-mono text-fg font-medium">{user.email}</span>
+                              <span>•</span>
+                              <span>Added {user.addedAt}</span>
+                              <span>•</span>
+                              <span className={`inline-flex items-center gap-1 font-medium ${
+                                user.isActive ? "text-emerald-500" : "text-red-500"
+                              }`}>
+                                {user.isActive ? <CheckCircle size={12} weight="fill" /> : <XCircle size={12} weight="fill" />}
+                                <span>{user.isActive ? t.activeStatus : t.inactiveStatus}</span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions (Only Superadmin can toggle or delete non-superadmin accounts) */}
+                        {session.isSuperadmin && !isUserSuperadmin && (
+                          <div className="flex items-center gap-2 self-end sm:self-center">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleUser(user)}
+                              className={`px-2.5 py-1 rounded-control text-[11px] font-semibold transition-colors border ${
+                                user.isActive
+                                  ? "border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
+                                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
+                              }`}
+                            >
+                              {user.isActive ? t.deactivate : t.activate}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteUser(user)}
+                              className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                              title={t.deleteBtn}
+                            >
+                              <Trash size={15} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </main>

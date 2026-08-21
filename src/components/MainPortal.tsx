@@ -18,6 +18,9 @@ import {
   subscribeHeroContent,
   getStoredHeroSnapshot,
   getServerHeroSnapshot,
+  subscribeContactSettings,
+  getStoredContactSettingsSnapshot,
+  getServerContactSettingsSnapshot,
 } from "@/data/mockData";
 import { useDialog } from "@/components/Dialog";
 import {
@@ -104,6 +107,11 @@ export default function MainPortal() {
     subscribeHeroContent,
     getStoredHeroSnapshot,
     getServerHeroSnapshot
+  );
+  const contactSettings = useSyncExternalStore(
+    subscribeContactSettings,
+    getStoredContactSettingsSnapshot,
+    getServerContactSettingsSnapshot
   );
 
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
@@ -648,7 +656,7 @@ export default function MainPortal() {
         </div>
       </section>
 
-      {/* SECTION 7: CONTACT & LIAISON SECRETARIAT */}
+      {/* SECTION 7: CONTACT & LIAISON SECRETARIAT (Dynamically Configurable from Admin) */}
       <section id="contact" className="py-20 border-b border-line bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Top Section Header */}
@@ -658,12 +666,10 @@ export default function MainPortal() {
               <span>{lang === "ne" ? "सम्पर्क तथा सचिवालय" : "Secretariat Liaison"}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg">
-              {lang === "ne" ? "सम्पर्क तथा सदस्यता सोधपुछ" : "Contact & Membership Inquiries"}
+              {lang === "ne" ? contactSettings.contactHeadingNe : contactSettings.contactHeadingEn}
             </h2>
             <p className="text-base text-muted max-w-[65ch] leading-relaxed">
-              {lang === "ne"
-                ? "नयाँ सदस्यता, आजीवन सदस्यता वा संस्थागत सहकार्यका लागि सम्पर्क फाराम भर्नुहोस् वा सिधै सचिवालयमा सम्पर्क गर्नुहोस्।"
-                : "Fill in the details below for membership inquiries or organizational partnerships, or reach out directly to our liaison secretariat."}
+              {lang === "ne" ? contactSettings.contactDescriptionNe : contactSettings.contactDescriptionEn}
             </p>
           </div>
 
@@ -772,82 +778,60 @@ export default function MainPortal() {
               )}
             </div>
 
-            {/* Right Column: Liaison Offices & Direct Channels */}
+            {/* Right Column: Liaison Secretariat Card */}
             <div className="lg:col-span-5 space-y-4">
-              {/* Kathmandu Secretariat Card */}
-              <div className="rounded-card border border-line bg-ground p-6 space-y-3 shadow-sm hover:border-accent transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-control bg-accent-soft text-accent flex items-center justify-center flex-shrink-0">
-                    <Buildings size={20} weight="duotone" />
+              <div className="rounded-card border border-line bg-ground p-6 sm:p-7 space-y-5 shadow-sm hover:border-accent transition-all">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-control bg-accent-soft text-accent flex items-center justify-center flex-shrink-0">
+                    <Buildings size={22} weight="duotone" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-fg">
-                      {lang === "ne" ? "काठमाडौँ सम्पर्क सचिवालय" : "Kathmandu Secretariat"}
+                    <div className="text-base font-bold text-fg leading-tight">
+                      {lang === "ne" ? contactSettings.kathmanduTitleNe : contactSettings.kathmanduTitleEn}
                     </div>
-                    <div className="text-[11px] text-accent font-semibold">
-                      {lang === "ne" ? "केन्द्रीय सम्पर्क कार्यालय" : "Main Liaison Secretariat"}
+                    <div className="text-xs text-accent font-semibold mt-0.5">
+                      {lang === "ne" ? contactSettings.kathmanduSubtitleNe : contactSettings.kathmanduSubtitleEn}
                     </div>
                   </div>
                 </div>
 
-                <div className="text-xs text-muted space-y-2 pt-2 border-t border-line">
-                  <div className="flex items-start gap-2">
-                    <MapPin size={15} className="text-accent flex-shrink-0 mt-0.5" />
-                    <span>
-                      {lang === "ne"
-                        ? "शंखमूल मार्ग, नयाँ बानेश्वर, काठमाडौँ, नेपाल"
-                        : "Shankhamul Marg, New Baneshwor, Kathmandu, Nepal"}
+                <div className="text-xs text-muted space-y-3 pt-3 border-t border-line">
+                  <div className="flex items-start gap-2.5">
+                    <MapPin size={16} className="text-accent flex-shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">
+                      {lang === "ne" ? contactSettings.kathmanduAddressNe : contactSettings.kathmanduAddressEn}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Phone size={15} className="text-accent flex-shrink-0" />
-                    <a href="tel:+977014481234" className="hover:text-accent font-mono text-fg">
-                      +977 01-4481234, 9851012345
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <EnvelopeSimple size={15} className="text-accent flex-shrink-0" />
-                    <a href="mailto:info@thorgaktm.org.np" className="hover:text-accent text-fg">
-                      info@thorgaktm.org.np
-                    </a>
-                  </div>
+
+                  {(contactSettings.phone1 || contactSettings.phone2) && (
+                    <div className="flex items-center gap-2.5">
+                      <Phone size={16} className="text-accent flex-shrink-0" />
+                      <div className="flex flex-wrap items-center gap-2 font-mono text-fg">
+                        {contactSettings.phone1 && (
+                          <a href={`tel:${contactSettings.phone1}`} className="hover:text-accent transition-colors">
+                            {contactSettings.phone1}
+                          </a>
+                        )}
+                        {contactSettings.phone1 && contactSettings.phone2 && <span>,</span>}
+                        {contactSettings.phone2 && (
+                          <a href={`tel:${contactSettings.phone2}`} className="hover:text-accent transition-colors">
+                            {contactSettings.phone2}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {contactSettings.email && (
+                    <div className="flex items-center gap-2.5">
+                      <EnvelopeSimple size={16} className="text-accent flex-shrink-0" />
+                      <a href={`mailto:${contactSettings.email}`} className="hover:text-accent text-fg transition-colors">
+                        {contactSettings.email}
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Thorga Village Center Card */}
-              <div className="rounded-card border border-line bg-ground p-6 space-y-3 shadow-sm hover:border-accent transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-control bg-accent-soft text-accent flex items-center justify-center flex-shrink-0">
-                    <MapPin size={20} weight="duotone" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-fg">
-                      {lang === "ne" ? "थोर्गा गाउँ सम्पर्क केन्द्र" : "Thorga Village Center"}
-                    </div>
-                    <div className="text-[11px] text-accent font-semibold">
-                      {lang === "ne" ? "गृहजिल्ला समन्वय केन्द्र" : "Village Coordination Hub"}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-xs text-muted space-y-2 pt-2 border-t border-line">
-                  <div className="flex items-start gap-2">
-                    <MapPin size={15} className="text-accent flex-shrink-0 mt-0.5" />
-                    <span>
-                      {lang === "ne"
-                        ? "थोर्गा बजार, रुरुक्षेत्र-२, गुल्मी, लुम्बिनी प्रदेश"
-                        : "Thorga Bazaar, Ruru Kshetra-2, Gulmi, Lumbini Province"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone size={15} className="text-accent flex-shrink-0" />
-                    <a href="tel:+977079520123" className="hover:text-accent font-mono text-fg">
-                      +977 079-520123
-                    </a>
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
         </div>

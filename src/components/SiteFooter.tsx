@@ -74,15 +74,7 @@ export function SiteFooter({ lang }: { lang: Language }) {
                 <span>
                   {lang === "ne"
                     ? "काठमाडौँ सचिवालय: शंखमूल मार्ग, नयाँ बानेश्वर"
-                    : "Kathmandu Office: Shankhamul Marg, New Baneshwor"}
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <MapPin size={16} className="text-accent flex-shrink-0 mt-0.5" />
-                <span>
-                  {lang === "ne"
-                    ? "थोर्गा सम्पर्क केन्द्र: रुरुक्षेत्र-२, गुल्मी"
-                    : "Thorga Center: Ruru Kshetra-2, Gulmi"}
+                    : "Kathmandu Secretariat: Shankhamul Marg, New Baneshwor"}
                 </span>
               </div>
               <div className="flex items-center gap-2">

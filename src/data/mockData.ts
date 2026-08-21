@@ -413,3 +413,80 @@ export function saveStoredHeroContent(content: HeroContent): void {
   } catch {}
 }
 
+export interface ContactSettings {
+  contactHeadingNe: string;
+  contactHeadingEn: string;
+  contactDescriptionNe: string;
+  contactDescriptionEn: string;
+  kathmanduTitleNe: string;
+  kathmanduTitleEn: string;
+  kathmanduSubtitleNe: string;
+  kathmanduSubtitleEn: string;
+  kathmanduAddressNe: string;
+  kathmanduAddressEn: string;
+  phone1: string;
+  phone2: string;
+  email: string;
+}
+
+export const initialContactSettings: ContactSettings = {
+  contactHeadingNe: "सम्पर्क तथा सदस्यता सोधपुछ",
+  contactHeadingEn: "Contact & Membership Inquiries",
+  contactDescriptionNe: "मञ्चको सदस्यता, सामाजिक परियोजना, स्मारिका प्रकाशन तथा सहयोगका लागि सम्पर्क गर्नुहोस्",
+  contactDescriptionEn: "Reach out for memberships, community welfare programs, publications, or partnerships",
+  kathmanduTitleNe: "काठमाडौँ सम्पर्क सचिवालय",
+  kathmanduTitleEn: "Kathmandu Secretariat",
+  kathmanduSubtitleNe: "केन्द्रीय सम्पर्क कार्यालय",
+  kathmanduSubtitleEn: "Main Liaison Secretariat",
+  kathmanduAddressNe: "शंखमूल मार्ग, नयाँ बानेश्वर, काठमाडौँ, नेपाल",
+  kathmanduAddressEn: "Shankhamul Marg, New Baneshwor, Kathmandu, Nepal",
+  phone1: "+977 01-4481234",
+  phone2: "9851012345",
+  email: "info@thorgaktm.org.np",
+};
+
+const CONTACT_STORAGE_KEY = "thorga_contact_settings";
+
+let contactSubscribers: Array<() => void> = [];
+
+export function subscribeContactSettings(callback: () => void) {
+  contactSubscribers.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === CONTACT_STORAGE_KEY) {
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", handleStorage);
+  }
+  return () => {
+    contactSubscribers = contactSubscribers.filter((s) => s !== callback);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", handleStorage);
+    }
+  };
+}
+
+export function getStoredContactSettingsSnapshot(): ContactSettings {
+  if (typeof window === "undefined") return initialContactSettings;
+  try {
+    const raw = localStorage.getItem(CONTACT_STORAGE_KEY);
+    if (!raw) return initialContactSettings;
+    return JSON.parse(raw);
+  } catch {
+    return initialContactSettings;
+  }
+}
+
+export function getServerContactSettingsSnapshot(): ContactSettings {
+  return initialContactSettings;
+}
+
+export function saveStoredContactSettings(settings: ContactSettings): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CONTACT_STORAGE_KEY, JSON.stringify(settings));
+    contactSubscribers.forEach((s) => s());
+  } catch {}
+}
+
