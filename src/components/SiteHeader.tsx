@@ -3,7 +3,7 @@
 import React, { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Language } from "@/data/mockData";
+import { Language, saveStoredLanguage } from "@/data/mockData";
 import {
   Buildings,
   SlidersHorizontal,
@@ -64,6 +64,11 @@ export function SiteHeader({
         localStorage.setItem("thorga-theme", next);
       } catch {}
     }
+  };
+
+  const handleLangChange = (newLang: Language) => {
+    setLang(newLang);
+    saveStoredLanguage(newLang);
   };
 
   return (
@@ -146,7 +151,7 @@ export function SiteHeader({
             <div className="inline-flex rounded-control border border-line p-0.5 bg-surface">
               <button
                 type="button"
-                onClick={() => setLang("ne")}
+                onClick={() => handleLangChange("ne")}
                 className={`px-2.5 py-1 text-xs sm:text-sm font-semibold rounded-chip transition-all ${
                   lang === "ne" ? "bg-accent text-on-accent shadow-sm" : "text-muted hover:text-fg"
                 }`}
@@ -155,7 +160,7 @@ export function SiteHeader({
               </button>
               <button
                 type="button"
-                onClick={() => setLang("en")}
+                onClick={() => handleLangChange("en")}
                 className={`px-2.5 py-1 text-xs sm:text-sm font-semibold rounded-chip transition-all ${
                   lang === "en" ? "bg-accent text-on-accent shadow-sm" : "text-muted hover:text-fg"
                 }`}

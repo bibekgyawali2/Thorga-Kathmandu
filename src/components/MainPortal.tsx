@@ -7,20 +7,28 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import {
   Member,
-  EventItem,
   Publication,
-  GalleryItem,
   Language,
-  initialMembers,
-  initialEvents,
-  initialPublications,
-  initialGallery,
+  getStoredLanguage,
   subscribeHeroContent,
   getStoredHeroSnapshot,
   getServerHeroSnapshot,
   subscribeContactSettings,
   getStoredContactSettingsSnapshot,
   getServerContactSettingsSnapshot,
+  subscribeMembers,
+  getStoredMembersSnapshot,
+  getServerMembersSnapshot,
+  subscribeEvents,
+  getStoredEventsSnapshot,
+  getServerEventsSnapshot,
+  subscribePublications,
+  getStoredPublicationsSnapshot,
+  getServerPublicationsSnapshot,
+  subscribeGallery,
+  getStoredGallerySnapshot,
+  getServerGallerySnapshot,
+  addStoredInquiry,
 } from "@/data/mockData";
 import { useDialog } from "@/components/Dialog";
 import {
@@ -98,11 +106,27 @@ function Portrait({
 }
 
 export default function MainPortal() {
-  const [lang, setLang] = useState<Language>("ne");
-  const [members] = useState<Member[]>(initialMembers);
-  const [events] = useState<EventItem[]>(initialEvents);
-  const [publications] = useState<Publication[]>(initialPublications);
-  const [gallery] = useState<GalleryItem[]>(initialGallery);
+  const [lang, setLang] = useState<Language>(() => getStoredLanguage());
+  const members = useSyncExternalStore(
+    subscribeMembers,
+    getStoredMembersSnapshot,
+    getServerMembersSnapshot
+  );
+  const events = useSyncExternalStore(
+    subscribeEvents,
+    getStoredEventsSnapshot,
+    getServerEventsSnapshot
+  );
+  const publications = useSyncExternalStore(
+    subscribePublications,
+    getStoredPublicationsSnapshot,
+    getServerPublicationsSnapshot
+  );
+  const gallery = useSyncExternalStore(
+    subscribeGallery,
+    getStoredGallerySnapshot,
+    getServerGallerySnapshot
+  );
   const heroContent = useSyncExternalStore(
     subscribeHeroContent,
     getStoredHeroSnapshot,
@@ -116,6 +140,7 @@ export default function MainPortal() {
 
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
   const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [inquiryForm, setInquiryForm] = useState({ name: "", phone: "", email: "", message: "" });
   const [committeeFilter, setCommitteeFilter] = useState<"current" | "advisor" | "all">("current");
   const { alert: dialogAlert } = useDialog();
 
@@ -462,67 +487,76 @@ export default function MainPortal() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {publicationsShowcase.map((pub) => (
-              <article
-                key={pub.id}
-                className="rounded-card border border-line bg-surface overflow-hidden flex flex-col justify-between hover:border-accent transition-all group"
-              >
-                <div className="relative h-48 w-full p-4 flex items-center justify-center bg-tint overflow-hidden">
-                  {pub.coverImageUrl && (
-                    <Image
-                      src={pub.coverImageUrl}
-                      alt={pub.titleEn}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      className="object-cover opacity-40 group-hover:opacity-60 transition-opacity"
-                    />
-                  )}
-                  <div className="relative z-10 w-36 h-40 rounded-control shadow-md p-3 flex flex-col justify-between bg-surface border border-line">
-                    <FileText size={22} className="text-accent" weight="duotone" />
-                    <div className="text-[11px] font-bold text-fg line-clamp-2">
-                      {lang === "ne" ? pub.titleNe : pub.titleEn}
+          {publicationsShowcase.length === 0 ? (
+            <div className="rounded-card border border-dashed border-line p-12 text-center space-y-2 bg-surface">
+              <BookOpen size={32} className="text-accent mx-auto" weight="duotone" />
+              <p className="text-sm font-semibold text-fg">
+                {lang === "ne" ? "हाल कुनै नयाँ प्रकाशन उपलब्ध छैन" : "No publications uploaded yet"}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {publicationsShowcase.map((pub) => (
+                <article
+                  key={pub.id}
+                  className="rounded-card border border-line bg-surface overflow-hidden flex flex-col justify-between hover:border-accent transition-all group"
+                >
+                  <div className="relative h-48 w-full p-4 flex items-center justify-center bg-tint overflow-hidden">
+                    {pub.coverImageUrl && (
+                      <Image
+                        src={pub.coverImageUrl}
+                        alt={pub.titleEn}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover opacity-40 group-hover:opacity-60 transition-opacity"
+                      />
+                    )}
+                    <div className="relative z-10 w-36 h-40 rounded-control shadow-md p-3 flex flex-col justify-between bg-surface border border-line">
+                      <FileText size={22} className="text-accent" weight="duotone" />
+                      <div className="text-[11px] font-bold text-fg line-clamp-2">
+                        {lang === "ne" ? pub.titleNe : pub.titleEn}
+                      </div>
+                      <div className="text-[9px] text-muted font-mono flex justify-between border-t border-line pt-1">
+                        <span>{pub.pages} Pgs</span>
+                        <span>{pub.fileSize}</span>
+                      </div>
                     </div>
-                    <div className="text-[9px] text-muted font-mono flex justify-between border-t border-line pt-1">
-                      <span>{pub.pages} Pgs</span>
-                      <span>{pub.fileSize}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
-                  <div>
-                    <div className="text-[11px] font-semibold text-accent">
-                      {lang === "ne" ? pub.categoryNe : pub.categoryEn}
-                    </div>
-                    <h3 className="text-sm font-bold text-fg leading-snug mt-0.5">
-                      {lang === "ne" ? pub.titleNe : pub.titleEn}
-                    </h3>
                   </div>
 
-                  <div className="pt-3 border-t border-line flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setActivePdfPreview(pub)}
-                      className="flex-1 py-1.5 px-2 rounded-control text-xs font-semibold flex items-center justify-center gap-1 bg-tint hover:bg-accent-soft text-fg transition-colors"
-                    >
-                      <Eye size={14} />
-                      <span>{lang === "ne" ? "हेर्नुहोस्" : "Preview"}</span>
-                    </button>
-                    <a
-                      href={pub.pdfUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-1.5 px-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
-                    >
-                      <Download size={14} />
-                      <span>{lang === "ne" ? "डाउनलोड" : "Download"}</span>
-                    </a>
+                  <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="text-[11px] font-semibold text-accent">
+                        {lang === "ne" ? pub.categoryNe : pub.categoryEn}
+                      </div>
+                      <h3 className="text-sm font-bold text-fg leading-snug mt-0.5">
+                        {lang === "ne" ? pub.titleNe : pub.titleEn}
+                      </h3>
+                    </div>
+
+                    <div className="pt-3 border-t border-line flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setActivePdfPreview(pub)}
+                        className="flex-1 py-1.5 px-2 rounded-control text-xs font-semibold flex items-center justify-center gap-1 bg-tint hover:bg-accent-soft text-fg transition-colors"
+                      >
+                        <Eye size={14} />
+                        <span>{lang === "ne" ? "हेर्नुहोस्" : "Preview"}</span>
+                      </button>
+                      <a
+                        href={pub.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-1.5 px-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                      >
+                        <Download size={14} />
+                        <span>{lang === "ne" ? "डाउनलोड" : "Download"}</span>
+                      </a>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -554,47 +588,56 @@ export default function MainPortal() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {upcomingEventsShowcase.map((event) => (
-              <article
-                key={event.id}
-                className="rounded-card border border-line bg-ground overflow-hidden flex flex-col sm:flex-row hover:border-accent transition-all group"
-              >
-                <div className="sm:w-48 relative h-44 sm:h-auto flex-shrink-0 bg-tint">
-                  <Image
-                    src={event.imageUrl}
-                    alt={event.titleEn}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 192px"
-                    className="object-cover group-hover:scale-105 transition-transform"
-                  />
-                  <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface text-[10px] font-bold text-accent shadow-sm">
-                    {lang === "ne" ? event.categoryNe : event.categoryEn}
-                  </div>
-                </div>
-
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2 text-xs font-bold text-accent">
-                      <Calendar size={14} />
-                      <span>{lang === "ne" ? event.dateNe : event.dateEn}</span>
+          {upcomingEventsShowcase.length === 0 ? (
+            <div className="rounded-card border border-dashed border-line p-12 text-center space-y-2 bg-ground">
+              <Calendar size={32} className="text-accent mx-auto" weight="duotone" />
+              <p className="text-sm font-semibold text-fg">
+                {lang === "ne" ? "हाल कुनै आगामी कार्यक्रम तय भएको छैन" : "No upcoming events scheduled at this moment"}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {upcomingEventsShowcase.map((event) => (
+                <article
+                  key={event.id}
+                  className="rounded-card border border-line bg-ground overflow-hidden flex flex-col sm:flex-row hover:border-accent transition-all group"
+                >
+                  <div className="sm:w-48 relative h-44 sm:h-auto flex-shrink-0 bg-tint">
+                    <Image
+                      src={event.imageUrl}
+                      alt={event.titleEn}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 192px"
+                      className="object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface text-[10px] font-bold text-accent shadow-sm">
+                      {lang === "ne" ? event.categoryNe : event.categoryEn}
                     </div>
-                    <h3 className="text-base font-bold text-fg leading-snug">
-                      {lang === "ne" ? event.titleNe : event.titleEn}
-                    </h3>
-                    <p className="text-xs leading-relaxed text-muted line-clamp-2">
-                      {lang === "ne" ? event.descriptionNe : event.descriptionEn}
-                    </p>
                   </div>
 
-                  <div className="pt-2 border-t border-line text-xs text-muted flex items-center gap-1.5">
-                    <MapPin size={14} className="text-accent flex-shrink-0" />
-                    <span>{lang === "ne" ? event.locationNe : event.locationEn}</span>
+                  <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-accent">
+                        <Calendar size={14} />
+                        <span>{lang === "ne" ? event.dateNe : event.dateEn}</span>
+                      </div>
+                      <h3 className="text-base font-bold text-fg leading-snug">
+                        {lang === "ne" ? event.titleNe : event.titleEn}
+                      </h3>
+                      <p className="text-xs leading-relaxed text-muted line-clamp-2">
+                        {lang === "ne" ? event.descriptionNe : event.descriptionEn}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-line text-xs text-muted flex items-center gap-1.5">
+                      <MapPin size={14} className="text-accent flex-shrink-0" />
+                      <span>{lang === "ne" ? event.locationNe : event.locationEn}</span>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -626,33 +669,42 @@ export default function MainPortal() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {galleryShowcase.map((item) => (
-              <Link
-                key={item.id}
-                href="/gallery"
-                className="relative h-64 rounded-card overflow-hidden border border-line bg-surface group shadow-sm hover:border-accent transition-all"
-              >
-                <Image
-                  src={item.imageUrl}
-                  alt={item.titleEn}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-75 group-hover:opacity-90 transition-opacity" />
-                <div className="absolute bottom-0 inset-x-0 p-5 space-y-1 text-white">
-                  <div className="text-[10px] font-bold text-accent">{item.categoryEn}</div>
-                  <h3 className="text-sm font-bold leading-snug line-clamp-2">
-                    {lang === "ne" ? item.titleNe : item.titleEn}
-                  </h3>
-                  <div className="text-[11px] text-white/80 font-mono">
-                    {lang === "ne" ? item.dateNe : item.dateEn}
+          {galleryShowcase.length === 0 ? (
+            <div className="rounded-card border border-dashed border-line p-12 text-center space-y-2 bg-surface">
+              <Sparkle size={32} className="text-accent mx-auto" weight="duotone" />
+              <p className="text-sm font-semibold text-fg">
+                {lang === "ne" ? "हाल कुनै तस्बिर उपलब्ध छैन" : "No gallery photos uploaded yet"}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {galleryShowcase.map((item) => (
+                <Link
+                  key={item.id}
+                  href="/gallery"
+                  className="relative h-64 rounded-card overflow-hidden border border-line bg-surface group shadow-sm hover:border-accent transition-all"
+                >
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.titleEn}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-75 group-hover:opacity-90 transition-opacity" />
+                  <div className="absolute bottom-0 inset-x-0 p-5 space-y-1 text-white">
+                    <div className="text-[10px] font-bold text-accent">{item.categoryEn}</div>
+                    <h3 className="text-sm font-bold leading-snug line-clamp-2">
+                      {lang === "ne" ? item.titleNe : item.titleEn}
+                    </h3>
+                    <div className="text-[11px] text-white/80 font-mono">
+                      {lang === "ne" ? item.dateNe : item.dateEn}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -702,7 +754,15 @@ export default function MainPortal() {
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
+                    if (!inquiryForm.name || !inquiryForm.phone || !inquiryForm.message) return;
+                    addStoredInquiry({
+                      name: inquiryForm.name,
+                      phone: inquiryForm.phone,
+                      email: inquiryForm.email,
+                      message: inquiryForm.message,
+                    });
                     setContactSubmitted(true);
+                    setInquiryForm({ name: "", phone: "", email: "", message: "" });
                     dialogAlert({
                       title: lang === "ne" ? "सन्देश प्राप्त भयो" : "Inquiry Submitted",
                       description:
@@ -727,6 +787,8 @@ export default function MainPortal() {
                       <input
                         required
                         type="text"
+                        value={inquiryForm.name}
+                        onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
                         placeholder={lang === "ne" ? "तपाईंको नाम" : "Your full name"}
                         className="w-full px-3.5 py-2.5 rounded-control border border-line bg-surface text-fg text-xs focus:border-accent"
                       />
@@ -738,6 +800,8 @@ export default function MainPortal() {
                       <input
                         required
                         type="tel"
+                        value={inquiryForm.phone}
+                        onChange={(e) => setInquiryForm({ ...inquiryForm, phone: e.target.value })}
                         placeholder="+977 98..."
                         className="w-full px-3.5 py-2.5 rounded-control border border-line bg-surface text-fg text-xs focus:border-accent"
                       />
@@ -750,6 +814,8 @@ export default function MainPortal() {
                     </label>
                     <input
                       type="email"
+                      value={inquiryForm.email}
+                      onChange={(e) => setInquiryForm({ ...inquiryForm, email: e.target.value })}
                       placeholder="example@mail.com"
                       className="w-full px-3.5 py-2.5 rounded-control border border-line bg-surface text-fg text-xs focus:border-accent"
                     />
@@ -762,6 +828,8 @@ export default function MainPortal() {
                     <textarea
                       required
                       rows={4}
+                      value={inquiryForm.message}
+                      onChange={(e) => setInquiryForm({ ...inquiryForm, message: e.target.value })}
                       placeholder={lang === "ne" ? "तपाईंको जिज्ञासा यहाँ लेख्नुहोस्..." : "Write your query here..."}
                       className="w-full px-3.5 py-2.5 rounded-control border border-line bg-surface text-fg text-xs focus:border-accent"
                     />

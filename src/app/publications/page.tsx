@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { Language, Publication, initialPublications } from "@/data/mockData";
+import {
+  Language,
+  Publication,
+  getStoredLanguage,
+  subscribePublications,
+  getStoredPublicationsSnapshot,
+  getServerPublicationsSnapshot,
+} from "@/data/mockData";
 import {
   BookOpen,
   FileText,
@@ -17,8 +24,12 @@ import {
 } from "@phosphor-icons/react";
 
 export default function PublicationsPage() {
-  const [lang, setLang] = useState<Language>("ne");
-  const [publications] = useState<Publication[]>(initialPublications);
+  const [lang, setLang] = useState<Language>(() => getStoredLanguage());
+  const publications = useSyncExternalStore(
+    subscribePublications,
+    getStoredPublicationsSnapshot,
+    getServerPublicationsSnapshot
+  );
   const [search, setSearch] = useState("");
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
 

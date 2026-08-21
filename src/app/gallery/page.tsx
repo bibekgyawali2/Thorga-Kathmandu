@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { Language, GalleryItem, initialGallery } from "@/data/mockData";
+import {
+  Language,
+  GalleryItem,
+  getStoredLanguage,
+  subscribeGallery,
+  getStoredGallerySnapshot,
+  getServerGallerySnapshot,
+} from "@/data/mockData";
 import {
   Image as ImageIcon,
   ArrowLeft,
@@ -14,8 +21,12 @@ import {
 } from "@phosphor-icons/react";
 
 export default function GalleryPage() {
-  const [lang, setLang] = useState<Language>("ne");
-  const [gallery] = useState<GalleryItem[]>(initialGallery);
+  const [lang, setLang] = useState<Language>(() => getStoredLanguage());
+  const gallery = useSyncExternalStore(
+    subscribeGallery,
+    getStoredGallerySnapshot,
+    getServerGallerySnapshot
+  );
   const [category, setCategory] = useState("all");
   const [activePhoto, setActivePhoto] = useState<GalleryItem | null>(null);
 

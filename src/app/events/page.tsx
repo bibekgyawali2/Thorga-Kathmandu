@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { Language, EventItem, initialEvents } from "@/data/mockData";
+import {
+  Language,
+  getStoredLanguage,
+  subscribeEvents,
+  getStoredEventsSnapshot,
+  getServerEventsSnapshot,
+} from "@/data/mockData";
 import {
   Calendar,
   Clock,
@@ -15,8 +21,12 @@ import {
 } from "@phosphor-icons/react";
 
 export default function EventsPage() {
-  const [lang, setLang] = useState<Language>("ne");
-  const [events] = useState<EventItem[]>(initialEvents);
+  const [lang, setLang] = useState<Language>(() => getStoredLanguage());
+  const events = useSyncExternalStore(
+    subscribeEvents,
+    getStoredEventsSnapshot,
+    getServerEventsSnapshot
+  );
   const [statusFilter, setStatusFilter] = useState<"upcoming" | "completed">("upcoming");
 
   const filteredEvents = events.filter((e) => e.status === statusFilter);

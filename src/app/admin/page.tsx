@@ -10,15 +10,24 @@ import {
   GalleryItem,
   HeroContent,
   ContactSettings,
+  Inquiry,
   Language,
-  initialMembers,
-  initialEvents,
-  initialPublications,
-  initialGallery,
+  getStoredLanguage,
+  saveStoredLanguage,
   getStoredHeroSnapshot,
   saveStoredHeroContent,
   getStoredContactSettingsSnapshot,
   saveStoredContactSettings,
+  getStoredMembersSnapshot,
+  saveStoredMembers,
+  getStoredEventsSnapshot,
+  saveStoredEvents,
+  getStoredPublicationsSnapshot,
+  saveStoredPublications,
+  getStoredGallerySnapshot,
+  saveStoredGallery,
+  getStoredInquiriesSnapshot,
+  saveStoredInquiries,
 } from "@/data/mockData";
 import {
   AdminUser,
@@ -65,37 +74,6 @@ import {
   XCircle,
   Key,
 } from "@phosphor-icons/react";
-
-interface Inquiry {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  message: string;
-  date: string;
-  read: boolean;
-}
-
-const mockInquiries: Inquiry[] = [
-  {
-    id: "inq-1",
-    name: "Narayan Prasad Gyawali",
-    phone: "+977 9841556677",
-    email: "narayan.g@gmail.com",
-    message: "I would like to apply for life membership of the Manch. Please send the registration form.",
-    date: "2026-08-20",
-    read: false,
-  },
-  {
-    id: "inq-2",
-    name: "Sita Sharma",
-    phone: "+977 9851239876",
-    email: "sita.sharma@yahoo.com",
-    message: "Seeking details on how to contribute to the Thorga rural education scholarship fund.",
-    date: "2026-08-18",
-    read: true,
-  },
-];
 
 const ADMIN_I18N = {
   ne: {
@@ -273,9 +251,15 @@ function getServerThemeSnapshot(): "light" | "dark" {
 
 export default function AdminPage() {
   const [session, setSession] = useState(() => getAdminSession());
-  const [lang, setLang] = useState<Language>("ne");
+  const [lang, setLang] = useState<Language>(() => getStoredLanguage());
   const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerThemeSnapshot);
   const { alert: dialogAlert, confirm: dialogConfirm } = useDialog();
+
+  const toggleAdminLang = () => {
+    const next = lang === "ne" ? "en" : "ne";
+    setLang(next);
+    saveStoredLanguage(next);
+  };
 
   const t = ADMIN_I18N[lang];
 
@@ -293,11 +277,11 @@ export default function AdminPage() {
 
   // Managed Data States
   const [heroState, setHeroState] = useState<HeroContent>(() => getStoredHeroSnapshot());
-  const [membersList, setMembersList] = useState<Member[]>(initialMembers);
-  const [pubList, setPubList] = useState<Publication[]>(initialPublications);
-  const [eventsList, setEventsList] = useState<EventItem[]>(initialEvents);
-  const [galleryList, setGalleryList] = useState<GalleryItem[]>(initialGallery);
-  const [inquiriesList, setInquiriesList] = useState<Inquiry[]>(mockInquiries);
+  const [membersList, setMembersList] = useState<Member[]>(() => getStoredMembersSnapshot());
+  const [pubList, setPubList] = useState<Publication[]>(() => getStoredPublicationsSnapshot());
+  const [eventsList, setEventsList] = useState<EventItem[]>(() => getStoredEventsSnapshot());
+  const [galleryList, setGalleryList] = useState<GalleryItem[]>(() => getStoredGallerySnapshot());
+  const [inquiriesList, setInquiriesList] = useState<Inquiry[]>(() => getStoredInquiriesSnapshot());
   const [adminUsersList, setAdminUsersList] = useState<AdminUser[]>(() => getAdminUsers());
 
   // Filter & Form States
@@ -443,7 +427,9 @@ export default function AdminPage() {
       id: `m-${Date.now()}`,
       ...memberForm,
     };
-    setMembersList([newMember, ...membersList]);
+    const updated = [newMember, ...membersList];
+    setMembersList(updated);
+    saveStoredMembers(updated);
     setShowAddMemberModal(false);
     setMemberForm({
       nameEn: "",
@@ -496,7 +482,9 @@ export default function AdminPage() {
       if (memberToDelete?.photoUrl) {
         deleteCloudinaryAsset(memberToDelete.photoUrl);
       }
-      setMembersList(membersList.filter((m) => m.id !== id));
+      const updated = membersList.filter((m) => m.id !== id);
+      setMembersList(updated);
+      saveStoredMembers(updated);
     }
   };
 
@@ -514,7 +502,9 @@ export default function AdminPage() {
       id: `p-${Date.now()}`,
       ...pubForm,
     };
-    setPubList([newPub, ...pubList]);
+    const updated = [newPub, ...pubList];
+    setPubList(updated);
+    saveStoredPublications(updated);
     setShowAddPubModal(false);
     dialogAlert({
       title: lang === "ne" ? "प्रकाशन थपियो" : "Publication Uploaded",
@@ -542,7 +532,9 @@ export default function AdminPage() {
       if (pubToDelete?.coverImageUrl) {
         deleteCloudinaryAsset(pubToDelete.coverImageUrl);
       }
-      setPubList(pubList.filter((p) => p.id !== id));
+      const updated = pubList.filter((p) => p.id !== id);
+      setPubList(updated);
+      saveStoredPublications(updated);
     }
   };
 
@@ -560,7 +552,9 @@ export default function AdminPage() {
       id: `e-${Date.now()}`,
       ...eventForm,
     };
-    setEventsList([newEv, ...eventsList]);
+    const updated = [newEv, ...eventsList];
+    setEventsList(updated);
+    saveStoredEvents(updated);
     setShowAddEventModal(false);
     dialogAlert({
       title: lang === "ne" ? "कार्यक्रम थपियो" : "Event Scheduled",
@@ -582,7 +576,9 @@ export default function AdminPage() {
       if (eventToDelete?.imageUrl) {
         deleteCloudinaryAsset(eventToDelete.imageUrl);
       }
-      setEventsList(eventsList.filter((e) => e.id !== id));
+      const updated = eventsList.filter((e) => e.id !== id);
+      setEventsList(updated);
+      saveStoredEvents(updated);
     }
   };
 
@@ -600,7 +596,9 @@ export default function AdminPage() {
       id: `g-${Date.now()}`,
       ...galleryForm,
     };
-    setGalleryList([newG, ...galleryList]);
+    const updated = [newG, ...galleryList];
+    setGalleryList(updated);
+    saveStoredGallery(updated);
     setShowAddGalleryModal(false);
     dialogAlert({
       title: lang === "ne" ? "तस्बिर थपियो" : "Photo Added",
@@ -622,7 +620,9 @@ export default function AdminPage() {
       if (galleryToDelete?.imageUrl) {
         deleteCloudinaryAsset(galleryToDelete.imageUrl);
       }
-      setGalleryList(galleryList.filter((g) => g.id !== id));
+      const updated = galleryList.filter((g) => g.id !== id);
+      setGalleryList(updated);
+      saveStoredGallery(updated);
     }
   };
 
@@ -635,7 +635,9 @@ export default function AdminPage() {
       cancelText: t.cancelBtn,
     });
     if (confirmed) {
-      setInquiriesList(inquiriesList.filter((inq) => inq.id !== id));
+      const updated = inquiriesList.filter((inq) => inq.id !== id);
+      setInquiriesList(updated);
+      saveStoredInquiries(updated);
     }
   };
 
@@ -792,7 +794,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setLang(lang === "ne" ? "en" : "ne")}
+              onClick={toggleAdminLang}
               className="px-2.5 py-1 rounded-control border border-line bg-surface hover:bg-tint text-fg text-xs font-semibold flex items-center gap-1.5 transition-colors"
             >
               <Translate size={14} className="text-accent" />
@@ -1160,7 +1162,7 @@ export default function AdminPage() {
             {/* Language Switcher */}
             <button
               type="button"
-              onClick={() => setLang(lang === "ne" ? "en" : "ne")}
+              onClick={toggleAdminLang}
               className="px-3 py-1.5 rounded-control border border-line bg-surface hover:bg-tint text-fg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
             >
               <Translate size={14} className="text-accent" />

@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { Language, Member, initialMembers } from "@/data/mockData";
+import {
+  Language,
+  Member,
+  getStoredLanguage,
+  subscribeMembers,
+  getStoredMembersSnapshot,
+  getServerMembersSnapshot,
+} from "@/data/mockData";
 import {
   Users,
   Phone,
@@ -68,8 +75,12 @@ function Portrait({
 }
 
 export default function CommitteePage() {
-  const [lang, setLang] = useState<Language>("ne");
-  const [members] = useState<Member[]>(initialMembers);
+  const [lang, setLang] = useState<Language>(() => getStoredLanguage());
+  const members = useSyncExternalStore(
+    subscribeMembers,
+    getStoredMembersSnapshot,
+    getServerMembersSnapshot
+  );
   const [filter, setFilter] = useState<"current" | "advisor" | "all">("current");
   const [search, setSearch] = useState("");
 
