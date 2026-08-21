@@ -19,6 +19,7 @@ import {
   getStoredHeroSnapshot,
   getServerHeroSnapshot,
 } from "@/data/mockData";
+import { useDialog } from "@/components/Dialog";
 import {
   Users,
   BookOpen,
@@ -108,6 +109,7 @@ export default function MainPortal() {
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
   const [contactSubmitted, setContactSubmitted] = useState(false);
   const [committeeFilter, setCommitteeFilter] = useState<"current" | "advisor" | "all">("current");
+  const { alert: dialogAlert } = useDialog();
 
   // Filtered members for Executive Committee section
   const filteredCommitteeMembers = members.filter((m) => {
@@ -695,6 +697,14 @@ export default function MainPortal() {
                   onSubmit={(e) => {
                     e.preventDefault();
                     setContactSubmitted(true);
+                    dialogAlert({
+                      title: lang === "ne" ? "सन्देश प्राप्त भयो" : "Inquiry Submitted",
+                      description:
+                        lang === "ne"
+                          ? "तपाईंको सन्देश सचिवालयमा सफलतापूर्वक दर्ता भएको छ। हामी छिट्टै सम्पर्क गर्नेछौं।"
+                          : "Your message has been registered with the secretariat. We will be in touch shortly.",
+                      type: "success",
+                    });
                   }}
                   className="rounded-card border border-line bg-ground p-6 sm:p-8 space-y-5 shadow-sm"
                 >

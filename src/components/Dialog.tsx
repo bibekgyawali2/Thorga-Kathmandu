@@ -83,17 +83,22 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
     [showDialog]
   );
 
-  const handleClose = (result: boolean) => {
-    setDialogState((prev) => ({ ...prev, isOpen: false }));
-    if (dialogState.resolve) {
-      dialogState.resolve(result);
-    }
-    if (result && dialogState.options.onConfirm) {
-      dialogState.options.onConfirm();
-    } else if (!result && dialogState.options.onCancel) {
-      dialogState.options.onCancel();
-    }
-  };
+  const handleClose = useCallback(
+    (result: boolean) => {
+      setDialogState((prev) => {
+        if (prev.resolve) {
+          prev.resolve(result);
+        }
+        if (result && prev.options.onConfirm) {
+          prev.options.onConfirm();
+        } else if (!result && prev.options.onCancel) {
+          prev.options.onCancel();
+        }
+        return { ...prev, isOpen: false };
+      });
+    },
+    []
+  );
 
   // Handle ESC key and Auto focus
   useEffect(() => {
@@ -114,7 +119,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("keydown", handleKeyDown);
       clearTimeout(timer);
     };
-  }, [dialogState.isOpen]);
+  }, [dialogState.isOpen, handleClose]);
 
   const { options, isOpen } = dialogState;
   const type = options.type || "info";

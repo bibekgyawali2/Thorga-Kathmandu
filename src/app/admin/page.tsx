@@ -9,6 +9,7 @@ import {
   Publication,
   GalleryItem,
   HeroContent,
+  Language,
   initialMembers,
   initialEvents,
   initialPublications,
@@ -24,6 +25,7 @@ import {
   DEFAULT_ADMIN_CONFIG,
 } from "@/lib/adminAuth";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
+import { useDialog } from "@/components/Dialog";
 import {
   Users,
   BookOpen,
@@ -42,11 +44,11 @@ import {
   Sun,
   Moon,
   MagnifyingGlass,
-  House,
   Sparkle,
   List,
   X,
   Globe,
+  Translate,
 } from "@phosphor-icons/react";
 
 interface Inquiry {
@@ -80,6 +82,115 @@ const mockInquiries: Inquiry[] = [
   },
 ];
 
+const ADMIN_I18N = {
+  ne: {
+    brandTitle: "थोर्गा काठमाडौं मञ्च",
+    brandSubtitle: "प्रशासन प्यानल",
+    overview: "समग्र विवरण",
+    hero: "मुख्य ब्यानर",
+    members: "कार्यसमिति",
+    publications: "प्रकाशनहरू",
+    events: "कार्यक्रमहरू",
+    gallery: "तस्बिरहरू",
+    inquiries: "सम्पर्क सन्देश",
+    settings: "सम्पर्क सेटिङ्स",
+    publicPortal: "मुख्य वेबसाइट",
+    quickActions: "द्रुत कार्यहरू",
+    updateHero: "ब्यानर सम्पादन",
+    updateHeroDesc: "शीर्षक, विवरण र तस्बिर",
+    addMember: "सदस्य थप्नुहोस्",
+    addMemberDesc: "द्विभाषी विवरण दर्ता",
+    uploadPub: "प्रकाशन अपलोड",
+    uploadPubDesc: "स्मारिका र प्रतिवेदन",
+    scheduleEvent: "कार्यक्रम तालिका",
+    scheduleEventDesc: "भेला र बैठकहरू",
+    addGallery: "तस्बिर थप्नुहोस्",
+    saveChanges: "परिवर्तन सुरक्षित गर्नुहोस्",
+    savedSuccess: "सफलतापूर्वक सुरक्षित भयो।",
+    logout: "लगआउट",
+    theme: "रङ शैली",
+    all: "सबै",
+    current: "वर्तमान",
+    advisor: "सल्लाहकार",
+    past: "पूर्व नेतृत्व",
+    search: "खोजी गर्नुहोस्...",
+    noMembers: "कुनै सदस्य फेला परेन।",
+    noInquiries: "इनबक्समा कुनै सन्देश छैन।",
+    signInTitle: "प्रशासन लगइन",
+    signInDesc: "वेबसाइटका सामग्री व्यवस्थापन गर्न आधिकारिक प्रमाण प्रविष्ट गर्नुहोस्।",
+    username: "प्रयोगकर्ता नाम",
+    password: "पासवर्ड",
+    signInBtn: "लगइन गर्नुहोस्",
+    loginError: "प्रयोगकर्ता नाम वा पासवर्ड मिलेन। कृपया पुनः प्रयास गर्नुहोस्।",
+    removeMemberConfirmTitle: "सदस्य हटाउने पुष्टि",
+    removeMemberConfirmDesc: "के तपाईं यस सदस्यलाई रोस्टरबाट हटाउन निश्चित हुनुहुन्छ? क्लाउडिनरीमा भएको तस्बिर पनि मेटिनेछ।",
+    removePubConfirmTitle: "प्रकाशन हटाउने पुष्टि",
+    removePubConfirmDesc: "के तपाईं यस प्रकाशनलाई मेटाउन निश्चित हुनुहुन्छ? सम्बन्धित PDF र कभर तस्बिर क्लाउडिनरीबाट मेटिनेछ।",
+    removeEventConfirmTitle: "कार्यक्रम हटाउने पुष्टि",
+    removeEventConfirmDesc: "के तपाईं यस कार्यक्रमलाई तालिकाबाट हटाउन निश्चित हुनुहुन्छ?",
+    removeGalleryConfirmTitle: "तस्बिर हटाउने पुष्टि",
+    removeGalleryConfirmDesc: "के तपाईं यस तस्बिरलाई ग्यालरीबाट मेटाउन निश्चित हुनुहुन्छ?",
+    removeInquiryConfirmTitle: "सन्देश हटाउने पुष्टि",
+    removeInquiryConfirmDesc: "के तपाईं यस सोधपुछ सन्देशलाई हटाउन निश्चित हुनुहुन्छ?",
+    deleteBtn: "मेटाउनुहोस्",
+    cancelBtn: "रद्द गर्नुहोस्",
+    closeBtn: "बन्द गर्नुहोस्",
+  },
+  en: {
+    brandTitle: "Thorga Kathmandu Forum",
+    brandSubtitle: "Admin Panel",
+    overview: "Overview",
+    hero: "Hero Banner",
+    members: "Committee",
+    publications: "Publications",
+    events: "Events",
+    gallery: "Gallery",
+    inquiries: "Inquiries",
+    settings: "Settings",
+    publicPortal: "Public Portal",
+    quickActions: "Quick Actions",
+    updateHero: "Update Hero Banner",
+    updateHeroDesc: "Headline, text, visual photo",
+    addMember: "Add Committee Member",
+    addMemberDesc: "Bilingual profile setup",
+    uploadPub: "Upload Publication",
+    uploadPubDesc: "PDF souvenirs & reports",
+    scheduleEvent: "Schedule Event",
+    scheduleEventDesc: "Meetings and assemblies",
+    addGallery: "Add Photo",
+    saveChanges: "Save Changes",
+    savedSuccess: "Changes saved successfully.",
+    logout: "Sign Out",
+    theme: "Toggle Theme",
+    all: "All",
+    current: "Current",
+    advisor: "Advisors",
+    past: "Past",
+    search: "Search...",
+    noMembers: "No members match the query.",
+    noInquiries: "No messages in inbox.",
+    signInTitle: "Admin Sign In",
+    signInDesc: "Enter administrative credentials to manage portal data and content.",
+    username: "Username",
+    password: "Password",
+    signInBtn: "Sign In",
+    loginError: "Invalid username or password. Please try again.",
+    removeMemberConfirmTitle: "Remove Member",
+    removeMemberConfirmDesc: "Are you sure you want to remove this member? Associated photos on Cloudinary will also be deleted.",
+    removePubConfirmTitle: "Delete Publication",
+    removePubConfirmDesc: "Are you sure you want to delete this document? Associated PDF and cover on Cloudinary will also be deleted.",
+    removeEventConfirmTitle: "Delete Event",
+    removeEventConfirmDesc: "Are you sure you want to delete this scheduled event?",
+    removeGalleryConfirmTitle: "Delete Photo",
+    removeGalleryConfirmDesc: "Are you sure you want to delete this photo from the gallery?",
+    removeInquiryConfirmTitle: "Delete Inquiry",
+    removeInquiryConfirmDesc: "Are you sure you want to remove this public inquiry message?",
+    deleteBtn: "Delete",
+    cancelBtn: "Cancel",
+    closeBtn: "Close",
+  },
+};
+
 function subscribeTheme(callback: () => void) {
   if (typeof document === "undefined") return () => {};
   const observer = new MutationObserver(callback);
@@ -101,7 +212,11 @@ function getServerThemeSnapshot(): "light" | "dark" {
 
 export default function AdminPage() {
   const [session, setSession] = useState(() => getAdminSession());
+  const [lang, setLang] = useState<Language>("ne");
   const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerThemeSnapshot);
+  const { alert: dialogAlert, confirm: dialogConfirm } = useDialog();
+
+  const t = ADMIN_I18N[lang];
 
   const [activeTab, setActiveTab] = useState<
     "overview" | "hero" | "members" | "publications" | "events" | "gallery" | "inquiries" | "settings"
@@ -157,10 +272,10 @@ export default function AdminPage() {
     publishedYearNe: "२०८१",
     descriptionEn: "",
     descriptionNe: "",
-    pdfUrl: "https://example.com/sample.pdf",
+    pdfUrl: "",
     pages: 48,
     fileSize: "4.2 MB",
-    coverImageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
+    coverImageUrl: "",
   });
 
   // New Event Form
@@ -177,7 +292,7 @@ export default function AdminPage() {
     locationNe: "काठमाडौँ",
     descriptionEn: "",
     descriptionNe: "",
-    imageUrl: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "",
     status: "upcoming" as "upcoming" | "completed",
   });
 
@@ -189,7 +304,7 @@ export default function AdminPage() {
     categoryNe: "शिक्षा",
     dateEn: "2081 Shrawan",
     dateNe: "२०८१ साउन",
-    imageUrl: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80",
+    imageUrl: "",
   });
 
   // Settings State
@@ -229,13 +344,27 @@ export default function AdminPage() {
   const handleSaveHero = (e: React.FormEvent) => {
     e.preventDefault();
     saveStoredHeroContent(heroState);
-    alert("Hero section updated live on the homepage.");
+    dialogAlert({
+      title: lang === "ne" ? "ब्यानर सम्पादन भयो" : "Hero Banner Updated",
+      description:
+        lang === "ne"
+          ? "मुख्य पृष्ठको ब्यानर विवरणहरू सफलतापूर्वक अद्यावधिक गरिएको छ।"
+          : "Hero section headlines, text, and visual frame have been updated live.",
+      type: "success",
+    });
   };
 
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault();
     if (!memberForm.nameEn || !memberForm.nameNe || !memberForm.roleEn || !memberForm.roleNe) {
-      alert("Please fill all required bilingual name and role fields.");
+      dialogAlert({
+        title: lang === "ne" ? "अपूर्ण विवरण" : "Missing Information",
+        description:
+          lang === "ne"
+            ? "कृपया नाम र पद दुवै भाषामा अनिवार्य भर्नुहोस्।"
+            : "Please fill all required bilingual name and role fields.",
+        type: "warning",
+      });
       return;
     }
     const newMember: Member = {
@@ -259,6 +388,14 @@ export default function AdminPage() {
       tenureNe: "",
       photoUrl: "",
     });
+    dialogAlert({
+      title: lang === "ne" ? "सदस्य थपियो" : "Member Added",
+      description:
+        lang === "ne"
+          ? `${newMember.nameNe} कार्यसमिति रोस्टरमा थपिनुभएको छ।`
+          : `${newMember.nameEn} has been added to the committee roster.`,
+      type: "success",
+    });
   };
 
   const deleteCloudinaryAsset = async (url?: string) => {
@@ -274,9 +411,16 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteMember = (id: string) => {
+  const handleDeleteMember = async (id: string) => {
     const memberToDelete = membersList.find((m) => m.id === id);
-    if (confirm("Remove this member from the roster?")) {
+    const confirmed = await dialogConfirm({
+      title: t.removeMemberConfirmTitle,
+      description: `${t.removeMemberConfirmDesc} (${memberToDelete ? (lang === "ne" ? memberToDelete.nameNe : memberToDelete.nameEn) : ""})`,
+      type: "danger",
+      confirmText: t.deleteBtn,
+      cancelText: t.cancelBtn,
+    });
+    if (confirmed) {
       if (memberToDelete?.photoUrl) {
         deleteCloudinaryAsset(memberToDelete.photoUrl);
       }
@@ -287,7 +431,11 @@ export default function AdminPage() {
   const handleAddPub = (e: React.FormEvent) => {
     e.preventDefault();
     if (!pubForm.titleEn || !pubForm.titleNe) {
-      alert("Please enter document title.");
+      dialogAlert({
+        title: lang === "ne" ? "शीर्षक आवश्यक" : "Title Required",
+        description: lang === "ne" ? "कृपया प्रकाशनको शीर्षक प्रविष्ट गर्नुहोस्।" : "Please enter publication title.",
+        type: "warning",
+      });
       return;
     }
     const newPub: Publication = {
@@ -296,11 +444,26 @@ export default function AdminPage() {
     };
     setPubList([newPub, ...pubList]);
     setShowAddPubModal(false);
+    dialogAlert({
+      title: lang === "ne" ? "प्रकाशन थपियो" : "Publication Uploaded",
+      description:
+        lang === "ne"
+          ? "नयाँ प्रकाशन डिजिटल सङ्ग्रहमा सफलतापूर्वक प्रकाशित भयो।"
+          : "New document added to the public PDF archive.",
+      type: "success",
+    });
   };
 
-  const handleDeletePub = (id: string) => {
+  const handleDeletePub = async (id: string) => {
     const pubToDelete = pubList.find((p) => p.id === id);
-    if (confirm("Delete this publication?")) {
+    const confirmed = await dialogConfirm({
+      title: t.removePubConfirmTitle,
+      description: `${t.removePubConfirmDesc} (${pubToDelete ? (lang === "ne" ? pubToDelete.titleNe : pubToDelete.titleEn) : ""})`,
+      type: "danger",
+      confirmText: t.deleteBtn,
+      cancelText: t.cancelBtn,
+    });
+    if (confirmed) {
       if (pubToDelete?.pdfUrl) {
         deleteCloudinaryAsset(pubToDelete.pdfUrl);
       }
@@ -314,7 +477,11 @@ export default function AdminPage() {
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventForm.titleEn || !eventForm.titleNe) {
-      alert("Please enter event title.");
+      dialogAlert({
+        title: lang === "ne" ? "शीर्षक आवश्यक" : "Title Required",
+        description: lang === "ne" ? "कृपया कार्यक्रमको शीर्षक भर्नुहोस्।" : "Please enter event title.",
+        type: "warning",
+      });
       return;
     }
     const newEv: EventItem = {
@@ -323,11 +490,23 @@ export default function AdminPage() {
     };
     setEventsList([newEv, ...eventsList]);
     setShowAddEventModal(false);
+    dialogAlert({
+      title: lang === "ne" ? "कार्यक्रम थपियो" : "Event Scheduled",
+      description: lang === "ne" ? "कार्यक्रम क्यालेन्डरमा दर्ता भएको छ।" : "Event successfully added to schedule.",
+      type: "success",
+    });
   };
 
-  const handleDeleteEvent = (id: string) => {
+  const handleDeleteEvent = async (id: string) => {
     const eventToDelete = eventsList.find((e) => e.id === id);
-    if (confirm("Delete this scheduled event?")) {
+    const confirmed = await dialogConfirm({
+      title: t.removeEventConfirmTitle,
+      description: `${t.removeEventConfirmDesc} (${eventToDelete ? (lang === "ne" ? eventToDelete.titleNe : eventToDelete.titleEn) : ""})`,
+      type: "danger",
+      confirmText: t.deleteBtn,
+      cancelText: t.cancelBtn,
+    });
+    if (confirmed) {
       if (eventToDelete?.imageUrl) {
         deleteCloudinaryAsset(eventToDelete.imageUrl);
       }
@@ -338,7 +517,11 @@ export default function AdminPage() {
   const handleAddGallery = (e: React.FormEvent) => {
     e.preventDefault();
     if (!galleryForm.titleEn || !galleryForm.titleNe) {
-      alert("Please enter image title.");
+      dialogAlert({
+        title: lang === "ne" ? "विवरण आवश्यक" : "Caption Required",
+        description: lang === "ne" ? "कृपया तस्बिरको विवरण भर्नुहोस्।" : "Please enter photo caption.",
+        type: "warning",
+      });
       return;
     }
     const newG: GalleryItem = {
@@ -347,11 +530,23 @@ export default function AdminPage() {
     };
     setGalleryList([newG, ...galleryList]);
     setShowAddGalleryModal(false);
+    dialogAlert({
+      title: lang === "ne" ? "तस्बिर थपियो" : "Photo Added",
+      description: lang === "ne" ? "तस्बिर ग्यालरीमा सफलतापूर्वक थपियो।" : "Photo added to gallery.",
+      type: "success",
+    });
   };
 
-  const handleDeleteGallery = (id: string) => {
+  const handleDeleteGallery = async (id: string) => {
     const galleryToDelete = galleryList.find((g) => g.id === id);
-    if (confirm("Delete this image?")) {
+    const confirmed = await dialogConfirm({
+      title: t.removeGalleryConfirmTitle,
+      description: t.removeGalleryConfirmDesc,
+      type: "danger",
+      confirmText: t.deleteBtn,
+      cancelText: t.cancelBtn,
+    });
+    if (confirmed) {
       if (galleryToDelete?.imageUrl) {
         deleteCloudinaryAsset(galleryToDelete.imageUrl);
       }
@@ -359,8 +554,17 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteInquiry = (id: string) => {
-    setInquiriesList(inquiriesList.filter((inq) => inq.id !== id));
+  const handleDeleteInquiry = async (id: string) => {
+    const confirmed = await dialogConfirm({
+      title: t.removeInquiryConfirmTitle,
+      description: t.removeInquiryConfirmDesc,
+      type: "danger",
+      confirmText: t.deleteBtn,
+      cancelText: t.cancelBtn,
+    });
+    if (confirmed) {
+      setInquiriesList(inquiriesList.filter((inq) => inq.id !== id));
+    }
   };
 
   const filteredAdminMembers = membersList.filter((m) => {
@@ -377,23 +581,23 @@ export default function AdminPage() {
   const getPageTitle = () => {
     switch (activeTab) {
       case "overview":
-        return "Overview";
+        return t.overview;
       case "hero":
-        return "Hero Banner";
+        return t.hero;
       case "members":
-        return "Committee Roster";
+        return t.members;
       case "publications":
-        return "Publications Archive";
+        return t.publications;
       case "events":
-        return "Events Schedule";
+        return t.events;
       case "gallery":
-        return "Photo Gallery";
+        return t.gallery;
       case "inquiries":
-        return "Public Inquiries";
+        return t.inquiries;
       case "settings":
-        return "Liaison Settings";
+        return t.settings;
       default:
-        return "Dashboard";
+        return t.overview;
     }
   };
 
@@ -408,49 +612,47 @@ export default function AdminPage() {
             <div className="w-8 h-8 rounded-control bg-accent text-on-accent flex items-center justify-center font-bold">
               <Buildings size={18} />
             </div>
-            <div className="text-xs font-bold text-fg">थोर्गा काठमाडौं सम्पर्क मञ्च</div>
+            <div className="text-xs font-bold text-fg">{t.brandTitle}</div>
           </Link>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={toggleTheme}
-              className="p-2 rounded-control border border-line bg-surface text-fg hover:bg-tint transition-colors"
-              aria-label="Toggle Theme"
+              onClick={() => setLang(lang === "ne" ? "en" : "ne")}
+              className="px-2.5 py-1 rounded-control border border-line bg-surface hover:bg-tint text-fg text-xs font-semibold flex items-center gap-1.5 transition-colors"
             >
-              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+              <Translate size={14} className="text-accent" />
+              <span>{lang === "ne" ? "English" : "नेपाली"}</span>
             </button>
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control text-xs font-medium border border-line bg-surface hover:bg-tint text-fg transition-colors"
+              className="text-xs text-muted hover:text-fg flex items-center gap-1.5 py-1 px-2.5 rounded-control hover:bg-tint transition-colors"
             >
-              <House size={14} />
-              <span>Public Portal</span>
+              <span>{t.publicPortal}</span>
+              <ArrowSquareOut size={14} />
             </Link>
           </div>
         </header>
 
-        <main className="flex-1 flex items-center justify-center p-4">
-          <div className="max-w-sm w-full rounded-card border border-line bg-surface p-7 space-y-6 shadow-sm">
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-sm rounded-card border border-line bg-surface p-6 sm:p-8 space-y-6 shadow-sm">
             <div className="space-y-1.5 text-center">
-              <div className="w-10 h-10 rounded-control bg-accent-soft text-accent mx-auto flex items-center justify-center">
-                <LockKey size={22} />
+              <div className="w-10 h-10 rounded-control bg-accent-soft text-accent mx-auto flex items-center justify-center mb-2">
+                <LockKey size={20} />
               </div>
-              <h1 className="text-xl font-bold text-fg tracking-tight">Admin Console</h1>
-              <p className="text-xs text-muted">
-                Executive committee authentication
-              </p>
+              <h1 className="text-lg font-bold text-fg">{t.signInTitle}</h1>
+              <p className="text-xs text-muted leading-relaxed">{t.signInDesc}</p>
             </div>
 
             {loginError && (
-              <div className="p-3 rounded-control border border-red-500/30 bg-red-500/10 text-red-500 text-xs text-center font-medium">
-                Invalid credentials. Verify username and password.
+              <div className="p-3 rounded-control border border-red-500/30 bg-red-500/10 text-red-500 text-xs text-center">
+                {t.loginError}
               </div>
             )}
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-fg">Username</label>
+                <label className="text-xs font-semibold text-fg">{t.username}</label>
                 <input
                   required
                   type="text"
@@ -462,22 +664,22 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-fg">Password</label>
+                <label className="text-xs font-semibold text-fg">{t.password}</label>
                 <input
                   required
                   type="password"
                   value={loginPass}
                   onChange={(e) => setLoginPass(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="••••••••"
                   className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-all"
+                className="w-full py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
               >
-                Sign In
+                {t.signInBtn}
               </button>
             </form>
 
@@ -489,7 +691,7 @@ export default function AdminPage() {
         </main>
 
         <footer className="border-t border-line bg-surface py-3 text-center text-xs text-muted">
-          Thorga Kathmandu Forum Admin Panel
+          {t.brandTitle} {t.brandSubtitle}
         </footer>
       </div>
     );
@@ -521,8 +723,8 @@ export default function AdminPage() {
               <Buildings size={18} />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-fg truncate">थोर्गा काठमाडौं मञ्च</div>
-              <div className="text-[10px] text-muted">Admin Panel</div>
+              <div className="text-xs font-bold text-fg truncate">{t.brandTitle}</div>
+              <div className="text-[10px] text-muted">{t.brandSubtitle}</div>
             </div>
           </div>
 
@@ -550,7 +752,7 @@ export default function AdminPage() {
             }`}
           >
             <SlidersHorizontal size={16} />
-            <span>Overview</span>
+            <span>{t.overview}</span>
           </button>
 
           <button
@@ -567,7 +769,7 @@ export default function AdminPage() {
           >
             <span className="flex items-center gap-2.5">
               <Sparkle size={16} />
-              <span>Hero Banner</span>
+              <span>{t.hero}</span>
             </span>
             <span className="text-[10px] opacity-75">Live</span>
           </button>
@@ -586,7 +788,7 @@ export default function AdminPage() {
           >
             <span className="flex items-center gap-2.5">
               <Users size={16} />
-              <span>Committee</span>
+              <span>{t.members}</span>
             </span>
             <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
               activeTab === "members" ? "bg-black/20 text-white" : "bg-tint text-muted"
@@ -609,7 +811,7 @@ export default function AdminPage() {
           >
             <span className="flex items-center gap-2.5">
               <BookOpen size={16} />
-              <span>Publications</span>
+              <span>{t.publications}</span>
             </span>
             <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
               activeTab === "publications" ? "bg-black/20 text-white" : "bg-tint text-muted"
@@ -632,7 +834,7 @@ export default function AdminPage() {
           >
             <span className="flex items-center gap-2.5">
               <Calendar size={16} />
-              <span>Events</span>
+              <span>{t.events}</span>
             </span>
             <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
               activeTab === "events" ? "bg-black/20 text-white" : "bg-tint text-muted"
@@ -655,7 +857,7 @@ export default function AdminPage() {
           >
             <span className="flex items-center gap-2.5">
               <ImageIcon size={16} />
-              <span>Gallery</span>
+              <span>{t.gallery}</span>
             </span>
             <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
               activeTab === "gallery" ? "bg-black/20 text-white" : "bg-tint text-muted"
@@ -678,7 +880,7 @@ export default function AdminPage() {
           >
             <span className="flex items-center gap-2.5">
               <EnvelopeSimple size={16} />
-              <span>Inquiries</span>
+              <span>{t.inquiries}</span>
             </span>
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-chip bg-red-700 text-white font-semibold">
               {inquiriesList.length}
@@ -698,7 +900,7 @@ export default function AdminPage() {
             }`}
           >
             <Database size={16} />
-            <span>Liaison Settings</span>
+            <span>{t.settings}</span>
           </button>
         </div>
 
@@ -719,7 +921,7 @@ export default function AdminPage() {
               type="button"
               onClick={toggleTheme}
               className="p-1.5 rounded-control border border-line bg-surface text-fg hover:bg-tint transition-colors"
-              aria-label="Toggle Theme"
+              aria-label={t.theme}
             >
               {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
             </button>
@@ -727,7 +929,8 @@ export default function AdminPage() {
               type="button"
               onClick={handleLogout}
               className="p-1.5 rounded-control text-red-500 hover:bg-red-500/10 transition-colors"
-              aria-label="Sign Out"
+              aria-label={t.logout}
+              title={t.logout}
             >
               <SignOut size={14} />
             </button>
@@ -750,13 +953,26 @@ export default function AdminPage() {
             <h1 className="text-sm font-bold text-fg">{getPageTitle()}</h1>
           </div>
 
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control text-xs font-medium border border-line bg-surface hover:bg-tint text-fg transition-colors"
-          >
-            <ArrowSquareOut size={14} />
-            <span>Public Portal</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            {/* Language Switcher */}
+            <button
+              type="button"
+              onClick={() => setLang(lang === "ne" ? "en" : "ne")}
+              className="px-3 py-1.5 rounded-control border border-line bg-surface hover:bg-tint text-fg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
+            >
+              <Translate size={14} className="text-accent" />
+              <span>{lang === "ne" ? "English" : "नेपाली"}</span>
+            </button>
+
+            {/* Public Portal Link */}
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control text-xs font-medium border border-line bg-surface hover:bg-tint text-fg transition-colors"
+            >
+              <ArrowSquareOut size={14} />
+              <span>{t.publicPortal}</span>
+            </Link>
+          </div>
         </header>
 
         {/* Middle Content */}
@@ -768,7 +984,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-4 rounded-card border border-line bg-surface space-y-1">
                   <div className="text-xs text-muted flex items-center justify-between">
-                    <span>Members</span>
+                    <span>{t.members}</span>
                     <Users size={16} className="text-accent" />
                   </div>
                   <div className="text-2xl font-bold font-mono text-fg">{membersList.length}</div>
@@ -776,7 +992,7 @@ export default function AdminPage() {
 
                 <div className="p-4 rounded-card border border-line bg-surface space-y-1">
                   <div className="text-xs text-muted flex items-center justify-between">
-                    <span>Publications</span>
+                    <span>{t.publications}</span>
                     <BookOpen size={16} className="text-accent" />
                   </div>
                   <div className="text-2xl font-bold font-mono text-fg">{pubList.length}</div>
@@ -784,7 +1000,7 @@ export default function AdminPage() {
 
                 <div className="p-4 rounded-card border border-line bg-surface space-y-1">
                   <div className="text-xs text-muted flex items-center justify-between">
-                    <span>Events</span>
+                    <span>{t.events}</span>
                     <Calendar size={16} className="text-accent" />
                   </div>
                   <div className="text-2xl font-bold font-mono text-fg">{eventsList.length}</div>
@@ -792,7 +1008,7 @@ export default function AdminPage() {
 
                 <div className="p-4 rounded-card border border-line bg-surface space-y-1">
                   <div className="text-xs text-muted flex items-center justify-between">
-                    <span>Inquiries</span>
+                    <span>{t.inquiries}</span>
                     <EnvelopeSimple size={16} className="text-red-500" />
                   </div>
                   <div className="text-2xl font-bold font-mono text-fg">{inquiriesList.length}</div>
@@ -801,15 +1017,15 @@ export default function AdminPage() {
 
               {/* Action Triggers */}
               <div className="p-6 rounded-card border border-line bg-surface space-y-4">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Quick Actions</h2>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-muted">{t.quickActions}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     type="button"
                     onClick={() => setActiveTab("hero")}
                     className="p-4 rounded-control border border-line bg-ground hover:border-accent text-left transition-colors space-y-1"
                   >
-                    <div className="text-xs font-bold text-fg">Update Hero Banner</div>
-                    <div className="text-[11px] text-muted">Headline, text, photo</div>
+                    <div className="text-xs font-bold text-fg">{t.updateHero}</div>
+                    <div className="text-[11px] text-muted">{t.updateHeroDesc}</div>
                   </button>
 
                   <button
@@ -820,8 +1036,8 @@ export default function AdminPage() {
                     }}
                     className="p-4 rounded-control border border-line bg-ground hover:border-accent text-left transition-colors space-y-1"
                   >
-                    <div className="text-xs font-bold text-fg">Add Committee Member</div>
-                    <div className="text-[11px] text-muted">Bilingual profile setup</div>
+                    <div className="text-xs font-bold text-fg">{t.addMember}</div>
+                    <div className="text-[11px] text-muted">{t.addMemberDesc}</div>
                   </button>
 
                   <button
@@ -832,8 +1048,8 @@ export default function AdminPage() {
                     }}
                     className="p-4 rounded-control border border-line bg-ground hover:border-accent text-left transition-colors space-y-1"
                   >
-                    <div className="text-xs font-bold text-fg">Upload Publication</div>
-                    <div className="text-[11px] text-muted">PDF souvenirs and reports</div>
+                    <div className="text-xs font-bold text-fg">{t.uploadPub}</div>
+                    <div className="text-[11px] text-muted">{t.uploadPubDesc}</div>
                   </button>
                 </div>
               </div>
@@ -1004,7 +1220,7 @@ export default function AdminPage() {
                   type="submit"
                   className="px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
                 >
-                  Save Changes
+                  {t.saveChanges}
                 </button>
               </div>
             </form>
@@ -1015,8 +1231,8 @@ export default function AdminPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-fg">Committee Directory</h2>
-                  <p className="text-xs text-muted">Manage executive members, advisors, and past officers.</p>
+                  <h2 className="text-base font-bold text-fg">{t.members}</h2>
+                  <p className="text-xs text-muted">{lang === "ne" ? "कार्यसमिति सदस्यहरू, सल्लाहकार तथा पूर्व नेतृत्व व्यवस्थापन" : "Manage executive members, advisors, and past officers."}</p>
                 </div>
                 <button
                   type="button"
@@ -1024,13 +1240,13 @@ export default function AdminPage() {
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
-                  <span>{showAddMemberModal ? "Close" : "Add Member"}</span>
+                  <span>{showAddMemberModal ? t.closeBtn : t.addMember}</span>
                 </button>
               </div>
 
               {showAddMemberModal && (
                 <form onSubmit={handleAddMember} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase tracking-wider text-accent">New Member Form</div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">{t.addMember}</div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -1125,7 +1341,7 @@ export default function AdminPage() {
                     type="submit"
                     className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
                   >
-                    Save Member
+                    {t.saveChanges}
                   </button>
                 </form>
               )}
@@ -1143,7 +1359,7 @@ export default function AdminPage() {
                           : "bg-ground border border-line text-fg hover:bg-tint"
                       }`}
                     >
-                      All ({membersList.length})
+                      {t.all} ({membersList.length})
                     </button>
                     <button
                       type="button"
@@ -1154,7 +1370,7 @@ export default function AdminPage() {
                           : "bg-ground border border-line text-fg hover:bg-tint"
                       }`}
                     >
-                      Current ({membersList.filter((m) => m.committeeType === "current").length})
+                      {t.current} ({membersList.filter((m) => m.committeeType === "current").length})
                     </button>
                     <button
                       type="button"
@@ -1165,7 +1381,7 @@ export default function AdminPage() {
                           : "bg-ground border border-line text-fg hover:bg-tint"
                       }`}
                     >
-                      Advisors ({membersList.filter((m) => m.committeeType === "advisor").length})
+                      {t.advisor} ({membersList.filter((m) => m.committeeType === "advisor").length})
                     </button>
                     <button
                       type="button"
@@ -1176,7 +1392,7 @@ export default function AdminPage() {
                           : "bg-ground border border-line text-fg hover:bg-tint"
                       }`}
                     >
-                      Past ({membersList.filter((m) => m.committeeType === "past").length})
+                      {t.past} ({membersList.filter((m) => m.committeeType === "past").length})
                     </button>
                   </div>
 
@@ -1186,7 +1402,7 @@ export default function AdminPage() {
                       type="text"
                       value={memberSearchQuery}
                       onChange={(e) => setMemberSearchQuery(e.target.value)}
-                      placeholder="Search member..."
+                      placeholder={t.search}
                       className="w-full pl-8 pr-3 py-1.5 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                     />
                   </div>
@@ -1196,7 +1412,7 @@ export default function AdminPage() {
                 <div className="divide-y divide-line">
                   {filteredAdminMembers.length === 0 ? (
                     <div className="py-6 text-center text-xs text-muted">
-                      No members match the query.
+                      {t.noMembers}
                     </div>
                   ) : (
                     filteredAdminMembers.map((member) => (
@@ -1207,10 +1423,13 @@ export default function AdminPage() {
                           </div>
                           <div className="min-w-0">
                             <div className="text-xs font-bold text-fg truncate">
-                              {member.nameNe} <span className="text-muted font-normal">({member.nameEn})</span>
+                              {lang === "ne" ? member.nameNe : member.nameEn}{" "}
+                              <span className="text-muted font-normal">
+                                ({lang === "ne" ? member.nameEn : member.nameNe})
+                              </span>
                             </div>
                             <div className="text-[11px] text-muted flex items-center gap-2 mt-0.5">
-                              <span className="text-accent font-medium">{member.roleNe}</span>
+                              <span className="text-accent font-medium">{lang === "ne" ? member.roleNe : member.roleEn}</span>
                               {member.phone && <span className="font-mono text-muted">{member.phone}</span>}
                               <span className="capitalize text-muted text-[10px]">({member.committeeType})</span>
                             </div>
@@ -1221,7 +1440,7 @@ export default function AdminPage() {
                           type="button"
                           onClick={() => handleDeleteMember(member.id)}
                           className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
-                          title="Remove Member"
+                          title={t.deleteBtn}
                         >
                           <Trash size={15} />
                         </button>
@@ -1238,8 +1457,8 @@ export default function AdminPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-fg">Publications Archive</h2>
-                  <p className="text-xs text-muted">Annual souvenirs, bulletins, and financial reports.</p>
+                  <h2 className="text-base font-bold text-fg">{t.publications}</h2>
+                  <p className="text-xs text-muted">{lang === "ne" ? "वार्षिक स्मारिका, मुखपत्र तथा प्रतिवेदन सङ्ग्रह" : "Annual souvenirs, bulletins, and financial reports."}</p>
                 </div>
                 <button
                   type="button"
@@ -1247,13 +1466,13 @@ export default function AdminPage() {
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
-                  <span>{showAddPubModal ? "Close" : "Upload Document"}</span>
+                  <span>{showAddPubModal ? t.closeBtn : t.uploadPub}</span>
                 </button>
               </div>
 
               {showAddPubModal && (
                 <form onSubmit={handleAddPub} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase tracking-wider text-accent">New Document Upload</div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">{t.uploadPub}</div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -1325,7 +1544,7 @@ export default function AdminPage() {
                     type="submit"
                     className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
                   >
-                    Publish Document
+                    {t.saveChanges}
                   </button>
                 </form>
               )}
@@ -1340,7 +1559,10 @@ export default function AdminPage() {
                         </div>
                         <div>
                           <div className="text-xs font-bold text-fg">
-                            {pub.titleNe} <span className="text-muted font-normal">({pub.titleEn})</span>
+                            {lang === "ne" ? pub.titleNe : pub.titleEn}{" "}
+                            <span className="text-muted font-normal">
+                              ({lang === "ne" ? pub.titleEn : pub.titleNe})
+                            </span>
                           </div>
                           <div className="text-[11px] text-muted font-mono flex items-center gap-2 mt-0.5">
                             <span className="text-accent">{pub.categoryEn}</span>
@@ -1354,7 +1576,7 @@ export default function AdminPage() {
                         type="button"
                         onClick={() => handleDeletePub(pub.id)}
                         className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
-                        title="Delete"
+                        title={t.deleteBtn}
                       >
                         <Trash size={15} />
                       </button>
@@ -1370,8 +1592,8 @@ export default function AdminPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-fg">Events Schedule</h2>
-                  <p className="text-xs text-muted">Upcoming meetings, gatherings, and community events.</p>
+                  <h2 className="text-base font-bold text-fg">{t.events}</h2>
+                  <p className="text-xs text-muted">{lang === "ne" ? "आगामी भेला, बैठक तथा सामाजिक कार्यक्रम तालिका" : "Upcoming meetings, gatherings, and community events."}</p>
                 </div>
                 <button
                   type="button"
@@ -1379,13 +1601,13 @@ export default function AdminPage() {
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
-                  <span>{showAddEventModal ? "Close" : "Schedule Event"}</span>
+                  <span>{showAddEventModal ? t.closeBtn : t.scheduleEvent}</span>
                 </button>
               </div>
 
               {showAddEventModal && (
                 <form onSubmit={handleAddEvent} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase tracking-wider text-accent">New Event Details</div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">{t.scheduleEvent}</div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -1459,7 +1681,7 @@ export default function AdminPage() {
                     type="submit"
                     className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
                   >
-                    Save Event
+                    {t.saveChanges}
                   </button>
                 </form>
               )}
@@ -1474,11 +1696,14 @@ export default function AdminPage() {
                         </div>
                         <div>
                           <div className="text-xs font-bold text-fg">
-                            {ev.titleNe} <span className="text-muted font-normal">({ev.titleEn})</span>
+                            {lang === "ne" ? ev.titleNe : ev.titleEn}{" "}
+                            <span className="text-muted font-normal">
+                              ({lang === "ne" ? ev.titleEn : ev.titleNe})
+                            </span>
                           </div>
                           <div className="text-[11px] text-muted flex items-center gap-2 mt-0.5">
-                            <span className="font-mono text-accent">{ev.dateNe}</span>
-                            <span>{ev.locationNe}</span>
+                            <span className="font-mono text-accent">{lang === "ne" ? ev.dateNe : ev.dateEn}</span>
+                            <span>{lang === "ne" ? ev.locationNe : ev.locationEn}</span>
                             <span className="capitalize text-[10px] font-semibold text-muted">({ev.status})</span>
                           </div>
                         </div>
@@ -1488,7 +1713,7 @@ export default function AdminPage() {
                         type="button"
                         onClick={() => handleDeleteEvent(ev.id)}
                         className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
-                        title="Delete"
+                        title={t.deleteBtn}
                       >
                         <Trash size={15} />
                       </button>
@@ -1504,8 +1729,8 @@ export default function AdminPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-fg">Photo Gallery</h2>
-                  <p className="text-xs text-muted">Community activities, education drives, and meetings.</p>
+                  <h2 className="text-base font-bold text-fg">{t.gallery}</h2>
+                  <p className="text-xs text-muted">{lang === "ne" ? "सामाजिक अभियान, कार्यक्रम तथा बैठकका तस्बिरहरू" : "Community activities, education drives, and meetings."}</p>
                 </div>
                 <button
                   type="button"
@@ -1513,13 +1738,13 @@ export default function AdminPage() {
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
-                  <span>{showAddGalleryModal ? "Close" : "Add Image"}</span>
+                  <span>{showAddGalleryModal ? t.closeBtn : t.addGallery}</span>
                 </button>
               </div>
 
               {showAddGalleryModal && (
                 <form onSubmit={handleAddGallery} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase tracking-wider text-accent">New Gallery Photo</div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">{t.addGallery}</div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -1572,7 +1797,7 @@ export default function AdminPage() {
                     type="submit"
                     className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
                   >
-                    Save Photo
+                    {t.saveChanges}
                   </button>
                 </form>
               )}
@@ -1586,13 +1811,16 @@ export default function AdminPage() {
                       </div>
                       <div className="p-3 flex items-center justify-between">
                         <div className="min-w-0 pr-2">
-                          <div className="text-xs font-bold text-fg truncate">{g.titleNe}</div>
+                          <div className="text-xs font-bold text-fg truncate">
+                            {lang === "ne" ? g.titleNe : g.titleEn}
+                          </div>
                           <div className="text-[10px] text-muted font-mono">{g.categoryEn}</div>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleDeleteGallery(g.id)}
                           className="p-1 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                          title={t.deleteBtn}
                         >
                           <Trash size={14} />
                         </button>
@@ -1608,14 +1836,14 @@ export default function AdminPage() {
           {activeTab === "inquiries" && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-base font-bold text-fg">Inbox Messages</h2>
-                <p className="text-xs text-muted">Public contact submissions and inquiries.</p>
+                <h2 className="text-base font-bold text-fg">{t.inquiries}</h2>
+                <p className="text-xs text-muted">{lang === "ne" ? "सर्वसाधारणबाट प्राप्त सम्पर्क तथा सदस्यता सोधपुछ सन्देशहरू" : "Public contact submissions and inquiries."}</p>
               </div>
 
               <div className="space-y-3">
                 {inquiriesList.length === 0 ? (
                   <div className="p-8 text-center text-xs text-muted border border-line rounded-card bg-surface">
-                    No messages in inbox.
+                    {t.noInquiries}
                   </div>
                 ) : (
                   inquiriesList.map((inq) => (
@@ -1639,7 +1867,7 @@ export default function AdminPage() {
                             type="button"
                             onClick={() => handleDeleteInquiry(inq.id)}
                             className="p-1 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
-                            title="Delete"
+                            title={t.deleteBtn}
                           >
                             <Trash size={14} />
                           </button>
@@ -1659,20 +1887,24 @@ export default function AdminPage() {
           {activeTab === "settings" && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-base font-bold text-fg">Secretariat & Liaison Settings</h2>
-                <p className="text-xs text-muted">Contact details and office physical addresses.</p>
+                <h2 className="text-base font-bold text-fg">{t.settings}</h2>
+                <p className="text-xs text-muted">{lang === "ne" ? "सम्पर्क फोन, इमेल तथा कार्यालय ठेगाना व्यवस्थापन" : "Contact details and office physical addresses."}</p>
               </div>
 
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  alert("Settings saved successfully.");
+                  dialogAlert({
+                    title: lang === "ne" ? "सेटिङ्स सुरक्षित भयो" : "Settings Saved",
+                    description: t.savedSuccess,
+                    type: "success",
+                  });
                 }}
                 className="p-6 rounded-card border border-line bg-surface space-y-4"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-fg">Phone</label>
+                    <label className="text-xs font-semibold text-fg">{lang === "ne" ? "सम्पर्क फोन" : "Phone"}</label>
                     <input
                       type="text"
                       value={settings.contactPhone}
@@ -1681,7 +1913,7 @@ export default function AdminPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-fg">Email</label>
+                    <label className="text-xs font-semibold text-fg">{lang === "ne" ? "इमेल" : "Email"}</label>
                     <input
                       type="email"
                       value={settings.contactEmail}
@@ -1693,7 +1925,7 @@ export default function AdminPage() {
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-fg">Kathmandu Secretariat Address</label>
+                    <label className="text-xs font-semibold text-fg">{lang === "ne" ? "काठमाडौँ सम्पर्क सचिवालय ठेगाना" : "Kathmandu Secretariat Address"}</label>
                     <input
                       type="text"
                       value={settings.kathmanduAddress}
@@ -1702,7 +1934,7 @@ export default function AdminPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-fg">Thorga Village Center Address</label>
+                    <label className="text-xs font-semibold text-fg">{lang === "ne" ? "थोर्गा गाउँ सम्पर्क केन्द्र ठेगाना" : "Thorga Village Center Address"}</label>
                     <input
                       type="text"
                       value={settings.thorgaAddress}
@@ -1716,7 +1948,7 @@ export default function AdminPage() {
                   type="submit"
                   className="px-5 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
-                  Save Settings
+                  {t.saveChanges}
                 </button>
               </form>
             </div>
