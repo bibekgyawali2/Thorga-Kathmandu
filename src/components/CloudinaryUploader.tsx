@@ -2,7 +2,8 @@
 
 import React, { useState, useRef } from "react";
 import Image from "next/image";
-import { UploadSimple, FilePdf, CircleNotch, X, CheckCircle, WarningCircle } from "@phosphor-icons/react";
+import { UploadSimple, FilePdf, CircleNotch, X, CheckCircle, WarningCircle, Image as ImageIcon } from "@phosphor-icons/react";
+import { isValidImageSrc } from "@/lib/validation";
 
 interface CloudinaryUploaderProps {
   value?: string;
@@ -160,9 +161,13 @@ export function CloudinaryUploader({
               <div className="w-10 h-10 rounded-control bg-red-500/10 text-red-500 flex items-center justify-center flex-shrink-0">
                 <FilePdf size={22} weight="duotone" />
               </div>
-            ) : (
+            ) : isValidImageSrc(value) ? (
               <div className="relative w-10 h-10 rounded-control overflow-hidden border border-line flex-shrink-0 bg-surface">
                 <Image src={value} alt="Upload preview" fill sizes="40px" className="object-cover" />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-control bg-accent/10 text-accent flex items-center justify-center flex-shrink-0">
+                <ImageIcon size={22} weight="duotone" />
               </div>
             )}
 

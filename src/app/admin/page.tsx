@@ -31,6 +31,7 @@ import {
 } from "@/data/mockData";
 import {
   AdminUser,
+  AdminSession,
   AdminRole,
   SUPERADMIN_EMAIL,
   getAdminSession,
@@ -50,6 +51,7 @@ import {
   isValidPhone,
   isValidEmail,
   isValidPassword,
+  isValidImageSrc,
 } from "@/lib/validation";
 import {
   Users,
@@ -252,8 +254,11 @@ function getServerThemeSnapshot(): "light" | "dark" {
   return "light";
 }
 
+const emptySubscribe = () => () => {};
+
 export default function AdminPage() {
-  const [session, setSession] = useState(() => getAdminSession());
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const [session, setSession] = useState<AdminSession | null>(() => getAdminSession());
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
   const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerThemeSnapshot);
   const { alert: dialogAlert, confirm: dialogConfirm } = useDialog();
@@ -926,6 +931,20 @@ export default function AdminPage() {
         return t.overview;
     }
   };
+
+  // -------------------------------------------------------------
+  // 0. SSR & INITIAL HYDRATION GUARD
+  // -------------------------------------------------------------
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-ground text-fg font-sans flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+          <div className="text-xs text-muted font-mono tracking-wider uppercase">Loading Portal...</div>
+        </div>
+      </div>
+    );
+  }
 
   // -------------------------------------------------------------
   // 1. AUTHENTICATION VIEW (When logged out)
@@ -2178,8 +2197,12 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {galleryList.map((g) => (
                     <div key={g.id} className="rounded-control overflow-hidden border border-line bg-ground">
-                      <div className="relative h-36 w-full">
-                        <Image src={g.imageUrl} alt={g.titleEn} fill sizes="300px" className="object-cover" />
+                      <div className="relative h-36 w-full bg-tint flex items-center justify-center">
+                        {isValidImageSrc(g.imageUrl) ? (
+                          <Image src={g.imageUrl} alt={g.titleEn} fill sizes="300px" className="object-cover" />
+                        ) : (
+                          <ImageIcon size={28} className="text-muted" weight="duotone" />
+                        )}
                       </div>
                       <div className="p-3 flex items-center justify-between">
                         <div className="min-w-0 pr-2">

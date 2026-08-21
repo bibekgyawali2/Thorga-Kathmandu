@@ -50,3 +50,17 @@ export function isValidPassword(password: string): { isValid: boolean; errorNe: 
   }
   return { isValid: true, errorNe: "", errorEn: "" };
 }
+
+export function isValidImageSrc(src: string | undefined | null): boolean {
+  if (!src || typeof src !== "string") return false;
+  const trimmed = src.trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith("/")) return true;
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+

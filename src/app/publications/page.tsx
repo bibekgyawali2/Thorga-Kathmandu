@@ -22,6 +22,7 @@ import {
   X,
   MagnifyingGlass,
 } from "@phosphor-icons/react";
+import { isValidImageSrc } from "@/lib/validation";
 
 export default function PublicationsPage() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
@@ -109,7 +110,7 @@ export default function PublicationsPage() {
               >
                 {/* Visual Document Card Spine */}
                 <div className="relative h-60 w-full p-4 flex items-center justify-center overflow-hidden bg-tint">
-                  {pub.coverImageUrl && (
+                  {pub.coverImageUrl && isValidImageSrc(pub.coverImageUrl) && (
                     <Image
                       src={pub.coverImageUrl}
                       alt={lang === "ne" ? pub.titleNe : pub.titleEn}

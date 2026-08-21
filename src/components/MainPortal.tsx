@@ -35,6 +35,7 @@ import {
   isValidPhone,
   isValidEmail,
   isValidMessage,
+  isValidImageSrc,
 } from "@/lib/validation";
 import { useDialog } from "@/components/Dialog";
 import {
@@ -71,7 +72,7 @@ function initials(name: string) {
 }
 
 function hasRealPhoto(url?: string) {
-  return Boolean(url) && !url!.includes("images.unsplash.com");
+  return Boolean(url) && isValidImageSrc(url) && !url!.includes("images.unsplash.com");
 }
 
 function Portrait({
@@ -537,7 +538,6 @@ export default function MainPortal() {
         </div>
       </section>
 
-
       {/* SECTION 4: PUBLICATIONS SHOWCASE */}
       <section className="py-20 border-b border-line bg-ground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -581,7 +581,7 @@ export default function MainPortal() {
                   className="rounded-card border border-line bg-surface overflow-hidden flex flex-col justify-between hover:border-accent transition-all group"
                 >
                   <div className="relative h-48 w-full p-4 flex items-center justify-center bg-tint overflow-hidden">
-                    {pub.coverImageUrl && (
+                    {pub.coverImageUrl && isValidImageSrc(pub.coverImageUrl) && (
                       <Image
                         src={pub.coverImageUrl}
                         alt={pub.titleEn}
@@ -603,33 +603,36 @@ export default function MainPortal() {
                   </div>
 
                   <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
-                    <div>
-                      <div className="text-[11px] font-semibold text-accent">
+                    <div className="space-y-1.5">
+                      <div className="text-[11px] font-bold text-accent">
                         {lang === "ne" ? pub.categoryNe : pub.categoryEn}
                       </div>
-                      <h3 className="text-sm font-bold text-fg leading-snug mt-0.5">
+                      <h3 className="text-base font-bold text-fg leading-snug">
                         {lang === "ne" ? pub.titleNe : pub.titleEn}
                       </h3>
+                      <p className="text-xs leading-relaxed text-muted line-clamp-2">
+                        {lang === "ne" ? pub.descriptionNe : pub.descriptionEn}
+                      </p>
                     </div>
 
-                    <div className="pt-3 border-t border-line flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setActivePdfPreview(pub)}
-                        className="flex-1 py-1.5 px-2 rounded-control text-xs font-semibold flex items-center justify-center gap-1 bg-tint hover:bg-accent-soft text-fg transition-colors"
-                      >
-                        <Eye size={14} />
-                        <span>{lang === "ne" ? "हेर्नुहोस्" : "Preview"}</span>
-                      </button>
+                    <div className="pt-3 border-t border-line flex items-center justify-between">
                       <a
                         href={pub.pdfUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 py-1.5 px-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                       >
                         <Download size={14} />
                         <span>{lang === "ne" ? "डाउनलोड" : "Download"}</span>
                       </a>
+                      <button
+                        type="button"
+                        onClick={() => setActivePdfPreview(pub)}
+                        className="text-xs text-muted hover:text-fg font-medium flex items-center gap-1 transition-colors"
+                      >
+                        <Eye size={14} />
+                        <span>{lang === "ne" ? "हेर्नुहोस्" : "Preview"}</span>
+                      </button>
                     </div>
                   </div>
                 </article>
@@ -639,22 +642,22 @@ export default function MainPortal() {
         </div>
       </section>
 
-      {/* SECTION 5: EVENTS & SOCIAL PROGRAMS SHOWCASE */}
+      {/* SECTION 5: UPCOMING EVENTS & PROGRAM ARCHIVE */}
       <section className="py-20 border-b border-line bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
                 <Calendar size={16} weight="duotone" />
-                <span>{lang === "ne" ? "आगामी कार्यक्रम" : "Upcoming Gatherings"}</span>
+                <span>{lang === "ne" ? "कार्यक्रम तथा सूचना" : "Events & Notices"}</span>
               </div>
               <h2 className="text-3xl font-extrabold tracking-tight text-fg">
-                {lang === "ne" ? "कार्यक्रम तथा गतिविधिहरू" : "Events & Social Programs"}
+                {lang === "ne" ? "आगामी तथा सम्पन्न कार्यक्रमहरू" : "Upcoming & Recent Community Events"}
               </h2>
               <p className="text-sm text-muted max-w-[60ch]">
                 {lang === "ne"
-                  ? "काठमाडौँ तथा थोर्गा गाउँमा आयोजना हुने आगामी कार्यक्रमहरू"
-                  : "Community gatherings, general assemblies, health camps, and cultural events"}
+                  ? "वार्षिक साधारण सभा, भेला तथा सामाजिक विकास सम्बन्धी गतिविधिहरू"
+                  : "Join us in our upcoming community gatherings, health camps, and annual general meetings"}
               </p>
             </div>
 
@@ -662,7 +665,7 @@ export default function MainPortal() {
               href="/events"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
             >
-              <span>{lang === "ne" ? "सबै कार्यक्रम हेर्नुहोस्" : "View Full Events Calendar"}</span>
+              <span>{lang === "ne" ? "सबै कार्यक्रमहरू हेर्नुहोस्" : "View All Events"}</span>
               <ArrowRight size={15} />
             </Link>
           </div>
@@ -671,7 +674,7 @@ export default function MainPortal() {
             <div className="rounded-card border border-dashed border-line p-12 text-center space-y-2 bg-ground">
               <Calendar size={32} className="text-accent mx-auto" weight="duotone" />
               <p className="text-sm font-semibold text-fg">
-                {lang === "ne" ? "हाल कुनै आगामी कार्यक्रम तय भएको छैन" : "No upcoming events scheduled at this moment"}
+                {lang === "ne" ? "हाल कुनै नयाँ कार्यक्रम छैन" : "No upcoming events scheduled"}
               </p>
             </div>
           ) : (
@@ -681,14 +684,18 @@ export default function MainPortal() {
                   key={event.id}
                   className="rounded-card border border-line bg-ground overflow-hidden flex flex-col sm:flex-row hover:border-accent transition-all group"
                 >
-                  <div className="sm:w-48 relative h-44 sm:h-auto flex-shrink-0 bg-tint">
-                    <Image
-                      src={event.imageUrl}
-                      alt={event.titleEn}
-                      fill
-                      sizes="(max-width: 640px) 100vw, 192px"
-                      className="object-cover group-hover:scale-105 transition-transform"
-                    />
+                  <div className="sm:w-48 relative h-44 sm:h-auto flex-shrink-0 bg-tint flex items-center justify-center">
+                    {isValidImageSrc(event.imageUrl) ? (
+                      <Image
+                        src={event.imageUrl}
+                        alt={event.titleEn}
+                        fill
+                        sizes="(max-width: 640px) 100vw, 192px"
+                        className="object-cover group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <Calendar size={36} className="text-accent" weight="duotone" />
+                    )}
                     <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface text-[10px] font-bold text-accent shadow-sm">
                       {lang === "ne" ? event.categoryNe : event.categoryEn}
                     </div>
@@ -761,15 +768,19 @@ export default function MainPortal() {
                 <Link
                   key={item.id}
                   href="/gallery"
-                  className="relative h-64 rounded-card overflow-hidden border border-line bg-surface group shadow-sm hover:border-accent transition-all"
+                  className="relative h-64 rounded-card overflow-hidden border border-line bg-surface group shadow-sm hover:border-accent transition-all flex items-center justify-center"
                 >
-                  <Image
-                    src={item.imageUrl}
-                    alt={item.titleEn}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                  {isValidImageSrc(item.imageUrl) ? (
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.titleEn}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <Sparkle size={36} className="text-accent" weight="duotone" />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-75 group-hover:opacity-90 transition-opacity" />
                   <div className="absolute bottom-0 inset-x-0 p-5 space-y-1 text-white">
                     <div className="text-[10px] font-bold text-accent">{item.categoryEn}</div>

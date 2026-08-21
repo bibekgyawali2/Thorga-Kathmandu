@@ -225,6 +225,19 @@ export function saveStoredContactSettings(settings: ContactSettings): void {
 }
 
 const LANG_STORAGE_KEY = "thorga_portal_lang";
+let langSubscribers: Array<() => void> = [];
+
+export function subscribeLanguage(callback: () => void) {
+  langSubscribers.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === LANG_STORAGE_KEY) callback();
+  };
+  if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
+  return () => {
+    langSubscribers = langSubscribers.filter((s) => s !== callback);
+    if (typeof window !== "undefined") window.removeEventListener("storage", handleStorage);
+  };
+}
 
 export function getStoredLanguage(): Language {
   if (typeof window === "undefined") return "ne";
@@ -236,10 +249,15 @@ export function getStoredLanguage(): Language {
   }
 }
 
+export function getServerLanguageSnapshot(): Language {
+  return "ne";
+}
+
 export function saveStoredLanguage(lang: Language): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(LANG_STORAGE_KEY, lang);
+    langSubscribers.forEach((s) => s());
   } catch {}
 }
 

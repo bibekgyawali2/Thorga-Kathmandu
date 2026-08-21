@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   CalendarCheck,
 } from "@phosphor-icons/react";
+import { isValidImageSrc } from "@/lib/validation";
 
 export default function EventsPage() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
@@ -109,14 +110,18 @@ export default function EventsPage() {
                 key={event.id}
                 className="rounded-card border border-line bg-surface overflow-hidden flex flex-col sm:flex-row hover:border-accent transition-all group"
               >
-                <div className="sm:w-56 relative h-48 sm:h-auto flex-shrink-0 bg-tint">
-                  <Image
-                    src={event.imageUrl}
-                    alt={lang === "ne" ? event.titleNe : event.titleEn}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 224px"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                <div className="sm:w-56 relative h-48 sm:h-auto flex-shrink-0 bg-tint flex items-center justify-center">
+                  {isValidImageSrc(event.imageUrl) ? (
+                    <Image
+                      src={event.imageUrl}
+                      alt={lang === "ne" ? event.titleNe : event.titleEn}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 224px"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <Calendar size={40} className="text-accent" weight="duotone" />
+                  )}
                   <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface/95 text-[11px] font-bold text-accent shadow-sm">
                     {lang === "ne" ? event.categoryNe : event.categoryEn}
                   </div>

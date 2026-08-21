@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Calendar,
 } from "@phosphor-icons/react";
+import { isValidImageSrc } from "@/lib/validation";
 
 function initials(name: string) {
   const parts = name
@@ -32,7 +33,7 @@ function initials(name: string) {
 }
 
 function hasRealPhoto(url?: string) {
-  return Boolean(url) && !url!.includes("images.unsplash.com");
+  return Boolean(url) && isValidImageSrc(url) && !url!.includes("images.unsplash.com");
 }
 
 function Portrait({

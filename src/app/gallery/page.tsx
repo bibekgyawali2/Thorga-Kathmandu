@@ -19,6 +19,7 @@ import {
   X,
   Camera,
 } from "@phosphor-icons/react";
+import { isValidImageSrc } from "@/lib/validation";
 
 export default function GalleryPage() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
@@ -111,15 +112,21 @@ export default function GalleryPage() {
               <article
                 key={item.id}
                 onClick={() => setActivePhoto(item)}
-                className="relative h-72 rounded-card overflow-hidden border border-line bg-surface cursor-pointer group shadow-sm hover:border-accent transition-all"
+                className="relative h-72 rounded-card overflow-hidden border border-line bg-surface cursor-pointer group shadow-sm hover:border-accent transition-all flex items-center justify-center"
               >
-                <Image
-                  src={item.imageUrl}
-                  alt={lang === "ne" ? item.titleNe : item.titleEn}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+                {isValidImageSrc(item.imageUrl) ? (
+                  <Image
+                    src={item.imageUrl}
+                    alt={lang === "ne" ? item.titleNe : item.titleEn}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-muted">
+                    <ImageIcon size={40} weight="duotone" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-75 group-hover:opacity-90 transition-opacity" />
                 <div className="absolute bottom-0 inset-x-0 p-5 space-y-1 text-white">
                   <div className="text-[11px] font-bold text-accent">
@@ -155,14 +162,21 @@ export default function GalleryPage() {
             >
               <X size={20} />
             </button>
-            <div className="relative h-[65vh] w-full bg-black">
-              <Image
-                src={activePhoto.imageUrl}
-                alt={lang === "ne" ? activePhoto.titleNe : activePhoto.titleEn}
-                fill
-                sizes="100vw"
-                className="object-contain"
-              />
+            <div className="relative h-[65vh] w-full bg-black flex items-center justify-center">
+              {isValidImageSrc(activePhoto.imageUrl) ? (
+                <Image
+                  src={activePhoto.imageUrl}
+                  alt={lang === "ne" ? activePhoto.titleNe : activePhoto.titleEn}
+                  fill
+                  sizes="100vw"
+                  className="object-contain"
+                />
+              ) : (
+                <div className="text-white/60 flex flex-col items-center gap-2">
+                  <ImageIcon size={48} weight="duotone" />
+                  <span className="text-xs font-mono">No Image Preview Available</span>
+                </div>
+              )}
             </div>
             <div className="p-6 space-y-1.5 bg-surface border-t border-line">
               <div className="text-xs font-bold text-accent">
