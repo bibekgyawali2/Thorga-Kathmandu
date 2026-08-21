@@ -335,3 +335,81 @@ export const initialGallery: GalleryItem[] = [
     dateNe: "असार २०८१",
   },
 ];
+
+export interface HeroContent {
+  badgeNe: string;
+  badgeEn: string;
+  titleNe: string;
+  titleEn: string;
+  descriptionNe: string;
+  descriptionEn: string;
+  imageUrl: string;
+  imageBadgeNe: string;
+  imageBadgeEn: string;
+  imageCaptionNe: string;
+  imageCaptionEn: string;
+  imageSubtitleNe: string;
+  imageSubtitleEn: string;
+}
+
+export const initialHeroContent: HeroContent = {
+  badgeNe: "थोर्गा, गुल्मी र काठमाडौँ सम्पर्क सञ्जाल",
+  badgeEn: "Thorga, Gulmi and Kathmandu Liaison",
+  titleNe: "थोर्गाको पहिचान, काठमाडौँमा एकता र सेवाको अभियान",
+  titleEn: "Uniting Thorga Heritage, Advancing Community Welfare",
+  descriptionNe: "काठमाडौँ उपत्यकामा रहेका थोर्गाबासीहरुलाई एकताबद्ध गर्दै गाउँको शैक्षिक, स्वास्थ्य तथा पूर्वाधार विकासमा समर्पित गैरनाफामूलक सामाजिक संस्था।",
+  descriptionEn: "A dedicated non-profit forum connecting native families of Thorga in Kathmandu for mutual assistance, youth scholarships, and village development.",
+  imageUrl: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1000&q=80",
+  imageBadgeNe: "आधिकारिक मञ्च",
+  imageBadgeEn: "Official Forum",
+  imageCaptionNe: "गुल्मी जिल्ला, रुरुक्षेत्र गाउँपालिका वडा नं. २ र ३ (साविक थोर्गा गा.वि.स.)",
+  imageCaptionEn: "Gulmi District, Ruru Kshetra Ward 2 and 3 (Former Thorga VDC)",
+  imageSubtitleNe: "काठमाडौँ सम्पर्क सचिवालय: शंखमूल मार्ग, नयाँ बानेश्वर",
+  imageSubtitleEn: "Kathmandu Liaison Office: Shankhamul Marg, New Baneshwor",
+};
+
+const HERO_STORAGE_KEY = "thorga_hero_content";
+
+let heroSubscribers: Array<() => void> = [];
+
+export function subscribeHeroContent(callback: () => void) {
+  heroSubscribers.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === HERO_STORAGE_KEY) {
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", handleStorage);
+  }
+  return () => {
+    heroSubscribers = heroSubscribers.filter((s) => s !== callback);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", handleStorage);
+    }
+  };
+}
+
+export function getStoredHeroSnapshot(): HeroContent {
+  if (typeof window === "undefined") return initialHeroContent;
+  try {
+    const raw = localStorage.getItem(HERO_STORAGE_KEY);
+    if (!raw) return initialHeroContent;
+    return JSON.parse(raw);
+  } catch {
+    return initialHeroContent;
+  }
+}
+
+export function getServerHeroSnapshot(): HeroContent {
+  return initialHeroContent;
+}
+
+export function saveStoredHeroContent(content: HeroContent): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(HERO_STORAGE_KEY, JSON.stringify(content));
+    heroSubscribers.forEach((s) => s());
+  } catch {}
+}
+

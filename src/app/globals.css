@@ -59,7 +59,7 @@
   --radius-control: 12px;
   --radius-chip: 8px;
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-nepali), var(--font-geist-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 

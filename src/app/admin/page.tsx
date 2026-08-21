@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -8,10 +8,13 @@ import {
   EventItem,
   Publication,
   GalleryItem,
+  HeroContent,
   initialMembers,
   initialEvents,
   initialPublications,
   initialGallery,
+  getStoredHeroSnapshot,
+  saveStoredHeroContent,
 } from "@/data/mockData";
 import {
   getAdminSession,
@@ -31,7 +34,6 @@ import {
   Plus,
   Trash,
   FileText,
-  Upload,
   Database,
   ArrowSquareOut,
   EnvelopeSimple,
@@ -39,6 +41,11 @@ import {
   Sun,
   Moon,
   MagnifyingGlass,
+  House,
+  Sparkle,
+  List,
+  X,
+  Globe,
 } from "@phosphor-icons/react";
 
 interface Inquiry {
@@ -57,7 +64,7 @@ const mockInquiries: Inquiry[] = [
     name: "Narayan Prasad Gyawali",
     phone: "+977 9841556677",
     email: "narayan.g@gmail.com",
-    message: "I would like to apply for the life membership of the Manch. Please send the registration form.",
+    message: "I would like to apply for life membership of the Manch. Please send the registration form.",
     date: "2026-08-20",
     read: false,
   },
@@ -72,12 +79,34 @@ const mockInquiries: Inquiry[] = [
   },
 ];
 
+function subscribeTheme(callback: () => void) {
+  if (typeof document === "undefined") return () => {};
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+  return () => observer.disconnect();
+}
+
+function getThemeSnapshot(): "light" | "dark" {
+  if (typeof document === "undefined") return "light";
+  return (document.documentElement.dataset.theme as "light" | "dark") || "light";
+}
+
+function getServerThemeSnapshot(): "light" | "dark" {
+  return "light";
+}
+
 export default function AdminPage() {
   const [session, setSession] = useState(() => getAdminSession());
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerThemeSnapshot);
+
   const [activeTab, setActiveTab] = useState<
-    "overview" | "members" | "publications" | "events" | "gallery" | "inquiries" | "settings"
+    "overview" | "hero" | "members" | "publications" | "events" | "gallery" | "inquiries" | "settings"
   >("overview");
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Login form state
   const [loginUser, setLoginUser] = useState("");
@@ -85,72 +114,81 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState(false);
 
   // Managed Data States
+  const [heroState, setHeroState] = useState<HeroContent>(() => getStoredHeroSnapshot());
   const [membersList, setMembersList] = useState<Member[]>(initialMembers);
   const [pubList, setPubList] = useState<Publication[]>(initialPublications);
   const [eventsList, setEventsList] = useState<EventItem[]>(initialEvents);
   const [galleryList, setGalleryList] = useState<GalleryItem[]>(initialGallery);
   const [inquiriesList, setInquiriesList] = useState<Inquiry[]>(mockInquiries);
 
-  // Search filter
-  const [searchQuery, setSearchQuery] = useState("");
+  // Filter & Form States
+  const [memberFilterCategory, setMemberFilterCategory] = useState<"all" | "current" | "advisor" | "past">("all");
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showAddPubModal, setShowAddPubModal] = useState(false);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showAddGalleryModal, setShowAddGalleryModal] = useState(false);
 
   // New Member Form
   const [memberForm, setMemberForm] = useState({
     nameEn: "",
     nameNe: "",
-    roleEn: "Executive Member",
-    roleNe: "कार्यसमिति सदस्य",
-    committeeType: "current" as "current" | "past" | "advisor",
+    roleEn: "",
+    roleNe: "",
+    committeeType: "current" as "current" | "advisor" | "past",
+    order: 10,
     phone: "",
     email: "",
-    photoUrl: "",
     bioEn: "",
     bioNe: "",
+    tenureEn: "",
+    tenureNe: "",
+    photoUrl: "",
   });
 
   // New Publication Form
   const [pubForm, setPubForm] = useState({
     titleEn: "",
     titleNe: "",
-    categoryEn: "Annual Souvenir",
-    categoryNe: "वार्षिक स्मारिका",
-    publishedYearEn: "2081 BS",
+    categoryEn: "Souvenir",
+    categoryNe: "स्मारिका",
+    publishedYearEn: "2081 BS (2024)",
     publishedYearNe: "२०८१",
-    fileSize: "4.2 MB",
-    pages: 48,
-    pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
-    coverImageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
     descriptionEn: "",
     descriptionNe: "",
+    pdfUrl: "https://example.com/sample.pdf",
+    pages: 48,
+    fileSize: "4.2 MB",
+    coverImageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
   });
 
   // New Event Form
   const [eventForm, setEventForm] = useState({
     titleEn: "",
     titleNe: "",
-    dateEn: "",
-    dateNe: "",
+    categoryEn: "General Assembly",
+    categoryNe: "साधारण सभा",
+    dateEn: "2081 Ashoj 12",
+    dateNe: "२०८१ असोज १२",
     timeEn: "11:00 AM",
-    timeNe: "बिहान ११:००",
-    locationEn: "",
-    locationNe: "",
+    timeNe: "बिहान ११:०० बजे",
+    locationEn: "Kathmandu",
+    locationNe: "काठमाडौँ",
     descriptionEn: "",
     descriptionNe: "",
-    categoryEn: "Community Program",
-    categoryNe: "सामुदायिक कार्यक्रम",
-    status: "upcoming" as "upcoming" | "completed",
     imageUrl: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80",
+    status: "upcoming" as "upcoming" | "completed",
   });
 
   // New Gallery Form
   const [galleryForm, setGalleryForm] = useState({
     titleEn: "",
     titleNe: "",
-    categoryEn: "Development",
-    categoryNe: "विकास निर्माण",
-    imageUrl: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80",
-    dateEn: "August 2026",
-    dateNe: "भाद्र २०८१",
+    categoryEn: "Education",
+    categoryNe: "शिक्षा",
+    dateEn: "2081 Shrawan",
+    dateNe: "२०८१ साउन",
+    imageUrl: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80",
   });
 
   // Settings State
@@ -161,11 +199,21 @@ export default function AdminPage() {
     contactEmail: "info@thorgaktm.org.np",
   });
 
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    if (typeof document !== "undefined") {
+      document.documentElement.dataset.theme = next;
+      try {
+        localStorage.setItem("thorga-theme", next);
+      } catch {}
+    }
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (verifyAdminCredentials(loginUser, loginPass)) {
       setAdminSession(loginUser);
-      setSession(getAdminSession());
+      setSession({ username: loginUser, isAuthenticated: true, loginTime: Date.now() });
       setLoginError(false);
     } else {
       setLoginError(true);
@@ -177,127 +225,79 @@ export default function AdminPage() {
     setSession(null);
   };
 
-  const handleCreateMember = (e: React.FormEvent) => {
+  const handleSaveHero = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!memberForm.nameEn || !memberForm.nameNe) return;
-    const newEntry: Member = {
+    saveStoredHeroContent(heroState);
+    alert("Hero section updated live on the homepage.");
+  };
+
+  const handleAddMember = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!memberForm.nameEn || !memberForm.nameNe || !memberForm.roleEn || !memberForm.roleNe) {
+      alert("Please fill all required bilingual name and role fields.");
+      return;
+    }
+    const newMember: Member = {
       id: `m-${Date.now()}`,
-      nameEn: memberForm.nameEn,
-      nameNe: memberForm.nameNe,
-      roleEn: memberForm.roleEn,
-      roleNe: memberForm.roleNe,
-      committeeType: memberForm.committeeType,
-      phone: memberForm.phone || "+977 9800000000",
-      email: memberForm.email || "member@thorgaktm.org.np",
-      photoUrl:
-        memberForm.photoUrl ||
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
-      bioEn: memberForm.bioEn || "Active community contributor.",
-      bioNe: memberForm.bioNe || "सक्रिय सामाजिक व्यक्तित्व।",
-      order: membersList.length + 1,
+      ...memberForm,
     };
-    setMembersList([newEntry, ...membersList]);
+    setMembersList([newMember, ...membersList]);
+    setShowAddMemberModal(false);
     setMemberForm({
       nameEn: "",
       nameNe: "",
-      roleEn: "Executive Member",
-      roleNe: "कार्यसमिति सदस्य",
+      roleEn: "",
+      roleNe: "",
       committeeType: "current",
+      order: 10,
       phone: "",
       email: "",
-      photoUrl: "",
       bioEn: "",
       bioNe: "",
+      tenureEn: "",
+      tenureNe: "",
+      photoUrl: "",
     });
-    alert("New member added to database successfully!");
   };
 
   const handleDeleteMember = (id: string) => {
-    if (confirm("Are you sure you want to delete this member?")) {
+    if (confirm("Remove this member from the roster?")) {
       setMembersList(membersList.filter((m) => m.id !== id));
     }
   };
 
-  const handleCreatePublication = (e: React.FormEvent) => {
+  const handleAddPub = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pubForm.titleEn || !pubForm.titleNe) return;
-    const newEntry: Publication = {
-      id: `pub-${Date.now()}`,
-      titleEn: pubForm.titleEn,
-      titleNe: pubForm.titleNe,
-      categoryEn: pubForm.categoryEn,
-      categoryNe: pubForm.categoryNe,
-      publishedYearEn: pubForm.publishedYearEn,
-      publishedYearNe: pubForm.publishedYearNe,
-      fileSize: pubForm.fileSize,
-      pages: Number(pubForm.pages) || 24,
-      pdfUrl: pubForm.pdfUrl,
-      coverImageUrl: pubForm.coverImageUrl,
-      descriptionEn: pubForm.descriptionEn || "Official published document of the organization.",
-      descriptionNe: pubForm.descriptionNe || "संस्थाको आधिकारिक प्रकाशित दस्तावेज।",
+    if (!pubForm.titleEn || !pubForm.titleNe) {
+      alert("Please enter document title.");
+      return;
+    }
+    const newPub: Publication = {
+      id: `p-${Date.now()}`,
+      ...pubForm,
     };
-    setPubList([newEntry, ...pubList]);
-    setPubForm({
-      titleEn: "",
-      titleNe: "",
-      categoryEn: "Annual Souvenir",
-      categoryNe: "वार्षिक स्मारिका",
-      publishedYearEn: "2081 BS",
-      publishedYearNe: "२०८१",
-      fileSize: "4.2 MB",
-      pages: 48,
-      pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
-      coverImageUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
-      descriptionEn: "",
-      descriptionNe: "",
-    });
-    alert("New publication recorded successfully!");
+    setPubList([newPub, ...pubList]);
+    setShowAddPubModal(false);
   };
 
-  const handleDeletePublication = (id: string) => {
-    if (confirm("Delete this publication document?")) {
+  const handleDeletePub = (id: string) => {
+    if (confirm("Delete this publication?")) {
       setPubList(pubList.filter((p) => p.id !== id));
     }
   };
 
-  const handleCreateEvent = (e: React.FormEvent) => {
+  const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eventForm.titleEn || !eventForm.titleNe) return;
-    const newEntry: EventItem = {
+    if (!eventForm.titleEn || !eventForm.titleNe) {
+      alert("Please enter event title.");
+      return;
+    }
+    const newEv: EventItem = {
       id: `e-${Date.now()}`,
-      titleEn: eventForm.titleEn,
-      titleNe: eventForm.titleNe,
-      dateEn: eventForm.dateEn || "Upcoming",
-      dateNe: eventForm.dateNe || "चाँडै",
-      timeEn: eventForm.timeEn,
-      timeNe: eventForm.timeNe,
-      locationEn: eventForm.locationEn || "Kathmandu",
-      locationNe: eventForm.locationNe || "काठमाडौँ",
-      descriptionEn: eventForm.descriptionEn,
-      descriptionNe: eventForm.descriptionNe,
-      categoryEn: eventForm.categoryEn,
-      categoryNe: eventForm.categoryNe,
-      status: eventForm.status,
-      imageUrl: eventForm.imageUrl,
+      ...eventForm,
     };
-    setEventsList([newEntry, ...eventsList]);
-    setEventForm({
-      titleEn: "",
-      titleNe: "",
-      dateEn: "",
-      dateNe: "",
-      timeEn: "11:00 AM",
-      timeNe: "बिहान ११:००",
-      locationEn: "",
-      locationNe: "",
-      descriptionEn: "",
-      descriptionNe: "",
-      categoryEn: "Community Program",
-      categoryNe: "सामुदायिक कार्यक्रम",
-      status: "upcoming",
-      imageUrl: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80",
-    });
-    alert("Event scheduled successfully!");
+    setEventsList([newEv, ...eventsList]);
+    setShowAddEventModal(false);
   };
 
   const handleDeleteEvent = (id: string) => {
@@ -306,842 +306,1100 @@ export default function AdminPage() {
     }
   };
 
-  const handleCreateGallery = (e: React.FormEvent) => {
+  const handleAddGallery = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!galleryForm.titleEn || !galleryForm.titleNe) return;
-    const newEntry: GalleryItem = {
+    if (!galleryForm.titleEn || !galleryForm.titleNe) {
+      alert("Please enter image title.");
+      return;
+    }
+    const newG: GalleryItem = {
       id: `g-${Date.now()}`,
-      titleEn: galleryForm.titleEn,
-      titleNe: galleryForm.titleNe,
-      categoryEn: galleryForm.categoryEn,
-      categoryNe: galleryForm.categoryNe,
-      imageUrl: galleryForm.imageUrl,
-      dateEn: galleryForm.dateEn,
-      dateNe: galleryForm.dateNe,
+      ...galleryForm,
     };
-    setGalleryList([newEntry, ...galleryList]);
-    setGalleryForm({
-      titleEn: "",
-      titleNe: "",
-      categoryEn: "Development",
-      categoryNe: "विकास निर्माण",
-      imageUrl: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80",
-      dateEn: "August 2026",
-      dateNe: "भाद्र २०८१",
-    });
-    alert("Photo added to gallery successfully!");
+    setGalleryList([newG, ...galleryList]);
+    setShowAddGalleryModal(false);
   };
 
   const handleDeleteGallery = (id: string) => {
-    if (confirm("Delete this photo from gallery?")) {
+    if (confirm("Delete this image?")) {
       setGalleryList(galleryList.filter((g) => g.id !== id));
     }
   };
 
-  const isDark = theme === "dark";
+  const handleDeleteInquiry = (id: string) => {
+    setInquiriesList(inquiriesList.filter((inq) => inq.id !== id));
+  };
 
-  // LOGIN SCREEN IF NOT AUTHENTICATED
+  const filteredAdminMembers = membersList.filter((m) => {
+    const matchesCategory = memberFilterCategory === "all" ? true : m.committeeType === memberFilterCategory;
+    const term = memberSearchQuery.toLowerCase();
+    const matchesSearch =
+      m.nameEn.toLowerCase().includes(term) ||
+      m.nameNe.includes(memberSearchQuery) ||
+      m.roleEn.toLowerCase().includes(term) ||
+      m.roleNe.includes(memberSearchQuery);
+    return matchesCategory && matchesSearch;
+  });
+
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case "overview":
+        return "Overview";
+      case "hero":
+        return "Hero Banner";
+      case "members":
+        return "Committee Roster";
+      case "publications":
+        return "Publications Archive";
+      case "events":
+        return "Events Schedule";
+      case "gallery":
+        return "Photo Gallery";
+      case "inquiries":
+        return "Public Inquiries";
+      case "settings":
+        return "Liaison Settings";
+      default:
+        return "Dashboard";
+    }
+  };
+
+  // -------------------------------------------------------------
+  // 1. AUTHENTICATION VIEW (When logged out)
+  // -------------------------------------------------------------
   if (!session?.isAuthenticated) {
     return (
-      <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full rounded-2xl border border-slate-800 bg-slate-900/90 backdrop-blur-md p-8 shadow-2xl space-y-6">
-          <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-700 via-red-800 to-slate-900 border border-red-500/30 flex items-center justify-center text-white mx-auto shadow-lg shadow-red-950/50">
-              <LockKey size={30} weight="duotone" />
+      <div className="min-h-screen bg-ground text-fg font-sans flex flex-col justify-between selection:bg-accent selection:text-on-accent">
+        <header className="border-b border-line bg-surface px-6 py-3.5 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-control bg-accent text-on-accent flex items-center justify-center font-bold">
+              <Buildings size={18} />
             </div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              Thorga Manch Administrative Portal
-            </h1>
-            <p className="text-xs text-slate-400">
-              Enter authorized administrator credentials to manage website data and publications.
-            </p>
-          </div>
-
-          {loginError && (
-            <div className="p-3 rounded-xl bg-red-950/60 border border-red-800/80 text-xs text-red-300">
-              Invalid username or password. Please use authorized credentials.
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Admin Username</label>
-              <input
-                required
-                type="text"
-                value={loginUser}
-                onChange={(e) => setLoginUser(e.target.value)}
-                placeholder="admin"
-                className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-red-500 font-mono"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300">Admin Password</label>
-              <input
-                required
-                type="password"
-                value={loginPass}
-                onChange={(e) => setLoginPass(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-red-500 font-mono"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 rounded-xl bg-red-700 hover:bg-red-800 active:scale-[0.98] text-white text-xs font-semibold shadow-lg shadow-red-950/40 transition-all flex items-center justify-center gap-2"
-            >
-              <SlidersHorizontal size={16} />
-              Authenticate & Enter Portal
-            </button>
-          </form>
-
-          <div className="pt-4 border-t border-slate-800 text-center space-y-2">
-            <div className="p-3 rounded-lg bg-slate-950 border border-slate-800/80 text-[11px] text-slate-400 font-mono text-left space-y-1">
-              <div className="text-slate-300 font-bold">Default System Credentials:</div>
-              <div>Username: <span className="text-emerald-400">{DEFAULT_ADMIN_CONFIG.username}</span></div>
-              <div>Password: <span className="text-emerald-400">{DEFAULT_ADMIN_CONFIG.password}</span></div>
-            </div>
-            <Link
-              href="/"
-              className="inline-block text-xs text-slate-400 hover:text-white transition-colors"
-            >
-              Return to Public Website
-            </Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  // AUTHENTICATED DASHBOARD INTERFACE
-  return (
-    <div
-      className={`min-h-screen font-sans antialiased transition-colors ${
-        isDark ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
-      }`}
-    >
-      {/* Top Admin Navigation Header */}
-      <header
-        className={`sticky top-0 z-30 border-b backdrop-blur-md px-6 py-3.5 flex items-center justify-between ${
-          isDark ? "bg-slate-900/95 border-slate-800" : "bg-white/95 border-slate-200"
-        }`}
-      >
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-red-700 flex items-center justify-center text-white font-bold">
-              <Buildings size={20} />
-            </div>
-            <div>
-              <div className={`text-sm font-bold leading-none ${isDark ? "text-white" : "text-slate-900"}`}>
-                Thorga Kathmandu Admin Console
-              </div>
-              <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>Supabase Live Sync Active</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-              isDark
-                ? "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200"
-                : "bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700"
-            }`}
-          >
-            <ArrowSquareOut size={14} />
-            <span>View Public Site</span>
+            <div className="text-xs font-bold text-fg">थोर्गा काठमाडौं सम्पर्क मञ्च</div>
           </Link>
 
-          <button
-            type="button"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-            className={`p-2 rounded-lg border transition-colors ${
-              isDark
-                ? "bg-slate-800 border-slate-700 text-amber-400"
-                : "bg-slate-100 border-slate-300 text-slate-700"
-            }`}
-          >
-            {isDark ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="px-3 py-1.5 rounded-lg bg-red-700/20 hover:bg-red-700/30 border border-red-700/40 text-xs font-semibold text-red-400 flex items-center gap-1.5 transition-colors"
-          >
-            <SignOut size={14} />
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Main Admin Content Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Sidebar Menu */}
-          <aside className="lg:col-span-3 space-y-2">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setActiveTab("overview")}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
-                activeTab === "overview"
-                  ? "bg-red-700 text-white shadow-md"
-                  : isDark
-                  ? "bg-slate-900 text-slate-300 hover:bg-slate-800"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
-              }`}
+              onClick={toggleTheme}
+              className="p-2 rounded-control border border-line bg-surface text-fg hover:bg-tint transition-colors"
+              aria-label="Toggle Theme"
             >
-              <span className="flex items-center gap-2">
-                <SlidersHorizontal size={16} />
-                Dashboard Overview
-              </span>
+              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
             </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("members")}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
-                activeTab === "members"
-                  ? "bg-red-700 text-white shadow-md"
-                  : isDark
-                  ? "bg-slate-900 text-slate-300 hover:bg-slate-800"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
-              }`}
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control text-xs font-medium border border-line bg-surface hover:bg-tint text-fg transition-colors"
             >
-              <span className="flex items-center gap-2">
-                <Users size={16} />
-                Executive Members (Bilingual)
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                {membersList.length}
-              </span>
-            </button>
+              <House size={14} />
+              <span>Public Portal</span>
+            </Link>
+          </div>
+        </header>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("publications")}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
-                activeTab === "publications"
-                  ? "bg-red-700 text-white shadow-md"
-                  : isDark
-                  ? "bg-slate-900 text-slate-300 hover:bg-slate-800"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <BookOpen size={16} />
-                Publications & PDF Archive
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                {pubList.length}
-              </span>
-            </button>
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="max-w-sm w-full rounded-card border border-line bg-surface p-7 space-y-6 shadow-sm">
+            <div className="space-y-1.5 text-center">
+              <div className="w-10 h-10 rounded-control bg-accent-soft text-accent mx-auto flex items-center justify-center">
+                <LockKey size={22} />
+              </div>
+              <h1 className="text-xl font-bold text-fg tracking-tight">Admin Console</h1>
+              <p className="text-xs text-muted">
+                Executive committee authentication
+              </p>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("events")}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
-                activeTab === "events"
-                  ? "bg-red-700 text-white shadow-md"
-                  : isDark
-                  ? "bg-slate-900 text-slate-300 hover:bg-slate-800"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <Calendar size={16} />
-                Scheduled Events
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                {eventsList.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("gallery")}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
-                activeTab === "gallery"
-                  ? "bg-red-700 text-white shadow-md"
-                  : isDark
-                  ? "bg-slate-900 text-slate-300 hover:bg-slate-800"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <ImageIcon size={16} />
-                Photo Gallery
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                {galleryList.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("inquiries")}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
-                activeTab === "inquiries"
-                  ? "bg-red-700 text-white shadow-md"
-                  : isDark
-                  ? "bg-slate-900 text-slate-300 hover:bg-slate-800"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <EnvelopeSimple size={16} />
-                Contact Inquiries
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-700 text-white font-mono">
-                {inquiriesList.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("settings")}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between transition-all ${
-                activeTab === "settings"
-                  ? "bg-red-700 text-white shadow-md"
-                  : isDark
-                  ? "bg-slate-900 text-slate-300 hover:bg-slate-800"
-                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <Database size={16} />
-                Liaison & Office Settings
-              </span>
-            </button>
-          </aside>
-
-          {/* Main Work Area */}
-          <main className="lg:col-span-9 space-y-6">
-            {/* 1. OVERVIEW TAB */}
-            {activeTab === "overview" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight">System Status and Quick Overview</h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Manage executive committee rosters, upload PDF publications, schedule village health camps, and view public inquiries.
-                  </p>
-                </div>
-
-                {/* Metric Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div
-                    className={`p-5 rounded-2xl border ${
-                      isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                      <span>Total Members</span>
-                      <Users size={18} className="text-red-500" />
-                    </div>
-                    <div className="text-2xl font-bold mt-2">{membersList.length}</div>
-                    <div className="text-[11px] text-emerald-500 font-medium mt-1">Active Roster</div>
-                  </div>
-
-                  <div
-                    className={`p-5 rounded-2xl border ${
-                      isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                      <span>Publications</span>
-                      <BookOpen size={18} className="text-blue-500" />
-                    </div>
-                    <div className="text-2xl font-bold mt-2">{pubList.length}</div>
-                    <div className="text-[11px] text-slate-400 font-medium mt-1">PDF Reports & Souvenirs</div>
-                  </div>
-
-                  <div
-                    className={`p-5 rounded-2xl border ${
-                      isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                      <span>Events Scheduled</span>
-                      <Calendar size={18} className="text-emerald-500" />
-                    </div>
-                    <div className="text-2xl font-bold mt-2">{eventsList.length}</div>
-                    <div className="text-[11px] text-slate-400 font-medium mt-1">Gatherings & Health Camps</div>
-                  </div>
-
-                  <div
-                    className={`p-5 rounded-2xl border ${
-                      isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-                      <span>Inquiries</span>
-                      <EnvelopeSimple size={18} className="text-amber-500" />
-                    </div>
-                    <div className="text-2xl font-bold mt-2">{inquiriesList.length}</div>
-                    <div className="text-[11px] text-amber-500 font-medium mt-1">Pending Responses</div>
-                  </div>
-                </div>
-
-                {/* Database Schema Status Box */}
-                <div
-                  className={`p-6 rounded-2xl border space-y-3 ${
-                    isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold flex items-center gap-2">
-                      <Database size={18} className="text-red-500" />
-                      Supabase SQL Schema Migration
-                    </h3>
-                    <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/50">
-                      Generated at supabase/schema.sql
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Tables for <code className="text-red-400 bg-slate-950 px-1 py-0.5 rounded">members</code>,{" "}
-                    <code className="text-red-400 bg-slate-950 px-1 py-0.5 rounded">publications</code>,{" "}
-                    <code className="text-red-400 bg-slate-950 px-1 py-0.5 rounded">events</code>,{" "}
-                    <code className="text-red-400 bg-slate-950 px-1 py-0.5 rounded">gallery</code>, and{" "}
-                    <code className="text-red-400 bg-slate-950 px-1 py-0.5 rounded">inquiries</code> are configured with Row Level Security (RLS) policies.
-                  </p>
-                </div>
+            {loginError && (
+              <div className="p-3 rounded-control border border-red-500/30 bg-red-500/10 text-red-500 text-xs text-center font-medium">
+                Invalid credentials. Verify username and password.
               </div>
             )}
 
-            {/* 2. MEMBERS TAB (DUAL LANGUAGE) */}
-            {activeTab === "members" && (
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-bold tracking-tight">Executive Members Roster</h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Manage names and designations in both English and Nepali.
-                    </p>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-fg">Username</label>
+                <input
+                  required
+                  type="text"
+                  value={loginUser}
+                  onChange={(e) => setLoginUser(e.target.value)}
+                  placeholder="admin"
+                  className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-fg">Password</label>
+                <input
+                  required
+                  type="password"
+                  value={loginPass}
+                  onChange={(e) => setLoginPass(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-all"
+              >
+                Sign In
+              </button>
+            </form>
+
+            <div className="p-3 rounded-control border border-line bg-ground text-[11px] space-y-0.5 text-muted">
+              <div>Default user: <span className="font-mono text-fg font-medium">{DEFAULT_ADMIN_CONFIG.username}</span></div>
+              <div>Default pass: <span className="font-mono text-fg font-medium">{DEFAULT_ADMIN_CONFIG.password}</span></div>
+            </div>
+          </div>
+        </main>
+
+        <footer className="border-t border-line bg-surface py-3 text-center text-xs text-muted">
+          Thorga Kathmandu Forum Admin Panel
+        </footer>
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // 2. FULL-HEIGHT SIDEBAR + CENTERED WORKSPACE
+  // -------------------------------------------------------------
+  return (
+    <div className="h-screen w-screen flex overflow-hidden bg-ground text-fg font-sans selection:bg-accent selection:text-on-accent">
+      {/* Mobile Backdrop */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+        />
+      )}
+
+      {/* LEFT SIDEBAR */}
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-surface border-r border-line flex flex-col justify-between transition-transform duration-200 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        } flex-shrink-0`}
+      >
+        {/* Brand Header */}
+        <div className="p-4 border-b border-line flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-control bg-accent text-on-accent flex items-center justify-center flex-shrink-0">
+              <Buildings size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-fg truncate">थोर्गा काठमाडौं मञ्च</div>
+              <div className="text-[10px] text-muted">Admin Panel</div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-1 rounded-control text-muted hover:text-fg"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Sidebar Nav */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-1">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("overview");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center gap-2.5 transition-colors ${
+              activeTab === "overview"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <SlidersHorizontal size={16} />
+            <span>Overview</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("hero");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+              activeTab === "hero"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <span className="flex items-center gap-2.5">
+              <Sparkle size={16} />
+              <span>Hero Banner</span>
+            </span>
+            <span className="text-[10px] opacity-75">Live</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("members");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+              activeTab === "members"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <span className="flex items-center gap-2.5">
+              <Users size={16} />
+              <span>Committee</span>
+            </span>
+            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
+              activeTab === "members" ? "bg-black/20 text-white" : "bg-tint text-muted"
+            }`}>
+              {membersList.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("publications");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+              activeTab === "publications"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <span className="flex items-center gap-2.5">
+              <BookOpen size={16} />
+              <span>Publications</span>
+            </span>
+            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
+              activeTab === "publications" ? "bg-black/20 text-white" : "bg-tint text-muted"
+            }`}>
+              {pubList.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("events");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+              activeTab === "events"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <span className="flex items-center gap-2.5">
+              <Calendar size={16} />
+              <span>Events</span>
+            </span>
+            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
+              activeTab === "events" ? "bg-black/20 text-white" : "bg-tint text-muted"
+            }`}>
+              {eventsList.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("gallery");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+              activeTab === "gallery"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <span className="flex items-center gap-2.5">
+              <ImageIcon size={16} />
+              <span>Gallery</span>
+            </span>
+            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
+              activeTab === "gallery" ? "bg-black/20 text-white" : "bg-tint text-muted"
+            }`}>
+              {galleryList.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("inquiries");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+              activeTab === "inquiries"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <span className="flex items-center gap-2.5">
+              <EnvelopeSimple size={16} />
+              <span>Inquiries</span>
+            </span>
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-chip bg-red-700 text-white font-semibold">
+              {inquiriesList.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("settings");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center gap-2.5 transition-colors ${
+              activeTab === "settings"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <Database size={16} />
+            <span>Liaison Settings</span>
+          </button>
+        </div>
+
+        {/* Pinned User Bar */}
+        <div className="p-3 border-t border-line bg-surface flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-full bg-accent-soft text-accent font-bold text-xs flex items-center justify-center flex-shrink-0">
+              A
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-fg truncate">{session.username}</div>
+              <div className="text-[10px] text-muted">Admin</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-1.5 rounded-control border border-line bg-surface text-fg hover:bg-tint transition-colors"
+              aria-label="Toggle Theme"
+            >
+              {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="p-1.5 rounded-control text-red-500 hover:bg-red-500/10 transition-colors"
+              aria-label="Sign Out"
+            >
+              <SignOut size={14} />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* RIGHT MAIN WORKSPACE */}
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+        {/* Top Bar */}
+        <header className="h-14 border-b border-line bg-surface px-6 flex items-center justify-between flex-shrink-0 z-10">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-1.5 rounded-control border border-line bg-surface text-fg"
+            >
+              <List size={16} />
+            </button>
+            <h1 className="text-sm font-bold text-fg">{getPageTitle()}</h1>
+          </div>
+
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control text-xs font-medium border border-line bg-surface hover:bg-tint text-fg transition-colors"
+          >
+            <ArrowSquareOut size={14} />
+            <span>Public Portal</span>
+          </Link>
+        </header>
+
+        {/* Middle Content */}
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+          {/* 1. OVERVIEW */}
+          {activeTab === "overview" && (
+            <div className="space-y-6">
+              {/* Stat Metrics Row */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 rounded-card border border-line bg-surface space-y-1">
+                  <div className="text-xs text-muted flex items-center justify-between">
+                    <span>Members</span>
+                    <Users size={16} className="text-accent" />
                   </div>
-                  <div className="relative">
-                    <MagnifyingGlass size={14} className="absolute left-3 top-3 text-slate-500" />
+                  <div className="text-2xl font-bold font-mono text-fg">{membersList.length}</div>
+                </div>
+
+                <div className="p-4 rounded-card border border-line bg-surface space-y-1">
+                  <div className="text-xs text-muted flex items-center justify-between">
+                    <span>Publications</span>
+                    <BookOpen size={16} className="text-accent" />
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-fg">{pubList.length}</div>
+                </div>
+
+                <div className="p-4 rounded-card border border-line bg-surface space-y-1">
+                  <div className="text-xs text-muted flex items-center justify-between">
+                    <span>Events</span>
+                    <Calendar size={16} className="text-accent" />
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-fg">{eventsList.length}</div>
+                </div>
+
+                <div className="p-4 rounded-card border border-line bg-surface space-y-1">
+                  <div className="text-xs text-muted flex items-center justify-between">
+                    <span>Inquiries</span>
+                    <EnvelopeSimple size={16} className="text-red-500" />
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-fg">{inquiriesList.length}</div>
+                </div>
+              </div>
+
+              {/* Action Triggers */}
+              <div className="p-6 rounded-card border border-line bg-surface space-y-4">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-muted">Quick Actions</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("hero")}
+                    className="p-4 rounded-control border border-line bg-ground hover:border-accent text-left transition-colors space-y-1"
+                  >
+                    <div className="text-xs font-bold text-fg">Update Hero Banner</div>
+                    <div className="text-[11px] text-muted">Headline, text, photo</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("members");
+                      setShowAddMemberModal(true);
+                    }}
+                    className="p-4 rounded-control border border-line bg-ground hover:border-accent text-left transition-colors space-y-1"
+                  >
+                    <div className="text-xs font-bold text-fg">Add Committee Member</div>
+                    <div className="text-[11px] text-muted">Bilingual profile setup</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("publications");
+                      setShowAddPubModal(true);
+                    }}
+                    className="p-4 rounded-control border border-line bg-ground hover:border-accent text-left transition-colors space-y-1"
+                  >
+                    <div className="text-xs font-bold text-fg">Upload Publication</div>
+                    <div className="text-[11px] text-muted">PDF souvenirs and reports</div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 2. HERO BANNER MANAGER */}
+          {activeTab === "hero" && (
+            <form onSubmit={handleSaveHero} className="space-y-6">
+              <div className="p-6 rounded-card border border-line bg-surface space-y-5">
+                <div className="text-sm font-bold text-fg flex items-center gap-2">
+                  <Globe size={18} className="text-accent" />
+                  <span>Headlines and Descriptions</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Top Ribbon Tag (Nepali)</label>
                     <input
+                      required
                       type="text"
-                      placeholder="Search member..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className={`pl-9 pr-4 py-2 rounded-xl text-xs border focus:outline-none focus:border-red-500 ${
-                        isDark ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-slate-300 text-slate-900"
-                      }`}
+                      value={heroState.badgeNe}
+                      onChange={(e) => setHeroState({ ...heroState, badgeNe: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Top Ribbon Tag (English)</label>
+                    <input
+                      required
+                      type="text"
+                      value={heroState.badgeEn}
+                      onChange={(e) => setHeroState({ ...heroState, badgeEn: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                     />
                   </div>
                 </div>
 
-                {/* Create Member Form */}
-                <form
-                  onSubmit={handleCreateMember}
-                  className={`p-6 rounded-2xl border space-y-4 ${
-                    isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                  }`}
-                >
-                  <div className="text-sm font-bold flex items-center gap-2">
-                    <Plus size={16} className="text-red-500" />
-                    Add New Member (Dual Language Input)
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Main Headline (Nepali)</label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={heroState.titleNe}
+                      onChange={(e) => setHeroState({ ...heroState, titleNe: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Main Headline (English)</label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={heroState.titleEn}
+                      onChange={(e) => setHeroState({ ...heroState, titleEn: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Subtitle Paragraph (Nepali)</label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={heroState.descriptionNe}
+                      onChange={(e) => setHeroState({ ...heroState, descriptionNe: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Subtitle Paragraph (English)</label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={heroState.descriptionEn}
+                      onChange={(e) => setHeroState({ ...heroState, descriptionEn: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Image and Frame */}
+              <div className="p-6 rounded-card border border-line bg-surface space-y-5">
+                <div className="text-sm font-bold text-fg flex items-center gap-2">
+                  <ImageIcon size={18} className="text-accent" />
+                  <span>Landscape Visual Frame</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-fg">Image URL</label>
+                  <input
+                    required
+                    type="url"
+                    value={heroState.imageUrl}
+                    onChange={(e) => setHeroState({ ...heroState, imageUrl: e.target.value })}
+                    className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Image Badge (Nepali)</label>
+                    <input
+                      type="text"
+                      value={heroState.imageBadgeNe}
+                      onChange={(e) => setHeroState({ ...heroState, imageBadgeNe: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Image Badge (English)</label>
+                    <input
+                      type="text"
+                      value={heroState.imageBadgeEn}
+                      onChange={(e) => setHeroState({ ...heroState, imageBadgeEn: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Caption Title (Nepali)</label>
+                    <input
+                      type="text"
+                      value={heroState.imageCaptionNe}
+                      onChange={(e) => setHeroState({ ...heroState, imageCaptionNe: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Caption Title (English)</label>
+                    <input
+                      type="text"
+                      value={heroState.imageCaptionEn}
+                      onChange={(e) => setHeroState({ ...heroState, imageCaptionEn: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Office Subtitle (Nepali)</label>
+                    <input
+                      type="text"
+                      value={heroState.imageSubtitleNe}
+                      onChange={(e) => setHeroState({ ...heroState, imageSubtitleNe: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Office Subtitle (English)</label>
+                    <input
+                      type="text"
+                      value={heroState.imageSubtitleEn}
+                      onChange={(e) => setHeroState({ ...heroState, imageSubtitleEn: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* 3. COMMITTEE ROSTER */}
+          {activeTab === "members" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-fg">Committee Directory</h2>
+                  <p className="text-xs text-muted">Manage executive members, advisors, and past officers.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddMemberModal(!showAddMemberModal)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                >
+                  <Plus size={14} />
+                  <span>{showAddMemberModal ? "Close" : "Add Member"}</span>
+                </button>
+              </div>
+
+              {showAddMemberModal && (
+                <form onSubmit={handleAddMember} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">New Member Form</div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Name in English *</label>
+                      <label className="text-xs font-semibold text-fg">Full Name (English) *</label>
                       <input
                         required
                         type="text"
                         value={memberForm.nameEn}
                         onChange={(e) => setMemberForm({ ...memberForm, nameEn: e.target.value })}
-                        placeholder="e.g. Ramesh Gyawali"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="Dr. Ram Chandra Gyawali"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">नाम (नेपालीमा) *</label>
+                      <label className="text-xs font-semibold text-fg">पूरा नाम (नेपाली) *</label>
                       <input
                         required
                         type="text"
                         value={memberForm.nameNe}
                         onChange={(e) => setMemberForm({ ...memberForm, nameNe: e.target.value })}
-                        placeholder="जस्तै: रमेश ज्ञवाली"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="डा. रामचन्द्र ज्ञवाली"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">Role (English) *</label>
+                      <input
+                        required
+                        type="text"
+                        value={memberForm.roleEn}
+                        onChange={(e) => setMemberForm({ ...memberForm, roleEn: e.target.value })}
+                        placeholder="President"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">पद (नेपाली) *</label>
+                      <input
+                        required
+                        type="text"
+                        value={memberForm.roleNe}
+                        onChange={(e) => setMemberForm({ ...memberForm, roleNe: e.target.value })}
+                        placeholder="अध्यक्ष"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Designation (English)</label>
-                      <input
-                        type="text"
-                        value={memberForm.roleEn}
-                        onChange={(e) => setMemberForm({ ...memberForm, roleEn: e.target.value })}
-                        placeholder="Joint Secretary"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">पद (नेपालीमा)</label>
-                      <input
-                        type="text"
-                        value={memberForm.roleNe}
-                        onChange={(e) => setMemberForm({ ...memberForm, roleNe: e.target.value })}
-                        placeholder="सह-सचिव"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Committee Role Category</label>
+                      <label className="text-xs font-semibold text-fg">Category</label>
                       <select
                         value={memberForm.committeeType}
                         onChange={(e) =>
                           setMemberForm({
                             ...memberForm,
-                            committeeType: e.target.value as "current" | "past" | "advisor",
+                            committeeType: e.target.value as "current" | "advisor" | "past",
                           })
                         }
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       >
-                        <option value="current">Current Executive</option>
-                        <option value="advisor">Advisor Council</option>
-                        <option value="past">Past President / Executive</option>
+                        <option value="current">Current Executive (२०८१-२०८४)</option>
+                        <option value="advisor">Advisors (सल्लाहकार)</option>
+                        <option value="past">Past Leaders (पूर्व नेतृत्व)</option>
                       </select>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Contact Phone</label>
+                      <label className="text-xs font-semibold text-fg">Phone</label>
                       <input
                         type="text"
                         value={memberForm.phone}
                         onChange={(e) => setMemberForm({ ...memberForm, phone: e.target.value })}
                         placeholder="+977 98..."
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Photo URL</label>
+                      <label className="text-xs font-semibold text-fg">Photo URL</label>
                       <input
                         type="url"
                         value={memberForm.photoUrl}
                         onChange={(e) => setMemberForm({ ...memberForm, photoUrl: e.target.value })}
-                        placeholder="https://images.unsplash.com/..."
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="https://..."
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-semibold flex items-center gap-2 transition-colors"
+                    className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
                   >
-                    <Plus size={16} /> Save Member Record
+                    Save Member
                   </button>
                 </form>
+              )}
 
-                {/* Members List Table */}
-                <div
-                  className={`rounded-2xl border overflow-hidden ${
-                    isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                  }`}
-                >
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left">
-                      <thead className={`border-b ${isDark ? "bg-slate-950 border-slate-800 text-slate-400" : "bg-slate-100 border-slate-200 text-slate-600"}`}>
-                        <tr>
-                          <th className="p-4">Member Name</th>
-                          <th className="p-4">Nepali Name</th>
-                          <th className="p-4">Designation</th>
-                          <th className="p-4">Category</th>
-                          <th className="p-4">Contact</th>
-                          <th className="p-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800">
-                        {membersList
-                          .filter((m) =>
-                            m.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            m.nameNe.includes(searchQuery)
-                          )
-                          .map((member) => (
-                            <tr key={member.id} className="hover:bg-slate-800/40 transition-colors">
-                              <td className="p-4 font-bold flex items-center gap-3">
-                                <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-slate-800">
-                                  <Image src={member.photoUrl} alt={member.nameEn} fill sizes="32px" className="object-cover" />
-                                </div>
-                                <span>{member.nameEn}</span>
-                              </td>
-                              <td className="p-4">{member.nameNe}</td>
-                              <td className="p-4">
-                                <div>{member.roleEn}</div>
-                                <div className="text-[10px] text-red-400">{member.roleNe}</div>
-                              </td>
-                              <td className="p-4">
-                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">
-                                  {member.committeeType}
-                                </span>
-                              </td>
-                              <td className="p-4 font-mono">{member.phone || "N/A"}</td>
-                              <td className="p-4 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteMember(member.id)}
-                                  className="p-1.5 rounded-lg hover:bg-red-950/60 text-red-400 transition-colors"
-                                  title="Delete Member"
-                                >
-                                  <Trash size={16} />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
+              {/* Filter and Search */}
+              <div className="p-4 rounded-card border border-line bg-surface space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setMemberFilterCategory("all")}
+                      className={`px-3 py-1.5 rounded-control text-xs font-medium transition-colors ${
+                        memberFilterCategory === "all"
+                          ? "bg-accent text-on-accent"
+                          : "bg-ground border border-line text-fg hover:bg-tint"
+                      }`}
+                    >
+                      All ({membersList.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMemberFilterCategory("current")}
+                      className={`px-3 py-1.5 rounded-control text-xs font-medium transition-colors ${
+                        memberFilterCategory === "current"
+                          ? "bg-accent text-on-accent"
+                          : "bg-ground border border-line text-fg hover:bg-tint"
+                      }`}
+                    >
+                      Current ({membersList.filter((m) => m.committeeType === "current").length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMemberFilterCategory("advisor")}
+                      className={`px-3 py-1.5 rounded-control text-xs font-medium transition-colors ${
+                        memberFilterCategory === "advisor"
+                          ? "bg-accent text-on-accent"
+                          : "bg-ground border border-line text-fg hover:bg-tint"
+                      }`}
+                    >
+                      Advisors ({membersList.filter((m) => m.committeeType === "advisor").length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMemberFilterCategory("past")}
+                      className={`px-3 py-1.5 rounded-control text-xs font-medium transition-colors ${
+                        memberFilterCategory === "past"
+                          ? "bg-accent text-on-accent"
+                          : "bg-ground border border-line text-fg hover:bg-tint"
+                      }`}
+                    >
+                      Past ({membersList.filter((m) => m.committeeType === "past").length})
+                    </button>
                   </div>
+
+                  <div className="relative w-full sm:w-56">
+                    <MagnifyingGlass size={14} className="absolute left-2.5 top-2.5 text-muted" />
+                    <input
+                      type="text"
+                      value={memberSearchQuery}
+                      onChange={(e) => setMemberSearchQuery(e.target.value)}
+                      placeholder="Search member..."
+                      className="w-full pl-8 pr-3 py-1.5 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
+                  </div>
+                </div>
+
+                {/* Table list */}
+                <div className="divide-y divide-line">
+                  {filteredAdminMembers.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-muted">
+                      No members match the query.
+                    </div>
+                  ) : (
+                    filteredAdminMembers.map((member) => (
+                      <div key={member.id} className="py-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-control bg-accent-soft text-accent flex items-center justify-center font-bold text-xs flex-shrink-0">
+                            {member.nameEn.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-fg truncate">
+                              {member.nameNe} <span className="text-muted font-normal">({member.nameEn})</span>
+                            </div>
+                            <div className="text-[11px] text-muted flex items-center gap-2 mt-0.5">
+                              <span className="text-accent font-medium">{member.roleNe}</span>
+                              {member.phone && <span className="font-mono text-muted">{member.phone}</span>}
+                              <span className="capitalize text-muted text-[10px]">({member.committeeType})</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMember(member.id)}
+                          className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                          title="Remove Member"
+                        >
+                          <Trash size={15} />
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* 3. PUBLICATIONS TAB */}
-            {activeTab === "publications" && (
-              <div className="space-y-6">
+          {/* 4. PUBLICATIONS */}
+          {activeTab === "publications" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight">Publications & PDF Document Center</h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Upload new PDF documents and update annual souvenir archives.
-                  </p>
+                  <h2 className="text-base font-bold text-fg">Publications Archive</h2>
+                  <p className="text-xs text-muted">Annual souvenirs, bulletins, and financial reports.</p>
                 </div>
-
-                {/* Upload Form */}
-                <form
-                  onSubmit={handleCreatePublication}
-                  className={`p-6 rounded-2xl border space-y-4 ${
-                    isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                  }`}
+                <button
+                  type="button"
+                  onClick={() => setShowAddPubModal(!showAddPubModal)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
-                  <div className="text-sm font-bold flex items-center gap-2">
-                    <Upload size={16} className="text-red-500" />
-                    Record New Publication / PDF
-                  </div>
+                  <Plus size={14} />
+                  <span>{showAddPubModal ? "Close" : "Upload Document"}</span>
+                </button>
+              </div>
+
+              {showAddPubModal && (
+                <form onSubmit={handleAddPub} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">New Document Upload</div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Document Title (English) *</label>
+                      <label className="text-xs font-semibold text-fg">Title (English) *</label>
                       <input
                         required
                         type="text"
                         value={pubForm.titleEn}
                         onChange={(e) => setPubForm({ ...pubForm, titleEn: e.target.value })}
-                        placeholder="Annual Souvenir 2081"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="Thorga Souvenir 2081"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">दस्तावेज शीर्षक (नेपालीमा) *</label>
+                      <label className="text-xs font-semibold text-fg">शीर्षक (नेपाली) *</label>
                       <input
                         required
                         type="text"
                         value={pubForm.titleNe}
                         onChange={(e) => setPubForm({ ...pubForm, titleNe: e.target.value })}
-                        placeholder="वार्षिक स्मारिका २०८१"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="थोर्गा स्मारिका २०८१"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Category</label>
+                      <label className="text-xs font-semibold text-fg">Category</label>
                       <input
                         type="text"
                         value={pubForm.categoryEn}
                         onChange={(e) => setPubForm({ ...pubForm, categoryEn: e.target.value })}
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="Souvenir"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Year (BS / AD)</label>
+                      <label className="text-xs font-semibold text-fg">Page Count</label>
                       <input
-                        type="text"
-                        value={pubForm.publishedYearEn}
-                        onChange={(e) => setPubForm({ ...pubForm, publishedYearEn: e.target.value })}
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        type="number"
+                        value={pubForm.pages}
+                        onChange={(e) => setPubForm({ ...pubForm, pages: Number(e.target.value) })}
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">PDF File URL</label>
+                      <label className="text-xs font-semibold text-fg">PDF URL</label>
                       <input
                         type="url"
                         value={pubForm.pdfUrl}
                         onChange={(e) => setPubForm({ ...pubForm, pdfUrl: e.target.value })}
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="https://..."
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-semibold flex items-center gap-2 transition-colors"
+                    className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
                   >
-                    <Upload size={16} /> Upload & Save Document
+                    Publish Document
                   </button>
                 </form>
+              )}
 
-                {/* Publications Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="p-4 rounded-card border border-line bg-surface space-y-3">
+                <div className="divide-y divide-line">
                   {pubList.map((pub) => (
-                    <div
-                      key={pub.id}
-                      className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 ${
-                        isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <FileText size={24} className="text-red-500" />
-                          <div>
-                            <div className="text-xs font-bold leading-snug">{pub.titleEn}</div>
-                            <div className="text-[10px] text-red-400">{pub.titleNe}</div>
+                    <div key={pub.id} className="py-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-control bg-accent-soft text-accent flex items-center justify-center flex-shrink-0">
+                          <FileText size={18} />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-fg">
+                            {pub.titleNe} <span className="text-muted font-normal">({pub.titleEn})</span>
+                          </div>
+                          <div className="text-[11px] text-muted font-mono flex items-center gap-2 mt-0.5">
+                            <span className="text-accent">{pub.categoryEn}</span>
+                            <span>{pub.pages} Pgs</span>
+                            <span>{pub.fileSize}</span>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleDeletePublication(pub.id)}
-                          className="p-1 text-slate-500 hover:text-red-400 transition-colors"
-                          title="Delete Publication"
-                        >
-                          <Trash size={16} />
-                        </button>
                       </div>
 
-                      <div className="text-[11px] text-slate-400 flex justify-between border-t border-slate-800 pt-2 font-mono">
-                        <span>{pub.publishedYearEn}</span>
-                        <span>{pub.fileSize}</span>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePub(pub.id)}
+                        className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                        title="Delete"
+                      >
+                        <Trash size={15} />
+                      </button>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* 4. EVENTS TAB */}
-            {activeTab === "events" && (
-              <div className="space-y-6">
+          {/* 5. EVENTS */}
+          {activeTab === "events" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight">Community Events & Programs</h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Schedule AGM meetings, free health clinics, and cultural assemblies.
-                  </p>
+                  <h2 className="text-base font-bold text-fg">Events Schedule</h2>
+                  <p className="text-xs text-muted">Upcoming meetings, gatherings, and community events.</p>
                 </div>
-
-                <form
-                  onSubmit={handleCreateEvent}
-                  className={`p-6 rounded-2xl border space-y-4 ${
-                    isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                  }`}
+                <button
+                  type="button"
+                  onClick={() => setShowAddEventModal(!showAddEventModal)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
-                  <div className="text-sm font-bold flex items-center gap-2">
-                    <Calendar size={16} className="text-red-500" />
-                    Schedule New Event
-                  </div>
+                  <Plus size={14} />
+                  <span>{showAddEventModal ? "Close" : "Schedule Event"}</span>
+                </button>
+              </div>
+
+              {showAddEventModal && (
+                <form onSubmit={handleAddEvent} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">New Event Details</div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Event Title (English) *</label>
+                      <label className="text-xs font-semibold text-fg">Title (English) *</label>
                       <input
                         required
                         type="text"
                         value={eventForm.titleEn}
                         onChange={(e) => setEventForm({ ...eventForm, titleEn: e.target.value })}
-                        placeholder="Annual General Meeting"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="Annual General Assembly"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">कार्यक्रम शीर्षक (नेपालीमा) *</label>
+                      <label className="text-xs font-semibold text-fg">शीर्षक (नेपाली) *</label>
                       <input
                         required
                         type="text"
                         value={eventForm.titleNe}
                         onChange={(e) => setEventForm({ ...eventForm, titleNe: e.target.value })}
                         placeholder="वार्षिक साधारण सभा"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Date (English)</label>
-                      <input
-                        type="text"
-                        value={eventForm.dateEn}
-                        onChange={(e) => setEventForm({ ...eventForm, dateEn: e.target.value })}
-                        placeholder="September 28, 2026"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">मिति (नेपालीमा)</label>
+                      <label className="text-xs font-semibold text-fg">Date (BS)</label>
                       <input
                         type="text"
                         value={eventForm.dateNe}
                         onChange={(e) => setEventForm({ ...eventForm, dateNe: e.target.value })}
-                        placeholder="असोज १२, २०८१"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="२०८१ असोज १२"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Status</label>
+                      <label className="text-xs font-semibold text-fg">Location</label>
+                      <input
+                        type="text"
+                        value={eventForm.locationEn}
+                        onChange={(e) => setEventForm({ ...eventForm, locationEn: e.target.value })}
+                        placeholder="Kathmandu"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">Status</label>
                       <select
                         value={eventForm.status}
-                        onChange={(e) =>
-                          setEventForm({
-                            ...eventForm,
-                            status: e.target.value as "upcoming" | "completed",
-                          })
-                        }
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        onChange={(e) => setEventForm({ ...eventForm, status: e.target.value as "upcoming" | "completed" })}
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       >
                         <option value="upcoming">Upcoming</option>
                         <option value="completed">Completed</option>
@@ -1151,149 +1409,145 @@ export default function AdminPage() {
 
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-semibold flex items-center gap-2 transition-colors"
+                    className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
                   >
-                    <Plus size={16} /> Add Scheduled Event
+                    Save Event
                   </button>
                 </form>
+              )}
 
-                <div className="space-y-3">
+              <div className="p-4 rounded-card border border-line bg-surface space-y-3">
+                <div className="divide-y divide-line">
                   {eventsList.map((ev) => (
-                    <div
-                      key={ev.id}
-                      className={`p-4 rounded-xl border flex items-center justify-between gap-4 ${
-                        isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                      }`}
-                    >
-                      <div className="space-y-1">
-                        <div className="text-xs font-bold">{ev.titleEn}</div>
-                        <div className="text-[11px] text-red-400">{ev.titleNe}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">
-                          {ev.dateEn} ({ev.dateNe}) · {ev.locationEn}
+                    <div key={ev.id} className="py-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-control bg-accent-soft text-accent flex items-center justify-center flex-shrink-0">
+                          <Calendar size={18} />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-fg">
+                            {ev.titleNe} <span className="text-muted font-normal">({ev.titleEn})</span>
+                          </div>
+                          <div className="text-[11px] text-muted flex items-center gap-2 mt-0.5">
+                            <span className="font-mono text-accent">{ev.dateNe}</span>
+                            <span>{ev.locationNe}</span>
+                            <span className="capitalize text-[10px] font-semibold text-muted">({ev.status})</span>
+                          </div>
                         </div>
                       </div>
+
                       <button
                         type="button"
                         onClick={() => handleDeleteEvent(ev.id)}
-                        className="p-2 text-slate-500 hover:text-red-400 transition-colors"
+                        className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                        title="Delete"
                       >
-                        <Trash size={16} />
+                        <Trash size={15} />
                       </button>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* 5. GALLERY TAB */}
-            {activeTab === "gallery" && (
-              <div className="space-y-6">
+          {/* 6. GALLERY */}
+          {activeTab === "gallery" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight">Community Photo Gallery</h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Manage event and village development photo albums.
-                  </p>
+                  <h2 className="text-base font-bold text-fg">Photo Gallery</h2>
+                  <p className="text-xs text-muted">Community activities, education drives, and meetings.</p>
                 </div>
-
-                <form
-                  onSubmit={handleCreateGallery}
-                  className={`p-6 rounded-2xl border space-y-4 ${
-                    isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                  }`}
+                <button
+                  type="button"
+                  onClick={() => setShowAddGalleryModal(!showAddGalleryModal)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
-                  <div className="text-sm font-bold flex items-center gap-2">
-                    <ImageIcon size={16} className="text-red-500" />
-                    Add Photo to Gallery
-                  </div>
+                  <Plus size={14} />
+                  <span>{showAddGalleryModal ? "Close" : "Add Image"}</span>
+                </button>
+              </div>
+
+              {showAddGalleryModal && (
+                <form onSubmit={handleAddGallery} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">New Gallery Photo</div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Photo Title (English) *</label>
+                      <label className="text-xs font-semibold text-fg">Caption (English) *</label>
                       <input
                         required
                         type="text"
                         value={galleryForm.titleEn}
                         onChange={(e) => setGalleryForm({ ...galleryForm, titleEn: e.target.value })}
-                        placeholder="Village Scholarship Distribution"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="Scholarship Handover"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">शीर्षक (नेपालीमा) *</label>
+                      <label className="text-xs font-semibold text-fg">विवरण (नेपाली) *</label>
                       <input
                         required
                         type="text"
                         value={galleryForm.titleNe}
                         onChange={(e) => setGalleryForm({ ...galleryForm, titleNe: e.target.value })}
-                        placeholder="छात्रवृत्ति वितरण कार्यक्रम"
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        placeholder="छात्रवृत्ति वितरण"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Image URL</label>
-                      <input
-                        type="url"
-                        value={galleryForm.imageUrl}
-                        onChange={(e) => setGalleryForm({ ...galleryForm, imageUrl: e.target.value })}
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Category</label>
+                      <label className="text-xs font-semibold text-fg">Category</label>
                       <select
                         value={galleryForm.categoryEn}
                         onChange={(e) => setGalleryForm({ ...galleryForm, categoryEn: e.target.value })}
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
                       >
                         <option value="Education">Education</option>
                         <option value="Culture">Culture</option>
                         <option value="Development">Development</option>
-                        <option value="Environment">Environment</option>
                       </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">Image URL *</label>
+                      <input
+                        required
+                        type="url"
+                        value={galleryForm.imageUrl}
+                        onChange={(e) => setGalleryForm({ ...galleryForm, imageUrl: e.target.value })}
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                      />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-semibold flex items-center gap-2 transition-colors"
+                    className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
                   >
-                    <Plus size={16} /> Save to Gallery
+                    Save Photo
                   </button>
                 </form>
+              )}
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {galleryList.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`relative h-40 rounded-xl overflow-hidden border group ${
-                        isDark ? "border-slate-800 bg-slate-900" : "border-slate-300 bg-slate-200"
-                      }`}
-                    >
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.titleEn}
-                        fill
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="object-cover"
-                      />
-                      <div className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
-                        <div className="text-[10px] text-red-400 font-semibold">{item.categoryEn}</div>
-                        <div className="text-xs font-bold text-white line-clamp-2">{item.titleEn}</div>
+              <div className="p-4 rounded-card border border-line bg-surface space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {galleryList.map((g) => (
+                    <div key={g.id} className="rounded-control overflow-hidden border border-line bg-ground">
+                      <div className="relative h-36 w-full">
+                        <Image src={g.imageUrl} alt={g.titleEn} fill sizes="300px" className="object-cover" />
+                      </div>
+                      <div className="p-3 flex items-center justify-between">
+                        <div className="min-w-0 pr-2">
+                          <div className="text-xs font-bold text-fg truncate">{g.titleNe}</div>
+                          <div className="text-[10px] text-muted font-mono">{g.categoryEn}</div>
+                        </div>
                         <button
                           type="button"
-                          onClick={() => handleDeleteGallery(item.id)}
-                          className="self-end p-1 rounded bg-red-700 text-white hover:bg-red-800 text-[10px]"
+                          onClick={() => handleDeleteGallery(g.id)}
+                          className="p-1 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
                         >
                           <Trash size={14} />
                         </button>
@@ -1302,138 +1556,127 @@ export default function AdminPage() {
                   ))}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* 6. INQUIRIES TAB */}
-            {activeTab === "inquiries" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight">Public Inquiries & Membership Requests</h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Messages submitted through the public contact form.
-                  </p>
-                </div>
+          {/* 7. INQUIRIES */}
+          {activeTab === "inquiries" && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-base font-bold text-fg">Inbox Messages</h2>
+                <p className="text-xs text-muted">Public contact submissions and inquiries.</p>
+              </div>
 
-                <div className="space-y-3">
-                  {inquiriesList.map((inq) => (
+              <div className="space-y-3">
+                {inquiriesList.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-muted border border-line rounded-card bg-surface">
+                    No messages in inbox.
+                  </div>
+                ) : (
+                  inquiriesList.map((inq) => (
                     <div
                       key={inq.id}
-                      className={`p-5 rounded-2xl border space-y-2 ${
-                        isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                      }`}
+                      className="p-4 rounded-card border border-line bg-surface space-y-2.5"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="font-bold text-sm">{inq.name}</div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <div>
+                          <div className="text-xs font-bold text-fg">{inq.name}</div>
+                          <div className="text-[11px] text-muted flex items-center gap-2 mt-0.5">
+                            <a href={`tel:${inq.phone}`} className="hover:text-accent font-mono">
+                              {inq.phone}
+                            </a>
+                            <span>{inq.email}</span>
+                          </div>
+                        </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400 font-mono">{inq.date}</span>
+                          <span className="text-[10px] font-mono text-muted">{inq.date}</span>
                           <button
                             type="button"
-                            onClick={() => setInquiriesList(inquiriesList.filter((i) => i.id !== inq.id))}
-                            className="p-1 text-slate-500 hover:text-red-400 transition-colors"
-                            title="Delete Inquiry"
+                            onClick={() => handleDeleteInquiry(inq.id)}
+                            className="p-1 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                            title="Delete"
                           >
                             <Trash size={14} />
                           </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-red-400 font-mono">
-                        <span>{inq.phone}</span>
-                        <span>{inq.email}</span>
-                      </div>
-                      <p className="text-xs text-slate-300 pt-2 leading-relaxed bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                      <p className="text-xs leading-relaxed text-fg bg-ground p-3 rounded-control border border-line">
                         {inq.message}
                       </p>
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* 7. SETTINGS TAB */}
-            {activeTab === "settings" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight">Organization Secretariat & Liaison Settings</h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Update official contact phone numbers, secretariat emails, and office addresses.
-                  </p>
+          {/* 8. SETTINGS */}
+          {activeTab === "settings" && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-base font-bold text-fg">Secretariat & Liaison Settings</h2>
+                <p className="text-xs text-muted">Contact details and office physical addresses.</p>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  alert("Settings saved successfully.");
+                }}
+                className="p-6 rounded-card border border-line bg-surface space-y-4"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Phone</label>
+                    <input
+                      type="text"
+                      value={settings.contactPhone}
+                      onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Email</label>
+                    <input
+                      type="email"
+                      value={settings.contactEmail}
+                      onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
+                  </div>
                 </div>
 
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    alert("Settings updated successfully!");
-                  }}
-                  className={`p-6 rounded-2xl border space-y-4 ${
-                    isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"
-                  }`}
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Kathmandu Secretariat Address</label>
+                    <input
+                      type="text"
+                      value={settings.kathmanduAddress}
+                      onChange={(e) => setSettings({ ...settings, kathmanduAddress: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-fg">Thorga Village Center Address</label>
+                    <input
+                      type="text"
+                      value={settings.thorgaAddress}
+                      onChange={(e) => setSettings({ ...settings, thorgaAddress: e.target.value })}
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
-                  <div className="text-sm font-bold flex items-center gap-2">
-                    <Database size={16} className="text-red-500" />
-                    Liaison Secretariat Addresses & Contact Details
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Contact Phone</label>
-                      <input
-                        type="text"
-                        value={settings.contactPhone}
-                        onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Contact Email</label>
-                      <input
-                        type="email"
-                        value={settings.contactEmail}
-                        onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Kathmandu Secretariat Address</label>
-                      <input
-                        type="text"
-                        value={settings.kathmanduAddress}
-                        onChange={(e) => setSettings({ ...settings, kathmanduAddress: e.target.value })}
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Thorga Village Center Address</label>
-                      <input
-                        type="text"
-                        value={settings.thorgaAddress}
-                        onChange={(e) => setSettings({ ...settings, thorgaAddress: e.target.value })}
-                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs ${
-                          isDark ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-semibold transition-colors"
-                  >
-                    Save System Settings
-                  </button>
-                </form>
-              </div>
-            )}
-          </main>
-        </div>
+                  Save Settings
+                </button>
+              </form>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
