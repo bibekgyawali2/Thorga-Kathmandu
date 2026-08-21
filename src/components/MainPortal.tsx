@@ -240,69 +240,136 @@ export default function MainPortal() {
     <div className="min-h-[100dvh] bg-ground text-fg font-sans selection:bg-accent selection:text-on-accent">
       <SiteHeader lang={lang} setLang={setLang} />
 
-      {/* SECTION 1: HERO (Fully Dynamic from Admin Panel) */}
-      <section className="relative overflow-hidden pt-12 pb-20 border-b border-line bg-surface">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Content */}
-            <div className="lg:col-span-7 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-                <Globe size={14} />
-                <span>{lang === "ne" ? heroContent.badgeNe : heroContent.badgeEn}</span>
+      {/* SECTION 1: IMMERSIVE HERO WITH FULL BACKGROUND IMAGE */}
+      <section className="relative overflow-hidden min-h-[85vh] lg:min-h-[92vh] flex items-center border-b border-line">
+        {/* Background Image Layer */}
+        {isValidImageSrc(heroContent.imageUrl) ? (
+          <Image
+            src={heroContent.imageUrl}
+            alt={lang === "ne" ? heroContent.imageCaptionNe : heroContent.imageCaptionEn}
+            fill
+            sizes="100vw"
+            className="object-cover object-center transform scale-105 transition-transform duration-1000"
+            priority
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-950 via-slate-900 to-black" />
+        )}
+
+        {/* Layered Rich Gradient Overlays for optimal readability and depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/75 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent/20 via-transparent to-transparent pointer-events-none" />
+
+        {/* Content Container */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
+          <div className="max-w-4xl space-y-7">
+            {/* Top Pill / Badge */}
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-chip bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold shadow-inner">
+              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <Globe size={14} className="text-accent" />
+              <span className="tracking-wide">{lang === "ne" ? heroContent.badgeNe : heroContent.badgeEn}</span>
+            </div>
+
+            {/* Main Headline */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12] drop-shadow-sm">
+              {lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
+            </h1>
+
+            {/* Subtitle / Description */}
+            <p className="text-base sm:text-lg lg:text-xl max-w-[62ch] leading-relaxed text-white/85 font-normal">
+              {lang === "ne" ? heroContent.descriptionNe : heroContent.descriptionEn}
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <Link
+                href="/committee"
+                className="px-6 py-3.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-lg hover:shadow-accent/25 transition-all flex items-center gap-2"
+              >
+                <Users size={18} />
+                <span>{lang === "ne" ? "कार्यसमिति सदस्यहरू" : "Executive Committee"}</span>
+              </Link>
+              <Link
+                href="/publications"
+                className="px-6 py-3.5 rounded-control bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-xs font-bold border border-white/25 shadow-md transition-all flex items-center gap-2"
+              >
+                <BookOpen size={18} />
+                <span>{lang === "ne" ? "स्मारिका तथा प्रकाशन" : "Explore Publications"}</span>
+              </Link>
+              <a
+                href="#contact"
+                className="px-5 py-3.5 rounded-control text-white/80 hover:text-white hover:bg-white/10 text-xs font-semibold transition-all flex items-center gap-1.5"
+              >
+                <span>{lang === "ne" ? "सम्पर्क फाराम" : "Get in Touch"}</span>
+                <ArrowRight size={14} />
+              </a>
+            </div>
+
+            {/* Location & Village Caption Tag */}
+            {(heroContent.imageCaptionNe || heroContent.imageCaptionEn) && (
+              <div className="pt-2 flex flex-wrap items-center gap-3 text-xs text-white/80 font-mono">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-black/40 backdrop-blur-md border border-white/15">
+                  <MapPin size={14} className="text-accent flex-shrink-0" />
+                  <span>{lang === "ne" ? heroContent.imageCaptionNe : heroContent.imageCaptionEn}</span>
+                </div>
+                {heroContent.imageSubtitleNe && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-black/40 backdrop-blur-md border border-white/15 text-white/70">
+                    <Buildings size={14} className="text-accent flex-shrink-0" />
+                    <span>{lang === "ne" ? heroContent.imageSubtitleNe : heroContent.imageSubtitleEn}</span>
+                  </div>
+                )}
               </div>
+            )}
+          </div>
 
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-fg leading-[1.15]">
-                {lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
-              </h1>
-
-              <p className="text-base sm:text-lg max-w-[55ch] leading-relaxed text-muted">
-                {lang === "ne" ? heroContent.descriptionNe : heroContent.descriptionEn}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-4 pt-2">
-                <Link
-                  href="/committee"
-                  className="px-6 py-3 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-all flex items-center gap-2"
-                >
-                  <Users size={18} />
-                  <span>{lang === "ne" ? "कार्यसमिति सदस्यहरू" : "Executive Committee"}</span>
-                </Link>
-                <Link
-                  href="/publications"
-                  className="px-6 py-3 rounded-control bg-tint hover:bg-accent-soft text-fg text-xs font-semibold border border-line transition-all flex items-center gap-2"
-                >
-                  <BookOpen size={18} />
-                  <span>{lang === "ne" ? "स्मारिका तथा प्रकाशन" : "Explore Publications"}</span>
-                </Link>
+          {/* Floating Key Highlights Bar */}
+          <div className="mt-12 pt-8 border-t border-white/15 grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
+            <div className="p-4 rounded-control bg-black/40 backdrop-blur-md border border-white/15 space-y-1">
+              <div className="text-[11px] font-bold text-accent uppercase tracking-wider">
+                {lang === "ne" ? "संस्थागत स्थापना" : "Established"}
+              </div>
+              <div className="text-base sm:text-lg font-bold text-white">
+                {lang === "ne" ? "२०६२ साल (2005)" : "2062 BS (2005 AD)"}
+              </div>
+              <div className="text-[11px] text-white/70">
+                {lang === "ne" ? "२ दशक लामो सेवा यात्रा" : "2 Decades of Community Aid"}
               </div>
             </div>
 
-            {/* Right Visual Frame */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative rounded-card overflow-hidden border border-line bg-surface shadow-lg">
-                <div className="relative h-96 w-full">
-                  <Image
-                    src={heroContent.imageUrl}
-                    alt={lang === "ne" ? heroContent.imageCaptionNe : heroContent.imageCaptionEn}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 42vw"
-                    className="object-cover"
-                    priority
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                </div>
-                <div className="absolute bottom-0 inset-x-0 p-6 space-y-2 text-white">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-chip bg-accent text-on-accent text-xs font-semibold">
-                    <ShieldCheck size={14} />
-                    <span>{lang === "ne" ? heroContent.imageBadgeNe : heroContent.imageBadgeEn}</span>
-                  </div>
-                  <h3 className="text-lg font-bold leading-snug">
-                    {lang === "ne" ? heroContent.imageCaptionNe : heroContent.imageCaptionEn}
-                  </h3>
-                  <p className="text-xs text-white/80">
-                    {lang === "ne" ? heroContent.imageSubtitleNe : heroContent.imageSubtitleEn}
-                  </p>
-                </div>
+            <div className="p-4 rounded-control bg-black/40 backdrop-blur-md border border-white/15 space-y-1">
+              <div className="text-[11px] font-bold text-accent uppercase tracking-wider">
+                {lang === "ne" ? "गृहजिल्ला / उत्पत्ति" : "Hometown Origin"}
+              </div>
+              <div className="text-base sm:text-lg font-bold text-white">
+                {lang === "ne" ? "रुरुक्षेत्र-२, थोर्गा" : "Rurukshetra-2, Thorga"}
+              </div>
+              <div className="text-[11px] text-white/70">
+                {lang === "ne" ? "गुल्मी जिल्ला, लुम्बिनी प्रदेश" : "Gulmi, Lumbini Province"}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-control bg-black/40 backdrop-blur-md border border-white/15 space-y-1">
+              <div className="text-[11px] font-bold text-accent uppercase tracking-wider">
+                {lang === "ne" ? "काठमाडौँ सम्पर्क केन्द्र" : "Kathmandu Secretariat"}
+              </div>
+              <div className="text-base sm:text-lg font-bold text-white">
+                {lang === "ne" ? "नयाँ बानेश्वर" : "New Baneshwor"}
+              </div>
+              <div className="text-[11px] text-white/70">
+                {lang === "ne" ? "उपत्यका समन्वय सचिवालय" : "Capital Liaison Secretariat"}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-control bg-black/40 backdrop-blur-md border border-white/15 space-y-1">
+              <div className="text-[11px] font-bold text-accent uppercase tracking-wider">
+                {lang === "ne" ? "मुख्य सेवा क्षेत्र" : "Focus Areas"}
+              </div>
+              <div className="text-base sm:text-lg font-bold text-white">
+                {lang === "ne" ? "शिक्षा, स्वास्थ्य र विकास" : "Education & Welfare"}
+              </div>
+              <div className="text-[11px] text-white/70">
+                {lang === "ne" ? "छात्रवृत्ति र आपतकालीन कोष" : "Scholarships & Mutual Aid"}
               </div>
             </div>
           </div>
