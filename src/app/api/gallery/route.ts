@@ -2,10 +2,6 @@ import { NextRequest } from "next/server";
 import { createHash } from "crypto";
 import { fetchGallery } from "@/lib/supabase/data";
 
-export const runtime = "nodejs";
-// Allow Next.js to cache this route handler on the server
-export const dynamic = "force-dynamic";
-
 export async function GET(request: NextRequest) {
   try {
     const data = await fetchGallery();

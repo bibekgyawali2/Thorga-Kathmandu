@@ -1052,10 +1052,7 @@ export default function AdminPage() {
               </button>
             </form>
 
-            <div className="p-3 rounded-control border border-line bg-ground text-[11px] space-y-1 text-muted">
-              <div>Superadmin: <span className="font-mono text-fg font-medium">{SUPERADMIN_EMAIL}</span></div>
-              <div>Default pass: <span className="font-mono text-fg font-medium">{DEFAULT_ADMIN_CONFIG.password}</span></div>
-            </div>
+
           </div>
         </main>
 

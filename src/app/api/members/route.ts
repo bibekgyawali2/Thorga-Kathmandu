@@ -2,9 +2,6 @@ import { NextRequest } from "next/server";
 import { createHash } from "crypto";
 import { fetchMembers } from "@/lib/supabase/data";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
 export async function GET(request: NextRequest) {
   try {
     const data = await fetchMembers();

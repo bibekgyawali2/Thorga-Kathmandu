@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadToCloudinary, deleteFromCloudinary } from "@/lib/cloudinary";
 
-export const runtime = "nodejs";
-
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB limit
 
 const ALLOWED_MIME_TYPES = [
