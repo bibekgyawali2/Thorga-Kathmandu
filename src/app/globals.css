@@ -1,26 +1,117 @@
 @import "tailwindcss";
 
+/*
+  Thorga Kathmandu design tokens.
+
+  One accent for the whole page (Section 4.2 Color Consistency Lock).
+  One radius system (Section 4.4 Shape Consistency Lock):
+    card    16px  surfaces that group content
+    control 12px  buttons, inputs, filters
+    chip     8px  badges and small labels
+  Full-round is reserved for genuinely circular objects only: avatars and
+  the timeline node markers. Nothing rectangular takes a pill radius.
+  Theme is driven by data-theme on <html>, set before paint by the inline
+  script in layout.tsx so there is no flash and no split between the CSS
+  media query and the React toggle state.
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ground: #f3f7f3;
+  --surface: #fafcfa;
+  --tint: #e4ede5;
+  --accent: #1b5e3f;
+  --accent-hover: #164c33;
+  --accent-soft: #dcebe1;
+  --on-accent: #ffffff;
+  --fg: #12211a;
+  --muted: #47574f;
+  --line: #dae4db;
+  --shadow: 0 1px 2px rgba(18, 33, 26, 0.04), 0 8px 24px rgba(18, 33, 26, 0.06);
+}
+
+[data-theme="dark"] {
+  --ground: #0e1512;
+  --surface: #161f1a;
+  --tint: #1d2a23;
+  --accent: #5cb98b;
+  --accent-hover: #74c89d;
+  --accent-soft: #1e3a2c;
+  --on-accent: #08120d;
+  --fg: #e6efe8;
+  --muted: #9dafa4;
+  --line: #25332b;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-tint: var(--tint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --radius-chip: 8px;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: var(--ground);
+  color: var(--fg);
+}
+
+/* Devanagari sits taller than Latin at the same size, so headings need
+   more leading than a Latin-only scale would use. */
+:lang(ne) h1,
+:lang(ne) h2,
+:lang(ne) h3 {
+  line-height: 1.3;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Scroll reveal. Content is visible by default so no-JS and reduced-motion
+   visitors get the full page; the animation only exists inside the
+   no-preference query (Section 6.B). Animates transform and opacity
+   only (Section 6.A). */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal[data-visible="true"] {
+    opacity: 1;
+    transform: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Horizontal event track: hide the scrollbar chrome without disabling
+   the scroll itself or the keyboard focus path. */
+.track {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.track::-webkit-scrollbar {
+  height: 6px;
+}
+
+.track::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
 }
