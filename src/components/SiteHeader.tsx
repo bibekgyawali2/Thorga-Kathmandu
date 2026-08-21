@@ -2,8 +2,15 @@
 
 import React, { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Language, saveStoredLanguage } from "@/data/mockData";
+import {
+  Language,
+  saveStoredLanguage,
+  subscribeBranding,
+  getStoredBrandingSnapshot,
+  getServerBrandingSnapshot,
+} from "@/data/mockData";
 import {
   Buildings,
   SlidersHorizontal,
@@ -54,6 +61,7 @@ export function SiteHeader({
 }) {
   const pathname = usePathname();
   const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerThemeSnapshot);
+  const branding = useSyncExternalStore(subscribeBranding, getStoredBrandingSnapshot, getServerBrandingSnapshot);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleTheme = () => {
@@ -109,8 +117,18 @@ export function SiteHeader({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* Brand Identity */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-card bg-accent text-on-accent flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform flex-shrink-0">
-              <Buildings size={24} weight="duotone" />
+            <div className="w-11 h-11 rounded-card bg-accent text-on-accent flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform flex-shrink-0 overflow-hidden">
+              {branding.logoUrl ? (
+                <Image
+                  src={branding.logoUrl}
+                  alt="Site Logo"
+                  width={44}
+                  height={44}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Buildings size={24} weight="duotone" />
+              )}
             </div>
             <div className="text-lg sm:text-xl font-bold tracking-tight text-fg leading-tight">
               {lang === "ne" ? "थोर्गा काठमाडौं सम्पर्क तथा विकास मञ्च" : "Thorga Kathmandu Liaison Forum"}

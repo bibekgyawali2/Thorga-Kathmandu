@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Mukta, Geist, Geist_Mono } from "next/font/google";
 import { DialogProvider } from "@/components/Dialog";
 import NavigationProgressBar from "@/components/NavigationProgressBar";
+import FaviconInjector from "@/components/FaviconInjector";
 import "./globals.css";
 
 const mukta = Mukta({
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         <Suspense fallback={null}>
           <NavigationProgressBar />
+          <FaviconInjector />
         </Suspense>
         <DialogProvider>{children}</DialogProvider>
       </body>

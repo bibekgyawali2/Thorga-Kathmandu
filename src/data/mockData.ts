@@ -102,6 +102,66 @@ export const initialHeroContent: HeroContent = {
   imageSubtitleEn: "Kathmandu Liaison Office: Shankhamul Marg, New Baneshwor",
 };
 
+// ==========================================
+// BRANDING SETTINGS STORE
+// ==========================================
+export interface BrandingSettings {
+  logoUrl: string;
+  faviconUrl: string;
+}
+
+export const initialBrandingSettings: BrandingSettings = {
+  logoUrl: "",
+  faviconUrl: "",
+};
+
+const BRANDING_STORAGE_KEY = "thorga_branding_settings";
+let brandingSubscribers: Array<() => void> = [];
+let _brandingCacheRaw: string | null = undefined as unknown as string | null;
+let _brandingCache: BrandingSettings = initialBrandingSettings;
+
+export function subscribeBranding(callback: () => void) {
+  brandingSubscribers.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === BRANDING_STORAGE_KEY) {
+      _brandingCacheRaw = undefined as unknown as string | null;
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
+  return () => {
+    brandingSubscribers = brandingSubscribers.filter((s) => s !== callback);
+    if (typeof window !== "undefined") window.removeEventListener("storage", handleStorage);
+  };
+}
+
+export function getStoredBrandingSnapshot(): BrandingSettings {
+  if (typeof window === "undefined") return initialBrandingSettings;
+  try {
+    const raw = localStorage.getItem(BRANDING_STORAGE_KEY);
+    if (!raw) return initialBrandingSettings;
+    if (raw === _brandingCacheRaw) return _brandingCache;
+    _brandingCacheRaw = raw;
+    _brandingCache = JSON.parse(raw);
+    return _brandingCache;
+  } catch {
+    return initialBrandingSettings;
+  }
+}
+
+export function getServerBrandingSnapshot(): BrandingSettings {
+  return initialBrandingSettings;
+}
+
+export function saveStoredBranding(settings: BrandingSettings): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(settings));
+    _brandingCacheRaw = undefined as unknown as string | null;
+    brandingSubscribers.forEach((s) => s());
+  } catch {}
+}
+
 const HERO_STORAGE_KEY = "thorga_hero_content";
 
 let heroSubscribers: Array<() => void> = [];
