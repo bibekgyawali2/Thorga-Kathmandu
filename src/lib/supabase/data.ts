@@ -54,30 +54,7 @@ function makeAdminClient() {
 // Site Settings (Hero, Branding, Contact)
 // ---------------------------------------------------------------------------
 export async function fetchSiteSetting<T>(key: string, defaultValue: T): Promise<T> {
-  // Try Supabase client first
-  try {
-    const supabase = makeAdminClient();
-    const { data, error } = await supabase
-      .from("site_settings")
-      .select("value")
-      .eq("key", key)
-      .maybeSingle();
-
-    if (!error && data && data.value !== undefined && data.value !== null) {
-      let parsed = data.value;
-      if (typeof parsed === "string") {
-        try { parsed = JSON.parse(parsed); } catch {}
-      }
-      if (Array.isArray(defaultValue)) {
-        return (Array.isArray(parsed) ? parsed : defaultValue) as T;
-      }
-      return (typeof parsed === "object" && parsed !== null
-        ? { ...defaultValue, ...parsed }
-        : parsed) as T;
-    }
-  } catch {}
-
-  // Fallback to direct pg pool if configured
+  // Direct pg pool first for high performance and bypassing client RLS latency
   const pg = getPgPool();
   if (pg) {
     try {
@@ -101,6 +78,29 @@ export async function fetchSiteSetting<T>(key: string, defaultValue: T): Promise
       console.warn(`[fetchSiteSetting] pg query failed for ${key}:`, err);
     }
   }
+
+  // Fallback to Supabase client
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", key)
+      .maybeSingle();
+
+    if (!error && data && data.value !== undefined && data.value !== null) {
+      let parsed = data.value;
+      if (typeof parsed === "string") {
+        try { parsed = JSON.parse(parsed); } catch {}
+      }
+      if (Array.isArray(defaultValue)) {
+        return (Array.isArray(parsed) ? parsed : defaultValue) as T;
+      }
+      return (typeof parsed === "object" && parsed !== null
+        ? { ...defaultValue, ...parsed }
+        : parsed) as T;
+    }
+  } catch {}
 
   return defaultValue;
 }
