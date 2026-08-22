@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { createHash } from "crypto";
-import { fetchGallery } from "@/lib/supabase/data";
+import { fetchGallery, saveGalleryItem, deleteGalleryItem } from "@/lib/supabase/data";
+import { GalleryItem } from "@/data/mockData";
+import { revalidateTag } from "next/cache";
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,5 +39,30 @@ export async function GET(request: NextRequest) {
       { error: "Failed to fetch gallery" },
       { status: 500 }
     );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = (await request.json()) as GalleryItem;
+    await saveGalleryItem(body);
+    revalidateTag("gallery", "max");
+    return Response.json({ success: true, data: body });
+  } catch (error) {
+    console.error("[api/gallery] POST error:", error);
+    return Response.json({ error: "Failed to save gallery item" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) return Response.json({ error: "ID is required" }, { status: 400 });
+    await deleteGalleryItem(id);
+    revalidateTag("gallery", "max");
+    return Response.json({ success: true, id });
+  } catch (error) {
+    console.error("[api/gallery] DELETE error:", error);
+    return Response.json({ error: "Failed to delete gallery item" }, { status: 500 });
   }
 }

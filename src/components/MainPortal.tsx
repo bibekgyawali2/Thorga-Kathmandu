@@ -9,27 +9,40 @@ import {
   Member,
   Publication,
   Language,
+  EventItem,
+  GalleryItem,
+  HeroContent,
+  BrandingSettings,
+  ContactSettings,
   getStoredLanguage,
   subscribeHeroContent,
   getStoredHeroSnapshot,
   getServerHeroSnapshot,
+  saveStoredHeroContent,
   subscribeContactSettings,
   getStoredContactSettingsSnapshot,
   getServerContactSettingsSnapshot,
+  saveStoredContactSettings,
+  saveStoredBranding,
   subscribeMembers,
   getStoredMembersSnapshot,
   getServerMembersSnapshot,
+  saveStoredMembers,
   subscribeEvents,
   getStoredEventsSnapshot,
   getServerEventsSnapshot,
+  saveStoredEvents,
   subscribePublications,
   getStoredPublicationsSnapshot,
   getServerPublicationsSnapshot,
+  saveStoredPublications,
   subscribeGallery,
   getStoredGallerySnapshot,
   getServerGallerySnapshot,
+  saveStoredGallery,
   addStoredInquiry,
 } from "@/data/mockData";
+import { useRemoteData } from "@/hooks/useRemoteData";
 import {
   isValidName,
   isValidPhone,
@@ -145,6 +158,15 @@ export default function MainPortal() {
     getStoredContactSettingsSnapshot,
     getServerContactSettingsSnapshot
   );
+
+  // Synchronize dynamic collections and settings from Supabase database
+  useRemoteData<HeroContent>("/api/hero", saveStoredHeroContent);
+  useRemoteData<BrandingSettings>("/api/branding", saveStoredBranding);
+  useRemoteData<ContactSettings>("/api/contact", saveStoredContactSettings);
+  useRemoteData<Member[]>("/api/members", saveStoredMembers);
+  useRemoteData<EventItem[]>("/api/events", saveStoredEvents);
+  useRemoteData<Publication[]>("/api/publications", saveStoredPublications);
+  useRemoteData<GalleryItem[]>("/api/gallery", saveStoredGallery);
 
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
   const [contactSubmitted, setContactSubmitted] = useState(false);

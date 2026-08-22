@@ -12,7 +12,9 @@ import {
   subscribeMembers,
   getStoredMembersSnapshot,
   getServerMembersSnapshot,
+  saveStoredMembers,
 } from "@/data/mockData";
+import { useRemoteData } from "@/hooks/useRemoteData";
 import {
   Clock,
   ArrowLeft,
@@ -80,6 +82,7 @@ export default function PastLeadersPage() {
     getStoredMembersSnapshot,
     getServerMembersSnapshot
   );
+  useRemoteData<Member[]>("/api/members", saveStoredMembers);
 
   const pastMembers = members.filter((m) => m.committeeType === "past");
 

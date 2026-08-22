@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { createHash } from "crypto";
-import { fetchPublications } from "@/lib/supabase/data";
+import { fetchPublications, savePublicationItem, deletePublicationItem } from "@/lib/supabase/data";
+import { Publication } from "@/data/mockData";
+import { revalidateTag } from "next/cache";
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,5 +37,30 @@ export async function GET(request: NextRequest) {
       { error: "Failed to fetch publications" },
       { status: 500 }
     );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = (await request.json()) as Publication;
+    await savePublicationItem(body);
+    revalidateTag("publications", "max");
+    return Response.json({ success: true, data: body });
+  } catch (error) {
+    console.error("[api/publications] POST error:", error);
+    return Response.json({ error: "Failed to save publication" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) return Response.json({ error: "ID is required" }, { status: 400 });
+    await deletePublicationItem(id);
+    revalidateTag("publications", "max");
+    return Response.json({ success: true, id });
+  } catch (error) {
+    console.error("[api/publications] DELETE error:", error);
+    return Response.json({ error: "Failed to delete publication" }, { status: 500 });
   }
 }

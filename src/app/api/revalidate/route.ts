@@ -1,7 +1,16 @@
 import { NextRequest } from "next/server";
 import { revalidateTag } from "next/cache";
 
-const VALID_TAGS = ["gallery", "events", "members", "publications"] as const;
+const VALID_TAGS = [
+  "gallery",
+  "events",
+  "members",
+  "publications",
+  "hero",
+  "branding",
+  "contact",
+  "settings",
+] as const;
 type ValidTag = (typeof VALID_TAGS)[number];
 
 /**

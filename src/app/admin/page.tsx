@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useSyncExternalStore } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -264,7 +264,15 @@ const emptySubscribe = () => () => {};
 
 /** Fire-and-forget: bust the server cache tag after an admin mutation */
 async function revalidateCollection(
-  tag: "gallery" | "events" | "members" | "publications"
+  tag:
+    | "gallery"
+    | "events"
+    | "members"
+    | "publications"
+    | "hero"
+    | "branding"
+    | "contact"
+    | "settings"
 ) {
   try {
     const secret = process.env.NEXT_PUBLIC_REVALIDATE_SECRET ?? "";
@@ -336,6 +344,79 @@ export default function AdminPage() {
   const [contactSettingsState, setContactSettingsState] = useState<ContactSettings>(() =>
     getStoredContactSettingsSnapshot()
   );
+
+  // Synchronize latest database state on mount
+  useEffect(() => {
+    fetch("/api/hero", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.titleEn) {
+          setHeroState(data);
+          saveStoredHeroContent(data);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/branding", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setBrandingState(data);
+          saveStoredBranding(data);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/contact", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.kathmanduTitleEn) {
+          setContactSettingsState(data);
+          saveStoredContactSettings(data);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/members", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setMembersList(data);
+          saveStoredMembers(data);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/events", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setEventsList(data);
+          saveStoredEvents(data);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/publications", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setPubList(data);
+          saveStoredPublications(data);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/gallery", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setGalleryList(data);
+          saveStoredGallery(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // New Member Form
   const [memberForm, setMemberForm] = useState({
@@ -447,12 +528,19 @@ export default function AdminPage() {
       return;
     }
     saveStoredHeroContent(heroState);
+    fetch("/api/hero", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(heroState),
+    }).catch((err) => console.error("Failed to sync hero to db:", err));
+    revalidateCollection("hero");
+
     dialogAlert({
       title: lang === "ne" ? "ब्यानर सम्पादन भयो" : "Hero Banner Updated",
       description:
         lang === "ne"
-          ? "मुख्य पृष्ठको ब्यानर विवरणहरू सफलतापूर्वक अद्यावधिक गरिएको छ।"
-          : "Hero section headlines, text, and visual frame have been updated live.",
+          ? "मुख्य पृष्ठको ब्यानर विवरणहरू सफलतापूर्वक डेटाबेसमा अद्यावधिक गरिएको छ।"
+          : "Hero section headlines, text, and visual frame have been updated live across all devices.",
       type: "success",
     });
   };
@@ -517,6 +605,11 @@ export default function AdminPage() {
     const updated = [newMember, ...membersList];
     setMembersList(updated);
     saveStoredMembers(updated);
+    fetch("/api/members", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newMember),
+    }).catch((err) => console.error("Failed to sync member to db:", err));
     revalidateCollection("members");
     setShowAddMemberModal(false);
     setMemberForm({
@@ -573,6 +666,9 @@ export default function AdminPage() {
       const updated = membersList.filter((m) => m.id !== id);
       setMembersList(updated);
       saveStoredMembers(updated);
+      fetch(`/api/members?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }).catch((err) => console.error("Failed to delete member from db:", err));
       revalidateCollection("members");
     }
   };
@@ -613,6 +709,11 @@ export default function AdminPage() {
     const updated = [newPub, ...pubList];
     setPubList(updated);
     saveStoredPublications(updated);
+    fetch("/api/publications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newPub),
+    }).catch((err) => console.error("Failed to sync pub to db:", err));
     revalidateCollection("publications");
     setShowAddPubModal(false);
     dialogAlert({
@@ -644,6 +745,9 @@ export default function AdminPage() {
       const updated = pubList.filter((p) => p.id !== id);
       setPubList(updated);
       saveStoredPublications(updated);
+      fetch(`/api/publications?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }).catch((err) => console.error("Failed to delete pub from db:", err));
       revalidateCollection("publications");
     }
   };
@@ -697,6 +801,11 @@ export default function AdminPage() {
     const updated = [newEv, ...eventsList];
     setEventsList(updated);
     saveStoredEvents(updated);
+    fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newEv),
+    }).catch((err) => console.error("Failed to sync event to db:", err));
     revalidateCollection("events");
     setShowAddEventModal(false);
     dialogAlert({
@@ -722,6 +831,9 @@ export default function AdminPage() {
       const updated = eventsList.filter((e) => e.id !== id);
       setEventsList(updated);
       saveStoredEvents(updated);
+      fetch(`/api/events?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }).catch((err) => console.error("Failed to delete event from db:", err));
       revalidateCollection("events");
     }
   };
@@ -760,6 +872,11 @@ export default function AdminPage() {
     const updated = [newG, ...galleryList];
     setGalleryList(updated);
     saveStoredGallery(updated);
+    fetch("/api/gallery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newG),
+    }).catch((err) => console.error("Failed to sync gallery to db:", err));
     revalidateCollection("gallery");
     setShowAddGalleryModal(false);
     dialogAlert({
@@ -785,6 +902,9 @@ export default function AdminPage() {
       const updated = galleryList.filter((g) => g.id !== id);
       setGalleryList(updated);
       saveStoredGallery(updated);
+      fetch(`/api/gallery?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      }).catch((err) => console.error("Failed to delete gallery from db:", err));
       revalidateCollection("gallery");
     }
   };
@@ -2403,7 +2523,7 @@ export default function AdminPage() {
                     return;
                   }
 
-                  saveStoredContactSettings({
+                  const newContactData = {
                     ...contactSettingsState,
                     contactHeadingNe: contactSettingsState.contactHeadingNe.trim(),
                     contactHeadingEn: contactSettingsState.contactHeadingEn.trim(),
@@ -2418,7 +2538,15 @@ export default function AdminPage() {
                     phone1: contactSettingsState.phone1.trim(),
                     phone2: contactSettingsState.phone2.trim(),
                     email: contactSettingsState.email.trim(),
-                  });
+                  };
+                  saveStoredContactSettings(newContactData);
+                  fetch("/api/contact", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newContactData),
+                  }).catch((err) => console.error("Failed to sync contact settings:", err));
+                  revalidateCollection("contact");
+
                   dialogAlert({
                     title: lang === "ne" ? "सम्पर्क विवरण सुरक्षित भयो" : "Contact Settings Saved",
                     description:
@@ -2903,6 +3031,13 @@ export default function AdminPage() {
                     onClick={() => {
                       const next = { ...brandingState };
                       saveStoredBranding(next);
+                      fetch("/api/branding", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(next),
+                      }).catch((err) => console.error("Failed to sync branding:", err));
+                      revalidateCollection("branding");
+
                       dialogAlert({
                         title: lang === "ne" ? "लोगो सुरक्षित भयो" : "Logo Saved",
                         description: lang === "ne" ? "साइट हेडरमा नयाँ लोगो लागू भएको छ।" : "New logo is now live in the site header.",
@@ -2920,6 +3055,12 @@ export default function AdminPage() {
                         const next = { ...brandingState, logoUrl: "" };
                         setBrandingState(next);
                         saveStoredBranding(next);
+                        fetch("/api/branding", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(next),
+                        }).catch((err) => console.error("Failed to sync branding:", err));
+                        revalidateCollection("branding");
                       }}
                       className="px-4 py-1.5 rounded-control border border-line text-muted hover:text-fg text-xs font-medium transition-colors"
                     >
@@ -2975,6 +3116,13 @@ export default function AdminPage() {
                     onClick={() => {
                       const next = { ...brandingState };
                       saveStoredBranding(next);
+                      fetch("/api/branding", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(next),
+                      }).catch((err) => console.error("Failed to sync branding:", err));
+                      revalidateCollection("branding");
+
                       dialogAlert({
                         title: lang === "ne" ? "फेभिकन सुरक्षित भयो" : "Favicon Saved",
                         description: lang === "ne" ? "ब्राउजर ट्याबमा नयाँ फेभिकन लागू भएको छ।" : "New favicon is now active in browser tabs.",
@@ -2992,6 +3140,12 @@ export default function AdminPage() {
                         const next = { ...brandingState, faviconUrl: "" };
                         setBrandingState(next);
                         saveStoredBranding(next);
+                        fetch("/api/branding", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(next),
+                        }).catch((err) => console.error("Failed to sync branding:", err));
+                        revalidateCollection("branding");
                       }}
                       className="px-4 py-1.5 rounded-control border border-line text-muted hover:text-fg text-xs font-medium transition-colors"
                     >
@@ -3006,6 +3160,13 @@ export default function AdminPage() {
                 type="button"
                 onClick={() => {
                   saveStoredBranding(brandingState);
+                  fetch("/api/branding", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(brandingState),
+                  }).catch((err) => console.error("Failed to sync branding:", err));
+                  revalidateCollection("branding");
+
                   dialogAlert({
                     title: lang === "ne" ? "ब्रान्डिङ सुरक्षित भयो" : "Branding Saved",
                     description: lang === "ne"
