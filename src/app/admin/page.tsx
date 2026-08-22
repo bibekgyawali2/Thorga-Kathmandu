@@ -84,6 +84,7 @@ import {
   CheckCircle,
   XCircle,
   PaintBucket,
+  PencilSimple,
 } from "@phosphor-icons/react";
 
 const ADMIN_I18N = {
@@ -139,6 +140,11 @@ const ADMIN_I18N = {
     removeGalleryConfirmDesc: "के तपाईं यस तस्बिरलाई ग्यालरीबाट मेटाउन निश्चित हुनुहुन्छ?",
     removeInquiryConfirmTitle: "सन्देश हटाउने पुष्टि",
     removeInquiryConfirmDesc: "के तपाईं यस सोधपुछ सन्देशलाई हटाउन निश्चित हुनुहुन्छ?",
+    editMember: "सदस्य सम्पादन",
+    editPub: "प्रकाशन सम्पादन",
+    editEvent: "कार्यक्रम सम्पादन",
+    editGallery: "तस्बिर सम्पादन",
+    editBtn: "सम्पादन",
     deleteBtn: "मेटाउनुहोस्",
     cancelBtn: "रद्द गर्नुहोस्",
     closeBtn: "बन्द गर्नुहोस्",
@@ -215,6 +221,11 @@ const ADMIN_I18N = {
     removeGalleryConfirmDesc: "Are you sure you want to delete this photo from the gallery?",
     removeInquiryConfirmTitle: "Delete Inquiry",
     removeInquiryConfirmDesc: "Are you sure you want to remove this public inquiry message?",
+    editMember: "Edit Member",
+    editPub: "Edit Publication",
+    editEvent: "Edit Event",
+    editGallery: "Edit Photo",
+    editBtn: "Edit",
     deleteBtn: "Delete",
     cancelBtn: "Cancel",
     closeBtn: "Close",
@@ -418,7 +429,8 @@ export default function AdminPage() {
       .catch(() => {});
   }, []);
 
-  // New Member Form
+  // Member States
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [memberForm, setMemberForm] = useState({
     nameEn: "",
     nameNe: "",
@@ -435,7 +447,8 @@ export default function AdminPage() {
     photoUrl: "",
   });
 
-  // New Publication Form
+  // Publication States
+  const [editingPub, setEditingPub] = useState<Publication | null>(null);
   const [pubForm, setPubForm] = useState({
     titleEn: "",
     titleNe: "",
@@ -451,7 +464,8 @@ export default function AdminPage() {
     coverImageUrl: "",
   });
 
-  // New Event Form
+  // Event States
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [eventForm, setEventForm] = useState({
     titleEn: "",
     titleNe: "",
@@ -469,7 +483,8 @@ export default function AdminPage() {
     status: "upcoming" as "upcoming" | "completed",
   });
 
-  // New Gallery Form
+  // Gallery States
+  const [editingGallery, setEditingGallery] = useState<GalleryItem | null>(null);
   const [galleryForm, setGalleryForm] = useState({
     titleEn: "",
     titleNe: "",
@@ -545,6 +560,26 @@ export default function AdminPage() {
     });
   };
 
+  const handleStartEditMember = (member: Member) => {
+    setEditingMember(member);
+    setMemberForm({
+      nameEn: member.nameEn || "",
+      nameNe: member.nameNe || "",
+      roleEn: member.roleEn || "",
+      roleNe: member.roleNe || "",
+      committeeType: member.committeeType || "current",
+      order: member.order || 10,
+      phone: member.phone || "",
+      email: member.email || "",
+      bioEn: member.bioEn || "",
+      bioNe: member.bioNe || "",
+      tenureEn: member.tenureEn || "",
+      tenureNe: member.tenureNe || "",
+      photoUrl: member.photoUrl || "",
+    });
+    setShowAddMemberModal(true);
+  };
+
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidName(memberForm.nameNe) || !isValidName(memberForm.nameEn)) {
@@ -552,8 +587,8 @@ export default function AdminPage() {
         title: lang === "ne" ? "नाम अमान्य वा अपूर्ण" : "Invalid Name",
         description:
           lang === "ne"
-            ? "कृपया सदस्यको नाम दुवै भाषामा (कम्तिमा २ अक्षर) शुद्धसँग लेख्नुहोस्।"
-            : "Please enter valid member names in both languages (min 2 characters).",
+            ? "कृपया सदस्यको पूरा नाम दुवै भाषामा अनिवार्य भर्नुहोस्।"
+            : "Please fill member names in both languages.",
         type: "warning",
       });
       return;
@@ -563,8 +598,8 @@ export default function AdminPage() {
         title: lang === "ne" ? "पद आवश्यक" : "Role Required",
         description:
           lang === "ne"
-            ? "कृपया सदस्यको पद (Role/Designation) दुवै भाषामा अनिवार्य भर्नुहोस्।"
-            : "Please enter the member role/designation in both languages.",
+            ? "कृपया सदस्यको पद (भूमिका) दुवै भाषामा भर्नुहोस्।"
+            : "Please enter member role in both languages.",
         type: "warning",
       });
       return;
@@ -588,6 +623,56 @@ export default function AdminPage() {
             ? "कृपया मान्य इमेल ठेगाना प्रविष्ट गर्नुहोस् (उदा. member@example.com)।"
             : "Please enter a valid email address.",
         type: "warning",
+      });
+      return;
+    }
+
+    if (editingMember) {
+      const updatedMember: Member = {
+        ...editingMember,
+        ...memberForm,
+        nameNe: memberForm.nameNe.trim(),
+        nameEn: memberForm.nameEn.trim(),
+        roleNe: memberForm.roleNe.trim(),
+        roleEn: memberForm.roleEn.trim(),
+        phone: memberForm.phone.trim(),
+        email: memberForm.email.trim(),
+      };
+      const updated = membersList.map((m) =>
+        m.id === editingMember.id ? updatedMember : m
+      );
+      setMembersList(updated);
+      saveStoredMembers(updated);
+      fetch("/api/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedMember),
+      }).catch((err) => console.error("Failed to update member in db:", err));
+      revalidateCollection("members");
+      setShowAddMemberModal(false);
+      setEditingMember(null);
+      setMemberForm({
+        nameEn: "",
+        nameNe: "",
+        roleEn: "",
+        roleNe: "",
+        committeeType: "current",
+        order: 10,
+        phone: "",
+        email: "",
+        bioEn: "",
+        bioNe: "",
+        tenureEn: "",
+        tenureNe: "",
+        photoUrl: "",
+      });
+      dialogAlert({
+        title: lang === "ne" ? "सदस्य सम्पादन भयो" : "Member Updated",
+        description:
+          lang === "ne"
+            ? `${updatedMember.nameNe} को विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।`
+            : `${updatedMember.nameEn}'s profile has been successfully updated.`,
+        type: "success",
       });
       return;
     }
@@ -673,6 +758,25 @@ export default function AdminPage() {
     }
   };
 
+  const handleStartEditPub = (pub: Publication) => {
+    setEditingPub(pub);
+    setPubForm({
+      titleEn: pub.titleEn || "",
+      titleNe: pub.titleNe || "",
+      categoryEn: pub.categoryEn || "Souvenir",
+      categoryNe: pub.categoryNe || "स्मारिका",
+      publishedYearEn: pub.publishedYearEn || "",
+      publishedYearNe: pub.publishedYearNe || "",
+      descriptionEn: pub.descriptionEn || "",
+      descriptionNe: pub.descriptionNe || "",
+      pdfUrl: pub.pdfUrl || "",
+      pages: pub.pages || 1,
+      fileSize: pub.fileSize || "4.2 MB",
+      coverImageUrl: pub.coverImageUrl || "",
+    });
+    setShowAddPubModal(true);
+  };
+
   const handleAddPub = (e: React.FormEvent) => {
     e.preventDefault();
     if (!pubForm.titleNe.trim() || !pubForm.titleEn.trim()) {
@@ -698,6 +802,53 @@ export default function AdminPage() {
       return;
     }
 
+    if (editingPub) {
+      const updatedPub: Publication = {
+        ...editingPub,
+        ...pubForm,
+        titleNe: pubForm.titleNe.trim(),
+        titleEn: pubForm.titleEn.trim(),
+        categoryNe: pubForm.categoryNe.trim(),
+        categoryEn: pubForm.categoryEn.trim(),
+      };
+      const updated = pubList.map((p) =>
+        p.id === editingPub.id ? updatedPub : p
+      );
+      setPubList(updated);
+      saveStoredPublications(updated);
+      fetch("/api/publications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedPub),
+      }).catch((err) => console.error("Failed to update pub in db:", err));
+      revalidateCollection("publications");
+      setShowAddPubModal(false);
+      setEditingPub(null);
+      setPubForm({
+        titleEn: "",
+        titleNe: "",
+        categoryEn: "Souvenir",
+        categoryNe: "स्मारिका",
+        publishedYearEn: "2081 BS (2024)",
+        publishedYearNe: "२०८१",
+        descriptionEn: "",
+        descriptionNe: "",
+        pdfUrl: "",
+        pages: 48,
+        fileSize: "4.2 MB",
+        coverImageUrl: "",
+      });
+      dialogAlert({
+        title: lang === "ne" ? "प्रकाशन सम्पादन भयो" : "Publication Updated",
+        description:
+          lang === "ne"
+            ? "प्रकाशन विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।"
+            : "Publication details updated successfully.",
+        type: "success",
+      });
+      return;
+    }
+
     const newPub: Publication = {
       id: `p-${Date.now()}`,
       ...pubForm,
@@ -716,6 +867,20 @@ export default function AdminPage() {
     }).catch((err) => console.error("Failed to sync pub to db:", err));
     revalidateCollection("publications");
     setShowAddPubModal(false);
+    setPubForm({
+      titleEn: "",
+      titleNe: "",
+      categoryEn: "Souvenir",
+      categoryNe: "स्मारिका",
+      publishedYearEn: "2081 BS (2024)",
+      publishedYearNe: "२०८१",
+      descriptionEn: "",
+      descriptionNe: "",
+      pdfUrl: "",
+      pages: 48,
+      fileSize: "4.2 MB",
+      coverImageUrl: "",
+    });
     dialogAlert({
       title: lang === "ne" ? "प्रकाशन थपियो" : "Publication Uploaded",
       description:
@@ -750,6 +915,27 @@ export default function AdminPage() {
       }).catch((err) => console.error("Failed to delete pub from db:", err));
       revalidateCollection("publications");
     }
+  };
+
+  const handleStartEditEvent = (ev: EventItem) => {
+    setEditingEvent(ev);
+    setEventForm({
+      titleEn: ev.titleEn || "",
+      titleNe: ev.titleNe || "",
+      categoryEn: ev.categoryEn || "Meeting",
+      categoryNe: ev.categoryNe || "भेला",
+      dateEn: ev.dateEn || "",
+      dateNe: ev.dateNe || "",
+      timeEn: ev.timeEn || "",
+      timeNe: ev.timeNe || "",
+      locationEn: ev.locationEn || "",
+      locationNe: ev.locationNe || "",
+      descriptionEn: ev.descriptionEn || "",
+      descriptionNe: ev.descriptionNe || "",
+      imageUrl: ev.imageUrl || "",
+      status: ev.status || "upcoming",
+    });
+    setShowAddEventModal(true);
   };
 
   const handleAddEvent = (e: React.FormEvent) => {
@@ -788,6 +974,57 @@ export default function AdminPage() {
       return;
     }
 
+    if (editingEvent) {
+      const updatedEv: EventItem = {
+        ...editingEvent,
+        ...eventForm,
+        titleNe: eventForm.titleNe.trim(),
+        titleEn: eventForm.titleEn.trim(),
+        dateNe: eventForm.dateNe.trim(),
+        dateEn: eventForm.dateEn.trim(),
+        locationNe: eventForm.locationNe.trim(),
+        locationEn: eventForm.locationEn.trim(),
+      };
+      const updated = eventsList.map((e) =>
+        e.id === editingEvent.id ? updatedEv : e
+      );
+      setEventsList(updated);
+      saveStoredEvents(updated);
+      fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedEv),
+      }).catch((err) => console.error("Failed to update event in db:", err));
+      revalidateCollection("events");
+      setShowAddEventModal(false);
+      setEditingEvent(null);
+      setEventForm({
+        titleEn: "",
+        titleNe: "",
+        categoryEn: "General Assembly",
+        categoryNe: "साधारण सभा",
+        dateEn: "2081 Ashoj 12",
+        dateNe: "२०८१ असोज १२",
+        timeEn: "11:00 AM",
+        timeNe: "बिहान ११:०० बजे",
+        locationEn: "Kathmandu",
+        locationNe: "काठमाडौँ",
+        descriptionEn: "",
+        descriptionNe: "",
+        imageUrl: "",
+        status: "upcoming",
+      });
+      dialogAlert({
+        title: lang === "ne" ? "कार्यक्रम सम्पादन भयो" : "Event Updated",
+        description:
+          lang === "ne"
+            ? "कार्यक्रम विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।"
+            : "Event details have been updated.",
+        type: "success",
+      });
+      return;
+    }
+
     const newEv: EventItem = {
       id: `e-${Date.now()}`,
       ...eventForm,
@@ -808,9 +1045,28 @@ export default function AdminPage() {
     }).catch((err) => console.error("Failed to sync event to db:", err));
     revalidateCollection("events");
     setShowAddEventModal(false);
+    setEventForm({
+      titleEn: "",
+      titleNe: "",
+      categoryEn: "General Assembly",
+      categoryNe: "साधारण सभा",
+      dateEn: "2081 Ashoj 12",
+      dateNe: "२०८१ असोज १२",
+      timeEn: "11:00 AM",
+      timeNe: "बिहान ११:०० बजे",
+      locationEn: "Kathmandu",
+      locationNe: "काठमाडौँ",
+      descriptionEn: "",
+      descriptionNe: "",
+      imageUrl: "",
+      status: "upcoming",
+    });
     dialogAlert({
       title: lang === "ne" ? "कार्यक्रम थपियो" : "Event Scheduled",
-      description: lang === "ne" ? "कार्यक्रम क्यालेन्डरमा दर्ता भएको छ।" : "Event successfully added to schedule.",
+      description:
+        lang === "ne"
+          ? "कार्यक्रम क्यालेन्डरमा दर्ता भएको छ।"
+          : "Event successfully added to schedule.",
       type: "success",
     });
   };
@@ -838,6 +1094,20 @@ export default function AdminPage() {
     }
   };
 
+  const handleStartEditGallery = (g: GalleryItem) => {
+    setEditingGallery(g);
+    setGalleryForm({
+      titleEn: g.titleEn || "",
+      titleNe: g.titleNe || "",
+      categoryEn: g.categoryEn || "Education",
+      categoryNe: g.categoryNe || "शिक्षा",
+      dateEn: g.dateEn || "",
+      dateNe: g.dateNe || "",
+      imageUrl: g.imageUrl || "",
+    });
+    setShowAddGalleryModal(true);
+  };
+
   const handleAddGallery = (e: React.FormEvent) => {
     e.preventDefault();
     if (!galleryForm.titleNe.trim() || !galleryForm.titleEn.trim()) {
@@ -863,6 +1133,46 @@ export default function AdminPage() {
       return;
     }
 
+    if (editingGallery) {
+      const updatedG: GalleryItem = {
+        ...editingGallery,
+        ...galleryForm,
+        titleNe: galleryForm.titleNe.trim(),
+        titleEn: galleryForm.titleEn.trim(),
+      };
+      const updated = galleryList.map((g) =>
+        g.id === editingGallery.id ? updatedG : g
+      );
+      setGalleryList(updated);
+      saveStoredGallery(updated);
+      fetch("/api/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedG),
+      }).catch((err) => console.error("Failed to update gallery in db:", err));
+      revalidateCollection("gallery");
+      setShowAddGalleryModal(false);
+      setEditingGallery(null);
+      setGalleryForm({
+        titleEn: "",
+        titleNe: "",
+        categoryEn: "Education",
+        categoryNe: "शिक्षा",
+        dateEn: "2081 Shrawan",
+        dateNe: "२०८१ साउन",
+        imageUrl: "",
+      });
+      dialogAlert({
+        title: lang === "ne" ? "तस्बिर सम्पादन भयो" : "Photo Updated",
+        description:
+          lang === "ne"
+            ? "तस्बिर विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।"
+            : "Gallery photo details updated successfully.",
+        type: "success",
+      });
+      return;
+    }
+
     const newG: GalleryItem = {
       id: `g-${Date.now()}`,
       ...galleryForm,
@@ -879,9 +1189,21 @@ export default function AdminPage() {
     }).catch((err) => console.error("Failed to sync gallery to db:", err));
     revalidateCollection("gallery");
     setShowAddGalleryModal(false);
+    setGalleryForm({
+      titleEn: "",
+      titleNe: "",
+      categoryEn: "Education",
+      categoryNe: "शिक्षा",
+      dateEn: "2081 Shrawan",
+      dateNe: "२०८१ साउन",
+      imageUrl: "",
+    });
     dialogAlert({
       title: lang === "ne" ? "तस्बिर थपियो" : "Photo Added",
-      description: lang === "ne" ? "तस्बिर ग्यालरीमा सफलतापूर्वक थपियो।" : "Photo added to gallery.",
+      description:
+        lang === "ne"
+          ? "तस्बिर ग्यालरीमा सफलतापूर्वक थपियो।"
+          : "Photo added to gallery.",
       type: "success",
     });
   };
@@ -1791,7 +2113,30 @@ export default function AdminPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowAddMemberModal(!showAddMemberModal)}
+                  onClick={() => {
+                    if (showAddMemberModal) {
+                      setShowAddMemberModal(false);
+                      setEditingMember(null);
+                    } else {
+                      setEditingMember(null);
+                      setMemberForm({
+                        nameEn: "",
+                        nameNe: "",
+                        roleEn: "",
+                        roleNe: "",
+                        committeeType: "current",
+                        order: 10,
+                        phone: "",
+                        email: "",
+                        bioEn: "",
+                        bioNe: "",
+                        tenureEn: "",
+                        tenureNe: "",
+                        photoUrl: "",
+                      });
+                      setShowAddMemberModal(true);
+                    }
+                  }}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
@@ -1801,7 +2146,23 @@ export default function AdminPage() {
 
               {showAddMemberModal && (
                 <form onSubmit={handleAddMember} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase tracking-wider text-accent">{t.addMember}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold uppercase tracking-wider text-accent">
+                      {editingMember ? t.editMember : t.addMember}
+                    </div>
+                    {editingMember && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingMember(null);
+                          setShowAddMemberModal(false);
+                        }}
+                        className="text-xs text-muted hover:text-fg"
+                      >
+                        {t.cancelBtn}
+                      </button>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -1892,12 +2253,26 @@ export default function AdminPage() {
                     onChange={(url) => setMemberForm({ ...memberForm, photoUrl: url })}
                   />
 
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
-                  >
-                    {t.saveChanges}
-                  </button>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                    >
+                      {editingMember ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes") : t.saveChanges}
+                    </button>
+                    {editingMember && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingMember(null);
+                          setShowAddMemberModal(false);
+                        }}
+                        className="px-4 py-2 rounded-control border border-line text-xs font-medium text-muted hover:text-fg"
+                      >
+                        {t.cancelBtn}
+                      </button>
+                    )}
+                  </div>
                 </form>
               )}
 
@@ -1991,14 +2366,24 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMember(member.id)}
-                          className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
-                          title={t.deleteBtn}
-                        >
-                          <Trash size={15} />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditMember(member)}
+                            className="p-1.5 text-accent hover:bg-accent/10 rounded-control transition-colors"
+                            title={t.editBtn}
+                          >
+                            <PencilSimple size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMember(member.id)}
+                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                            title={t.deleteBtn}
+                          >
+                            <Trash size={15} />
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}
@@ -2017,7 +2402,29 @@ export default function AdminPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowAddPubModal(!showAddPubModal)}
+                  onClick={() => {
+                    if (showAddPubModal) {
+                      setShowAddPubModal(false);
+                      setEditingPub(null);
+                    } else {
+                      setEditingPub(null);
+                      setPubForm({
+                        titleEn: "",
+                        titleNe: "",
+                        categoryEn: "Souvenir",
+                        categoryNe: "स्मारिका",
+                        publishedYearEn: "2081 BS (2024)",
+                        publishedYearNe: "२०८१",
+                        descriptionEn: "",
+                        descriptionNe: "",
+                        pdfUrl: "",
+                        pages: 48,
+                        fileSize: "4.2 MB",
+                        coverImageUrl: "",
+                      });
+                      setShowAddPubModal(true);
+                    }
+                  }}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
@@ -2027,7 +2434,23 @@ export default function AdminPage() {
 
               {showAddPubModal && (
                 <form onSubmit={handleAddPub} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase tracking-wider text-accent">{t.uploadPub}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold uppercase tracking-wider text-accent">
+                      {editingPub ? t.editPub : t.uploadPub}
+                    </div>
+                    {editingPub && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingPub(null);
+                          setShowAddPubModal(false);
+                        }}
+                        className="text-xs text-muted hover:text-fg"
+                      >
+                        {t.cancelBtn}
+                      </button>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -2095,12 +2518,26 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
-                  >
-                    {t.saveChanges}
-                  </button>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                    >
+                      {editingPub ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes") : t.saveChanges}
+                    </button>
+                    {editingPub && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingPub(null);
+                          setShowAddPubModal(false);
+                        }}
+                        className="px-4 py-2 rounded-control border border-line text-xs font-medium text-muted hover:text-fg"
+                      >
+                        {t.cancelBtn}
+                      </button>
+                    )}
+                  </div>
                 </form>
               )}
 
@@ -2127,14 +2564,24 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDeletePub(pub.id)}
-                        className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
-                        title={t.deleteBtn}
-                      >
-                        <Trash size={15} />
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditPub(pub)}
+                          className="p-1.5 text-accent hover:bg-accent/10 rounded-control transition-colors"
+                          title={t.editBtn}
+                        >
+                          <PencilSimple size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePub(pub.id)}
+                          className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                          title={t.deleteBtn}
+                        >
+                          <Trash size={15} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2152,7 +2599,31 @@ export default function AdminPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowAddEventModal(!showAddEventModal)}
+                  onClick={() => {
+                    if (showAddEventModal) {
+                      setShowAddEventModal(false);
+                      setEditingEvent(null);
+                    } else {
+                      setEditingEvent(null);
+                      setEventForm({
+                        titleEn: "",
+                        titleNe: "",
+                        categoryEn: "General Assembly",
+                        categoryNe: "साधारण सभा",
+                        dateEn: "2081 Ashoj 12",
+                        dateNe: "२०८१ असोज १२",
+                        timeEn: "11:00 AM",
+                        timeNe: "बिहान ११:०० बजे",
+                        locationEn: "Kathmandu",
+                        locationNe: "काठमाडौँ",
+                        descriptionEn: "",
+                        descriptionNe: "",
+                        imageUrl: "",
+                        status: "upcoming",
+                      });
+                      setShowAddEventModal(true);
+                    }
+                  }}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
@@ -2162,7 +2633,23 @@ export default function AdminPage() {
 
               {showAddEventModal && (
                 <form onSubmit={handleAddEvent} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase tracking-wider text-accent">{t.scheduleEvent}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold uppercase tracking-wider text-accent">
+                      {editingEvent ? t.editEvent : t.scheduleEvent}
+                    </div>
+                    {editingEvent && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingEvent(null);
+                          setShowAddEventModal(false);
+                        }}
+                        className="text-xs text-muted hover:text-fg"
+                      >
+                        {t.cancelBtn}
+                      </button>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -2232,12 +2719,26 @@ export default function AdminPage() {
                     onChange={(url) => setEventForm({ ...eventForm, imageUrl: url })}
                   />
 
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
-                  >
-                    {t.saveChanges}
-                  </button>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                    >
+                      {editingEvent ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes") : t.saveChanges}
+                    </button>
+                    {editingEvent && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingEvent(null);
+                          setShowAddEventModal(false);
+                        }}
+                        className="px-4 py-2 rounded-control border border-line text-xs font-medium text-muted hover:text-fg"
+                      >
+                        {t.cancelBtn}
+                      </button>
+                    )}
+                  </div>
                 </form>
               )}
 
@@ -2264,14 +2765,24 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteEvent(ev.id)}
-                        className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
-                        title={t.deleteBtn}
-                      >
-                        <Trash size={15} />
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditEvent(ev)}
+                          className="p-1.5 text-accent hover:bg-accent/10 rounded-control transition-colors"
+                          title={t.editBtn}
+                        >
+                          <PencilSimple size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEvent(ev.id)}
+                          className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                          title={t.deleteBtn}
+                        >
+                          <Trash size={15} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2289,7 +2800,24 @@ export default function AdminPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowAddGalleryModal(!showAddGalleryModal)}
+                  onClick={() => {
+                    if (showAddGalleryModal) {
+                      setShowAddGalleryModal(false);
+                      setEditingGallery(null);
+                    } else {
+                      setEditingGallery(null);
+                      setGalleryForm({
+                        titleEn: "",
+                        titleNe: "",
+                        categoryEn: "Education",
+                        categoryNe: "शिक्षा",
+                        dateEn: "2081 Shrawan",
+                        dateNe: "२०८१ साउन",
+                        imageUrl: "",
+                      });
+                      setShowAddGalleryModal(true);
+                    }
+                  }}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
@@ -2299,7 +2827,23 @@ export default function AdminPage() {
 
               {showAddGalleryModal && (
                 <form onSubmit={handleAddGallery} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase tracking-wider text-accent">{t.addGallery}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold uppercase tracking-wider text-accent">
+                      {editingGallery ? t.editGallery : t.addGallery}
+                    </div>
+                    {editingGallery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingGallery(null);
+                          setShowAddGalleryModal(false);
+                        }}
+                        className="text-xs text-muted hover:text-fg"
+                      >
+                        {t.cancelBtn}
+                      </button>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -2348,12 +2892,26 @@ export default function AdminPage() {
                     onChange={(url) => setGalleryForm({ ...galleryForm, imageUrl: url })}
                   />
 
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
-                  >
-                    {t.saveChanges}
-                  </button>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                    >
+                      {editingGallery ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes") : t.saveChanges}
+                    </button>
+                    {editingGallery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingGallery(null);
+                          setShowAddGalleryModal(false);
+                        }}
+                        className="px-4 py-2 rounded-control border border-line text-xs font-medium text-muted hover:text-fg"
+                      >
+                        {t.cancelBtn}
+                      </button>
+                    )}
+                  </div>
                 </form>
               )}
 
@@ -2375,14 +2933,24 @@ export default function AdminPage() {
                           </div>
                           <div className="text-[10px] text-muted font-mono">{g.categoryEn}</div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteGallery(g.id)}
-                          className="p-1 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
-                          title={t.deleteBtn}
-                        >
-                          <Trash size={14} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditGallery(g)}
+                            className="p-1 text-accent hover:bg-accent/10 rounded-control transition-colors"
+                            title={t.editBtn}
+                          >
+                            <PencilSimple size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGallery(g.id)}
+                            className="p-1 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                            title={t.deleteBtn}
+                          >
+                            <Trash size={14} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
