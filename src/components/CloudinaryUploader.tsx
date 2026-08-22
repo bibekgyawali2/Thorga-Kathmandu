@@ -142,7 +142,7 @@ export function CloudinaryUploader({
           type="text"
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Or paste direct Cloudinary URL..."
+          placeholder={isPdf ? "Or paste direct PDF URL..." : "Or paste image URL..."}
           className="w-full px-3 py-1.5 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
         />
 
@@ -174,7 +174,7 @@ export function CloudinaryUploader({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1 text-[11px] font-bold text-accent">
                 <CheckCircle size={12} weight="fill" />
-                <span>Cloudinary File Ready</span>
+                <span>{isPdf ? "PDF Document Ready" : "Image File Ready"}</span>
               </div>
               <div className="text-[10px] text-muted truncate font-mono">{value}</div>
             </div>
