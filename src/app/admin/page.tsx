@@ -86,6 +86,7 @@ import {
   XCircle,
   PaintBucket,
   PencilSimple,
+  CircleNotch,
 } from "@phosphor-icons/react";
 
 const ADMIN_I18N = {
@@ -328,6 +329,7 @@ export default function AdminPage() {
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState(false);
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Managed Data States
   const [heroState, setHeroState] = useState<HeroContent>(() => getStoredHeroSnapshot());
@@ -523,6 +525,9 @@ export default function AdminPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError(false);
+    setLoginErrorMessage("");
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -542,6 +547,8 @@ export default function AdminPage() {
     } catch {
       setLoginError(true);
       setLoginErrorMessage(t.loginError);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -1617,11 +1624,12 @@ export default function AdminPage() {
                 <label className="text-xs font-semibold text-fg">{t.username}</label>
                 <input
                   required
+                  disabled={isLoggingIn}
                   type="text"
                   value={loginUser}
                   onChange={(e) => setLoginUser(e.target.value)}
                   placeholder="admin or email"
-                  className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                  className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent disabled:opacity-60"
                 />
               </div>
 
@@ -1629,19 +1637,28 @@ export default function AdminPage() {
                 <label className="text-xs font-semibold text-fg">{t.password}</label>
                 <input
                   required
+                  disabled={isLoggingIn}
                   type="password"
                   value={loginPass}
                   onChange={(e) => setLoginPass(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                  className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent disabled:opacity-60"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
+                disabled={isLoggingIn}
+                className="w-full py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
               >
-                {t.signInBtn}
+                {isLoggingIn ? (
+                  <>
+                    <CircleNotch size={16} className="animate-spin" />
+                    <span>{lang === "ne" ? "प्रमाणीकरण हुँदैछ..." : "Signing in..."}</span>
+                  </>
+                ) : (
+                  <span>{t.signInBtn}</span>
+                )}
               </button>
             </form>
 
