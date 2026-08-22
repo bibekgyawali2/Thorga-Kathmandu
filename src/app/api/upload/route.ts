@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadToCloudinary, deleteFromCloudinary } from "@/lib/cloudinary";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+  Pragma: "no-cache",
+  Expires: "0",
+};
+
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB limit
 
 const ALLOWED_MIME_TYPES = [
@@ -21,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json(
         { error: "No file provided" },
-        { status: 400 }
+        { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
@@ -31,7 +41,7 @@ export async function POST(request: NextRequest) {
         {
           error: `File size exceeds 2MB limit. (Your file: ${(file.size / (1024 * 1024)).toFixed(2)} MB)`,
         },
-        { status: 400 }
+        { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
@@ -41,7 +51,7 @@ export async function POST(request: NextRequest) {
         {
           error: `Unsupported file type: ${file.type}. Only Images (JPEG, PNG, WebP, GIF) and PDF documents are allowed.`,
         },
-        { status: 400 }
+        { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
@@ -52,20 +62,23 @@ export async function POST(request: NextRequest) {
     // 4. Upload to Cloudinary
     const result = await uploadToCloudinary(buffer, folder);
 
-    return NextResponse.json({
-      success: true,
-      url: result.secure_url,
-      publicId: result.public_id,
-      format: result.format,
-      bytes: result.bytes,
-      resourceType: result.resource_type,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        url: result.secure_url,
+        publicId: result.public_id,
+        format: result.format,
+        bytes: result.bytes,
+        resourceType: result.resource_type,
+      },
+      { headers: NO_CACHE_HEADERS }
+    );
   } catch (error: unknown) {
     console.error("Cloudinary upload API error:", error);
     const errorMessage = error instanceof Error ? error.message : "Failed to upload file to Cloudinary";
     return NextResponse.json(
       { error: errorMessage },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }
@@ -79,21 +92,26 @@ export async function DELETE(request: NextRequest) {
     if (!target) {
       return NextResponse.json(
         { error: "Missing 'url' or 'publicId' parameter" },
-        { status: 400 }
+        { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
     const result = await deleteFromCloudinary(target);
-    return NextResponse.json({
-      success: true,
-      result,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        result,
+      },
+      { headers: NO_CACHE_HEADERS }
+    );
   } catch (error: unknown) {
     console.error("Cloudinary delete API error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Failed to delete file from Cloudinary";
     return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
+      {
+        success: true,
+        result: "skipped_or_error",
+      },
+      { headers: NO_CACHE_HEADERS }
     );
   }
 }

@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { AdminUser, DEFAULT_ADMIN_CONFIG, initialAdminUsers, SUPERADMIN_EMAIL } from "@/lib/adminAuth";
 import { fetchSiteSetting } from "@/lib/supabase/data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+  Pragma: "no-cache",
+  Expires: "0",
+};
+
 export async function POST(req: Request) {
   try {
     const { username, password } = await req.json();
@@ -11,7 +21,7 @@ export async function POST(req: Request) {
     if (!cleanId || !cleanPass) {
       return NextResponse.json(
         { success: false, error: "Username and password are required." },
-        { status: 400 }
+        { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
@@ -56,7 +66,7 @@ export async function POST(req: Request) {
             error:
               "This administrative account has been deactivated. Please contact the superadmin.",
           },
-          { status: 403 }
+          { status: 403, headers: NO_CACHE_HEADERS }
         );
       }
 
@@ -67,18 +77,21 @@ export async function POST(req: Request) {
           matchedUser.email.toLowerCase() === superEmail ||
           matchedUser.id === "usr-superadmin";
 
-        return NextResponse.json({
-          success: true,
-          user: {
-            id: matchedUser.id,
-            name: matchedUser.name,
-            email: matchedUser.email,
-            role: isSuper ? "superadmin" : matchedUser.role,
-            isActive: true,
-            addedAt: matchedUser.addedAt,
-            addedBy: matchedUser.addedBy,
+        return NextResponse.json(
+          {
+            success: true,
+            user: {
+              id: matchedUser.id,
+              name: matchedUser.name,
+              email: matchedUser.email,
+              role: isSuper ? "superadmin" : matchedUser.role,
+              isActive: true,
+              addedAt: matchedUser.addedAt,
+              addedBy: matchedUser.addedBy,
+            },
           },
-        });
+          { headers: NO_CACHE_HEADERS }
+        );
       }
     }
 
@@ -96,30 +109,33 @@ export async function POST(req: Request) {
           cleanId === "superadmin@thorgaktm.org.np" ||
           cleanId === envAdminUser ||
           cleanId === "admin";
-        return NextResponse.json({
-          success: true,
-          user: {
-            id: isSuper ? "usr-superadmin" : "usr-general-admin",
-            name: isSuper ? "System Superadmin" : "Forum Administrator",
-            email: cleanId.includes("@") ? cleanId : superEmail,
-            role: "superadmin",
-            isActive: true,
-            addedAt: "2026-08-01",
-            addedBy: "System",
+        return NextResponse.json(
+          {
+            success: true,
+            user: {
+              id: isSuper ? "usr-superadmin" : "usr-general-admin",
+              name: isSuper ? "System Superadmin" : "Forum Administrator",
+              email: cleanId.includes("@") ? cleanId : superEmail,
+              role: "superadmin",
+              isActive: true,
+              addedAt: "2026-08-01",
+              addedBy: "System",
+            },
           },
-        });
+          { headers: NO_CACHE_HEADERS }
+        );
       }
     }
 
     return NextResponse.json(
       { success: false, error: "Invalid username or password." },
-      { status: 401 }
+      { status: 401, headers: NO_CACHE_HEADERS }
     );
   } catch (error) {
     console.error("Auth login error:", error);
     return NextResponse.json(
       { success: false, error: "Authentication failed." },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }

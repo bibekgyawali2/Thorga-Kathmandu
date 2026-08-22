@@ -399,7 +399,7 @@ export default function AdminPage() {
     fetch("/api/members", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && Array.isArray(data) && data.length > 0) {
+        if (data && Array.isArray(data)) {
           setMembersList(data);
           saveStoredMembers(data);
         }
@@ -409,7 +409,7 @@ export default function AdminPage() {
     fetch("/api/events", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && Array.isArray(data) && data.length > 0) {
+        if (data && Array.isArray(data)) {
           setEventsList(data);
           saveStoredEvents(data);
         }
@@ -419,7 +419,7 @@ export default function AdminPage() {
     fetch("/api/publications", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && Array.isArray(data) && data.length > 0) {
+        if (data && Array.isArray(data)) {
           setPubList(data);
           saveStoredPublications(data);
         }
@@ -429,7 +429,7 @@ export default function AdminPage() {
     fetch("/api/gallery", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && Array.isArray(data) && data.length > 0) {
+        if (data && Array.isArray(data)) {
           setGalleryList(data);
           saveStoredGallery(data);
         }
@@ -439,7 +439,7 @@ export default function AdminPage() {
     fetch("/api/users", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && Array.isArray(data) && data.length > 0) {
+        if (data && Array.isArray(data)) {
           setAdminUsersList(data);
           saveAdminUsers(data);
         }

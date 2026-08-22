@@ -25,6 +25,10 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 export const metadata: Metadata = {
   title: "थोर्गा काठमाडौं सम्पर्क तथा विकास मञ्च | Thorga Kathmandu Manch",
   description: "काठमाडौँमा रहेका थोर्गाबासीहरुलाई एकताबद्ध गर्दै गाउँको चौतर्फी उन्नति र विकासमा समर्पित गैरनाफामूलक संस्था।",

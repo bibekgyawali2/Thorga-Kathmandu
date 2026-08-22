@@ -2,16 +2,29 @@ import { NextResponse } from "next/server";
 import { AdminUser, initialAdminUsers, SUPERADMIN_EMAIL } from "@/lib/adminAuth";
 import { fetchSiteSetting, saveSiteSetting } from "@/lib/supabase/data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+const NO_CACHE_HEADERS = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+  Pragma: "no-cache",
+  Expires: "0",
+};
+
 export async function GET() {
   try {
     const users = await fetchSiteSetting<AdminUser[]>(
       "admin_users",
       initialAdminUsers
     );
-    return NextResponse.json(users);
+    return NextResponse.json(users, { headers: NO_CACHE_HEADERS });
   } catch (error) {
     console.error("Failed to fetch admin users:", error);
-    return NextResponse.json(initialAdminUsers, { status: 500 });
+    return NextResponse.json(initialAdminUsers, {
+      status: 500,
+      headers: NO_CACHE_HEADERS,
+    });
   }
 }
 
@@ -72,12 +85,15 @@ export async function POST(req: Request) {
     }
 
     await saveSiteSetting("admin_users", updatedUsers);
-    return NextResponse.json({ success: true, users: updatedUsers });
+    return NextResponse.json(
+      { success: true, users: updatedUsers },
+      { headers: NO_CACHE_HEADERS }
+    );
   } catch (error) {
     console.error("Failed to save admin user:", error);
     return NextResponse.json(
       { success: false, error: "Failed to save user." },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }
@@ -90,7 +106,7 @@ export async function DELETE(req: Request) {
     if (!id) {
       return NextResponse.json(
         { success: false, error: "User ID is required." },
-        { status: 400 }
+        { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
@@ -100,35 +116,33 @@ export async function DELETE(req: Request) {
     );
 
     const target = currentUsers.find((u) => u.id === id);
-    if (!target) {
-      return NextResponse.json(
-        { success: false, error: "User not found." },
-        { status: 404 }
-      );
-    }
 
     if (
-      target.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
-      target.id === "usr-superadmin"
+      target &&
+      (target.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
+        target.id === "usr-superadmin")
     ) {
       return NextResponse.json(
         {
           success: false,
           error: "Cannot delete the primary system superadmin account.",
         },
-        { status: 403 }
+        { status: 403, headers: NO_CACHE_HEADERS }
       );
     }
 
     const updatedUsers = currentUsers.filter((u) => u.id !== id);
     await saveSiteSetting("admin_users", updatedUsers);
 
-    return NextResponse.json({ success: true, users: updatedUsers });
+    return NextResponse.json(
+      { success: true, users: updatedUsers },
+      { headers: NO_CACHE_HEADERS }
+    );
   } catch (error) {
     console.error("Failed to delete admin user:", error);
     return NextResponse.json(
       { success: false, error: "Failed to delete user." },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }

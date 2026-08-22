@@ -98,6 +98,12 @@ export async function deleteFromCloudinary(urlOrPublicId: string) {
     return { result: "not_found" };
   }
 
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  if (!apiKey || !apiSecret || apiKey.includes("placeholder") || apiSecret.includes("placeholder")) {
+    return { result: "skipped_unconfigured" };
+  }
+
   try {
     const res = await cloudinary.uploader.destroy(details.publicId, {
       resource_type: details.resourceType,
@@ -117,7 +123,7 @@ export async function deleteFromCloudinary(urlOrPublicId: string) {
     return res;
   } catch (error) {
     console.error("Cloudinary destroy error:", error);
-    throw error;
+    return { result: "error", error: error instanceof Error ? error.message : String(error) };
   }
 }
 
