@@ -3956,7 +3956,7 @@ export default function AdminPage() {
                   </p>
                 </div>
 
-                {session.isSuperadmin && (
+                {(session.isSuperadmin || session.role === "superadmin" || session.email?.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() || session.email?.toLowerCase() === "admin@thorgaktm.org.np") && (
                   <button
                     type="button"
                     onClick={() => {
@@ -3977,8 +3977,8 @@ export default function AdminPage() {
                 )}
               </div>
 
-              {/* Add/Edit User Modal / Form (Superadmin only) */}
-              {showAddUserModal && session.isSuperadmin && (
+              {/* Add/Edit User Modal / Form */}
+              {showAddUserModal && (
                 <form onSubmit={handleAddUser} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="text-xs font-bold uppercase tracking-wider text-accent">
@@ -4039,7 +4039,7 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-fg">
-                        {t.userPassword} {editingUser ? (lang === "ne" ? "(नयाँ पासवर्ड राख्न मात्र लेख्नुहोस्)" : "(Optional: new password)") : "*"}
+                        {t.userPassword} {editingUser ? (lang === "ne" ? "(नयाँ पासवर्ड राख्न मात्र लेख्नुहोस्)" : "(Optional: enter new password to change)") : "*"}
                       </label>
                       <input
                         required={!editingUser}
@@ -4096,6 +4096,9 @@ export default function AdminPage() {
                       user.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
                       user.role === "superadmin";
 
+                    const isCurrentUser = session.email?.toLowerCase() === user.email.toLowerCase();
+                    const canEdit = session.isSuperadmin || session.role === "superadmin" || isCurrentUser;
+
                     return (
                       <div key={user.id} className="py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">
@@ -4110,6 +4113,11 @@ export default function AdminPage() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-bold text-fg truncate">{user.name}</span>
+                              {isCurrentUser && (
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-chip bg-accent/20 text-accent border border-accent/30">
+                                  {lang === "ne" ? "तपाईंको खाता" : "You"}
+                                </span>
+                              )}
                               {isUserSuperadmin ? (
                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-chip bg-amber-500/20 text-amber-600 border border-amber-500/30">
                                    {t.roleSuperadmin}
@@ -4136,19 +4144,20 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        {/* Actions (Superadmin can edit, toggle, delete) */}
-                        {session.isSuperadmin && (
+                        {/* Actions (Superadmin or Current User) */}
+                        {canEdit && (
                           <div className="flex items-center gap-2 self-end sm:self-center">
                             <button
                               type="button"
                               onClick={() => handleStartEditUser(user)}
-                              className="p-1.5 text-accent hover:bg-accent-soft rounded-control transition-colors"
+                              className="p-1.5 text-accent hover:bg-accent-soft rounded-control transition-colors flex items-center gap-1 text-xs"
                               title={t.editUser}
                             >
                               <PencilSimple size={15} />
+                              <span className="text-[11px] font-medium">{lang === "ne" ? "पासवर्ड / सम्पादन" : "Edit / Password"}</span>
                             </button>
 
-                            {!isUserSuperadmin && (
+                            {(session.isSuperadmin || session.role === "superadmin") && !isUserSuperadmin && !isCurrentUser && (
                               <>
                                 <button
                                   type="button"
