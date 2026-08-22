@@ -263,9 +263,9 @@ export default function MainPortal() {
     <div className="min-h-[100dvh] bg-ground text-fg font-sans selection:bg-accent selection:text-on-accent">
       <SiteHeader lang={lang} setLang={setLang} />
 
-      {/* SECTION 1: HERO WITH CONSISTENT FULL BACKGROUND IMAGE & TEXT SHADOWS */}
-      <section className="relative overflow-hidden min-h-[75vh] lg:min-h-[85vh] flex items-center border-b border-line">
-        {/* Uniform Background Image - Consistent Left to Right with No Gradient */}
+      {/* SECTION 1: HERO (Full Background Image with Content on Top) */}
+      <section className="relative overflow-hidden min-h-[75vh] lg:min-h-[85vh] flex items-center border-b border-line bg-surface">
+        {/* Full Background Image */}
         {isValidImageSrc(heroContent.imageUrl) && (
           <div className="absolute inset-0">
             <Image
@@ -276,55 +276,83 @@ export default function MainPortal() {
               className="object-cover object-center"
               priority
             />
-            {/* Uniform subtle dark tint across entire image for text legibility */}
-            <div className="absolute inset-0 bg-black/45 dark:bg-black/60" />
+            {/* Dynamic Light/Dark Overlay for flawless text contrast */}
+            <div className="absolute inset-0 bg-gradient-to-r from-ground/95 via-ground/85 to-ground/50 dark:from-ground/95 dark:via-ground/85 dark:to-ground/60" />
+            <div className="absolute inset-0 bg-gradient-to-t from-ground via-transparent to-ground/30 pointer-events-none" />
           </div>
         )}
 
-        {/* Content Container (No Card - Direct on Background with Text Shadows) */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28 w-full">
+        {/* Content Container on Top */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
           <div className="max-w-3xl space-y-6">
-            {/* Top Pill / Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-chip bg-black/40 backdrop-blur-md border border-white/25 text-white text-xs font-semibold shadow-md">
+            {/* Top Ribbon Tag */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-chip bg-accent-soft text-accent text-xs font-semibold border border-accent/25 shadow-sm backdrop-blur-sm">
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
               <Globe size={14} className="text-accent" />
               <span className="tracking-wide">{lang === "ne" ? heroContent.badgeNe : heroContent.badgeEn}</span>
             </div>
 
-            {/* Main Headline with Text Shadow */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]">
+            {/* Main Headline */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-fg leading-[1.15]">
               {lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
             </h1>
 
-            {/* Subtitle / Description with Text Shadow */}
-            <p className="text-base sm:text-lg lg:text-xl max-w-[60ch] leading-relaxed text-white/95 font-medium drop-shadow-[0_1px_8px_rgba(0,0,0,0.85)]">
+            {/* Subtitle / Description */}
+            <p className="text-base sm:text-lg lg:text-xl max-w-[60ch] leading-relaxed text-muted font-normal">
               {lang === "ne" ? heroContent.descriptionNe : heroContent.descriptionEn}
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-3">
+            <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link
                 href="/committee"
-                className="px-6 py-3.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-lg transition-all flex items-center gap-2"
+                className="px-6 py-3.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-md transition-all flex items-center gap-2"
               >
                 <Users size={18} />
                 <span>{lang === "ne" ? "कार्यसमिति सदस्यहरू" : "Executive Committee"}</span>
               </Link>
               <Link
                 href="/publications"
-                className="px-6 py-3.5 rounded-control bg-black/40 hover:bg-black/60 backdrop-blur-md text-white text-xs font-bold border border-white/30 shadow-lg transition-all flex items-center gap-2"
+                className="px-6 py-3.5 rounded-control bg-surface/90 hover:bg-surface text-fg text-xs font-bold border border-line shadow-sm backdrop-blur-md transition-all flex items-center gap-2"
               >
                 <BookOpen size={18} />
                 <span>{lang === "ne" ? "स्मारिका तथा प्रकाशन" : "Explore Publications"}</span>
               </Link>
               <a
                 href="#contact"
-                className="px-5 py-3.5 rounded-control text-white hover:text-accent text-xs font-semibold drop-shadow-[0_1px_6px_rgba(0,0,0,0.9)] transition-all flex items-center gap-1.5"
+                className="px-5 py-3.5 rounded-control text-fg hover:text-accent text-xs font-semibold transition-all flex items-center gap-1.5"
               >
                 <span>{lang === "ne" ? "सम्पर्क फाराम" : "Get in Touch"}</span>
                 <ArrowRight size={14} />
               </a>
             </div>
+
+            {/* Location & Secretariat Footer Badges */}
+            {(heroContent.imageCaptionNe ||
+              heroContent.imageCaptionEn ||
+              heroContent.imageSubtitleNe ||
+              heroContent.imageSubtitleEn) && (
+              <div className="pt-4 flex flex-wrap items-center gap-2.5 text-xs">
+                {(heroContent.imageBadgeNe || heroContent.imageBadgeEn) && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-chip bg-accent text-on-accent text-xs font-semibold shadow-sm">
+                    <ShieldCheck size={14} />
+                    <span>{lang === "ne" ? heroContent.imageBadgeNe : heroContent.imageBadgeEn}</span>
+                  </div>
+                )}
+                {(heroContent.imageCaptionNe || heroContent.imageCaptionEn) && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-surface/85 backdrop-blur-md border border-line text-muted font-medium shadow-sm">
+                    <MapPin size={14} className="text-accent flex-shrink-0" />
+                    <span>{lang === "ne" ? heroContent.imageCaptionNe : heroContent.imageCaptionEn}</span>
+                  </div>
+                )}
+                {(heroContent.imageSubtitleNe || heroContent.imageSubtitleEn) && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-surface/85 backdrop-blur-md border border-line text-muted font-medium shadow-sm">
+                    <Buildings size={14} className="text-accent flex-shrink-0" />
+                    <span>{lang === "ne" ? heroContent.imageSubtitleNe : heroContent.imageSubtitleEn}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>

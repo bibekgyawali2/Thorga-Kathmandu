@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   description: "काठमाडौँमा रहेका थोर्गाबासीहरुलाई एकताबद्ध गर्दै गाउँको चौतर्फी उन्नति र विकासमा समर्पित गैरनाफामूलक संस्था।",
 };
 
-const themeInit = `(function(){try{var t=localStorage.getItem("thorga-theme");if(!t){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="light";}})();`;
+const themeInit = `(function(){try{var t=localStorage.getItem("thorga-theme");if(!t){t="light";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="light";}})();`;
 
 export default function RootLayout({
   children,

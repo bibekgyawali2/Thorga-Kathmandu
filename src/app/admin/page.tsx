@@ -505,17 +505,44 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = verifyAdminCredentials(loginUser, loginPass);
-    if (result.success && result.user) {
-      setAdminSession(result.user);
-      setSession(getAdminSession());
-      setLoginError(false);
-      setLoginErrorMessage("");
-    } else {
-      setLoginError(true);
-      setLoginErrorMessage(result.message || t.loginError);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginUser, password: loginPass }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.user) {
+        setAdminSession(data.user);
+        setSession(getAdminSession());
+        setLoginError(false);
+        setLoginErrorMessage("");
+        return;
+      }
+      // Fallback check in case of custom locally added admin users in localStorage
+      const clientResult = verifyAdminCredentials(loginUser, loginPass);
+      if (clientResult.success && clientResult.user) {
+        setAdminSession(clientResult.user);
+        setSession(getAdminSession());
+        setLoginError(false);
+        setLoginErrorMessage("");
+      } else {
+        setLoginError(true);
+        setLoginErrorMessage(data.error || clientResult.message || t.loginError);
+      }
+    } catch {
+      const clientResult = verifyAdminCredentials(loginUser, loginPass);
+      if (clientResult.success && clientResult.user) {
+        setAdminSession(clientResult.user);
+        setSession(getAdminSession());
+        setLoginError(false);
+        setLoginErrorMessage("");
+      } else {
+        setLoginError(true);
+        setLoginErrorMessage(clientResult.message || t.loginError);
+      }
     }
   };
 
