@@ -1337,11 +1337,27 @@ export default function AdminPage() {
           body: JSON.stringify(payload),
         });
         const data = await res.json();
+        if (!res.ok || !data.success) {
+          dialogAlert({
+            title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+            description: data.error || (lang === "ne" ? "प्रशासक खाता अद्यावधिक गर्न सकिएन।" : "Failed to update administrator."),
+            type: "danger",
+          });
+          return;
+        }
+
         if (data.users) {
           setAdminUsersList(data.users);
           saveAdminUsers(data.users);
         }
-      } catch {}
+      } catch (err) {
+        dialogAlert({
+          title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+          description: lang === "ne" ? "सर्भरसँग सम्पर्क हुन सकेन।" : "Network or server error occurred.",
+          type: "danger",
+        });
+        return;
+      }
 
       setShowAddUserModal(false);
       setEditingUser(null);
@@ -1367,13 +1383,26 @@ export default function AdminPage() {
           body: JSON.stringify(newUserPayload),
         });
         const data = await res.json();
+        if (!res.ok || !data.success) {
+          dialogAlert({
+            title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+            description: data.error || (lang === "ne" ? "नयाँ प्रशासक खाता सिर्जना गर्न सकिएन।" : "Failed to create administrator."),
+            type: "danger",
+          });
+          return;
+        }
+
         if (data.users) {
           setAdminUsersList(data.users);
           saveAdminUsers(data.users);
         }
-      } catch {
-        addAdminUser({ ...newUserPayload, isActive: true });
-        setAdminUsersList(getAdminUsers());
+      } catch (err) {
+        dialogAlert({
+          title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+          description: lang === "ne" ? "सर्भरसँग सम्पर्क हुन सकेन।" : "Network or server error occurred.",
+          type: "danger",
+        });
+        return;
       }
 
       setShowAddUserModal(false);
@@ -1403,13 +1432,26 @@ export default function AdminPage() {
         body: JSON.stringify({ id: user.id, isActive: !user.isActive }),
       });
       const data = await res.json();
+      if (!res.ok || !data.success) {
+        dialogAlert({
+          title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+          description: data.error || (lang === "ne" ? "स्थिति अद्यावधिक गर्न सकिएन।" : "Failed to update user status."),
+          type: "danger",
+        });
+        return;
+      }
+
       if (data.users) {
         setAdminUsersList(data.users);
         saveAdminUsers(data.users);
       }
     } catch {
-      toggleAdminUserStatus(user.id, session.email);
-      setAdminUsersList(getAdminUsers());
+      dialogAlert({
+        title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+        description: lang === "ne" ? "सर्भरसँग सम्पर्क हुन सकेन।" : "Network or server error occurred.",
+        type: "danger",
+      });
+      return;
     }
 
     dialogAlert({
@@ -1441,13 +1483,26 @@ export default function AdminPage() {
           method: "DELETE",
         });
         const data = await res.json();
+        if (!res.ok || !data.success) {
+          dialogAlert({
+            title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+            description: data.error || (lang === "ne" ? "प्रशासक हटाउन सकिएन।" : "Failed to remove user."),
+            type: "danger",
+          });
+          return;
+        }
+
         if (data.users) {
           setAdminUsersList(data.users);
           saveAdminUsers(data.users);
         }
       } catch {
-        removeAdminUser(user.id, session.email);
-        setAdminUsersList(getAdminUsers());
+        dialogAlert({
+          title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+          description: lang === "ne" ? "सर्भरसँग सम्पर्क हुन सकेन।" : "Network or server error occurred.",
+          type: "danger",
+        });
+        return;
       }
 
       dialogAlert({

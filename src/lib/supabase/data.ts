@@ -63,10 +63,17 @@ export async function fetchSiteSetting<T>(key: string, defaultValue: T): Promise
       .eq("key", key)
       .maybeSingle();
 
-    if (!error && data && data.value) {
-      return typeof data.value === "string"
-        ? JSON.parse(data.value)
-        : { ...defaultValue, ...data.value };
+    if (!error && data && data.value !== undefined && data.value !== null) {
+      let parsed = data.value;
+      if (typeof parsed === "string") {
+        try { parsed = JSON.parse(parsed); } catch {}
+      }
+      if (Array.isArray(defaultValue)) {
+        return (Array.isArray(parsed) ? parsed : defaultValue) as T;
+      }
+      return (typeof parsed === "object" && parsed !== null
+        ? { ...defaultValue, ...parsed }
+        : parsed) as T;
     }
   } catch {}
 
@@ -78,9 +85,17 @@ export async function fetchSiteSetting<T>(key: string, defaultValue: T): Promise
         "SELECT value FROM public.site_settings WHERE key = $1 LIMIT 1",
         [key]
       );
-      if (res.rows.length > 0 && res.rows[0].value) {
-        const val = res.rows[0].value;
-        return typeof val === "string" ? JSON.parse(val) : { ...defaultValue, ...val };
+      if (res.rows.length > 0 && res.rows[0].value !== undefined && res.rows[0].value !== null) {
+        let val = res.rows[0].value;
+        if (typeof val === "string") {
+          try { val = JSON.parse(val); } catch {}
+        }
+        if (Array.isArray(defaultValue)) {
+          return (Array.isArray(val) ? val : defaultValue) as T;
+        }
+        return (typeof val === "object" && val !== null
+          ? { ...defaultValue, ...val }
+          : val) as T;
       }
     } catch (err) {
       console.warn(`[fetchSiteSetting] pg query failed for ${key}:`, err);
