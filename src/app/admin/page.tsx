@@ -519,30 +519,13 @@ export default function AdminPage() {
         setSession(getAdminSession());
         setLoginError(false);
         setLoginErrorMessage("");
-        return;
-      }
-      // Fallback check in case of custom locally added admin users in localStorage
-      const clientResult = verifyAdminCredentials(loginUser, loginPass);
-      if (clientResult.success && clientResult.user) {
-        setAdminSession(clientResult.user);
-        setSession(getAdminSession());
-        setLoginError(false);
-        setLoginErrorMessage("");
       } else {
         setLoginError(true);
-        setLoginErrorMessage(data.error || clientResult.message || t.loginError);
+        setLoginErrorMessage(data.error || t.loginError);
       }
     } catch {
-      const clientResult = verifyAdminCredentials(loginUser, loginPass);
-      if (clientResult.success && clientResult.user) {
-        setAdminSession(clientResult.user);
-        setSession(getAdminSession());
-        setLoginError(false);
-        setLoginErrorMessage("");
-      } else {
-        setLoginError(true);
-        setLoginErrorMessage(clientResult.message || t.loginError);
-      }
+      setLoginError(true);
+      setLoginErrorMessage(t.loginError);
     }
   };
 

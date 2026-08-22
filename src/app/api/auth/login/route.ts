@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SUPERADMIN_EMAIL } from "@/lib/adminAuth";
+import { DEFAULT_ADMIN_CONFIG, SUPERADMIN_EMAIL } from "@/lib/adminAuth";
 
 export async function POST(req: Request) {
   try {
@@ -10,12 +10,16 @@ export async function POST(req: Request) {
     const envAdminUser = (
       process.env.ADMIN_USERNAME ||
       process.env.NEXT_PUBLIC_ADMIN_USERNAME ||
+      DEFAULT_ADMIN_CONFIG.username ||
       "admin"
     ).toLowerCase();
+
     const envAdminPass =
       process.env.ADMIN_PASSWORD ||
       process.env.NEXT_PUBLIC_ADMIN_PASSWORD ||
-      "thorga2083@admin";
+      DEFAULT_ADMIN_CONFIG.password ||
+      "thorga2081@admin";
+
     const superEmail = (
       process.env.SUPERADMIN_EMAIL ||
       process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL ||
@@ -30,7 +34,7 @@ export async function POST(req: Request) {
       cleanId === "superadmin@thorgaktm.org.np" ||
       cleanId === "admin@thorgaktm.org.np"
     ) {
-      if (cleanPass === envAdminPass || cleanPass === "thorga2081@admin") {
+      if (cleanPass === envAdminPass) {
         const isSuper =
           cleanId === superEmail ||
           cleanId === "superadmin@thorgaktm.org.np" ||
@@ -55,7 +59,7 @@ export async function POST(req: Request) {
       { success: false, error: "Invalid username or password." },
       { status: 401 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: "Authentication failed." },
       { status: 500 }
