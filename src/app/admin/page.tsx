@@ -341,6 +341,22 @@ export default function AdminPage() {
   const [adminUsersList, setAdminUsersList] = useState<AdminUser[]>(() => getAdminUsers());
   const [brandingState, setBrandingState] = useState<BrandingSettings>(() => getStoredBrandingSnapshot());
 
+  // Loading States for Operations
+  const [isSavingHero, setIsSavingHero] = useState(false);
+  const [isSavingMember, setIsSavingMember] = useState(false);
+  const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
+  const [isSavingPub, setIsSavingPub] = useState(false);
+  const [deletingPubId, setDeletingPubId] = useState<string | null>(null);
+  const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [isSavingGallery, setIsSavingGallery] = useState(false);
+  const [deletingGalleryId, setDeletingGalleryId] = useState<string | null>(null);
+  const [isSavingUser, setIsSavingUser] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
+  const [isSavingContact, setIsSavingContact] = useState(false);
+  const [isSavingBranding, setIsSavingBranding] = useState(false);
+
   // Filter & Form States
   const [memberFilterCategory, setMemberFilterCategory] = useState<"all" | "current" | "advisor" | "past">("all");
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
@@ -557,7 +573,7 @@ export default function AdminPage() {
     setSession(null);
   };
 
-  const handleSaveHero = (e: React.FormEvent) => {
+  const handleSaveHero = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
       !heroState.titleNe.trim() ||
@@ -575,22 +591,41 @@ export default function AdminPage() {
       });
       return;
     }
-    saveStoredHeroContent(heroState);
-    fetch("/api/hero", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(heroState),
-    }).catch((err) => console.error("Failed to sync hero to db:", err));
-    revalidateCollection("hero");
 
-    dialogAlert({
-      title: lang === "ne" ? "ब्यानर सम्पादन भयो" : "Hero Banner Updated",
-      description:
-        lang === "ne"
-          ? "मुख्य पृष्ठको ब्यानर विवरणहरू सफलतापूर्वक डेटाबेसमा अद्यावधिक गरिएको छ।"
-          : "Hero section headlines, text, and visual frame have been updated live across all devices.",
-      type: "success",
-    });
+    setIsSavingHero(true);
+    try {
+      const res = await fetch("/api/hero", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(heroState),
+      });
+      const data = await res.json();
+      if (data && data.success && data.data) {
+        setHeroState(data.data);
+        saveStoredHeroContent(data.data);
+      } else {
+        saveStoredHeroContent(heroState);
+      }
+      revalidateCollection("hero");
+
+      dialogAlert({
+        title: lang === "ne" ? "ब्यानर सम्पादन भयो" : "Hero Banner Updated",
+        description:
+          lang === "ne"
+            ? "मुख्य पृष्ठको ब्यानर विवरणहरू सफलतापूर्वक डेटाबेसमा अद्यावधिक गरिएको छ।"
+            : "Hero section headlines, text, and visual frame have been updated live across all devices.",
+        type: "success",
+      });
+    } catch (err) {
+      console.error("Failed to sync hero to db:", err);
+      dialogAlert({
+        title: lang === "ne" ? "कार्य असफल" : "Save Failed",
+        description: lang === "ne" ? "सर्भरसँग सम्पर्क हुन सकेन।" : "Network or server error occurred.",
+        type: "danger",
+      });
+    } finally {
+      setIsSavingHero(false);
+    }
   };
 
   const handleStartEditMember = (member: Member) => {
@@ -613,7 +648,7 @@ export default function AdminPage() {
     setShowAddMemberModal(true);
   };
 
-  const handleAddMember = (e: React.FormEvent) => {
+  const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidName(memberForm.nameNe) || !isValidName(memberForm.nameEn)) {
       dialogAlert({
@@ -660,9 +695,76 @@ export default function AdminPage() {
       return;
     }
 
-    if (editingMember) {
-      const updatedMember: Member = {
-        ...editingMember,
+    setIsSavingMember(true);
+    try {
+      if (editingMember) {
+        const updatedMember: Member = {
+          ...editingMember,
+          ...memberForm,
+          nameNe: memberForm.nameNe.trim(),
+          nameEn: memberForm.nameEn.trim(),
+          roleNe: memberForm.roleNe.trim(),
+          roleEn: memberForm.roleEn.trim(),
+          phone: memberForm.phone.trim(),
+          email: memberForm.email.trim(),
+        };
+
+        let finalMember = updatedMember;
+        try {
+          const res = await fetch("/api/members", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedMember),
+          });
+          const data = await res.json();
+          if (data && data.success && data.data) {
+            finalMember = data.data;
+          }
+        } catch (err) {
+          console.error("Failed to update member in db:", err);
+        }
+
+        const updated = membersList.map((m) =>
+          m.id === editingMember.id ? finalMember : m
+        );
+        setMembersList(updated);
+        saveStoredMembers(updated);
+        revalidateCollection("members");
+        setShowAddMemberModal(false);
+        setEditingMember(null);
+        setMemberForm({
+          nameEn: "",
+          nameNe: "",
+          roleEn: "",
+          roleNe: "",
+          committeeType: "current",
+          order: 10,
+          phone: "",
+          email: "",
+          bioEn: "",
+          bioNe: "",
+          tenureEn: "",
+          tenureNe: "",
+          photoUrl: "",
+        });
+        dialogAlert({
+          title: lang === "ne" ? "सदस्य सम्पादन भयो" : "Member Updated",
+          description:
+            lang === "ne"
+              ? `${finalMember.nameNe} को विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।`
+              : `${finalMember.nameEn}'s profile has been successfully updated.`,
+          type: "success",
+        });
+        return;
+      }
+
+      const generatedId =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `m-${Date.now()}`;
+
+      const newMember: Member = {
+        id: generatedId,
         ...memberForm,
         nameNe: memberForm.nameNe.trim(),
         nameEn: memberForm.nameEn.trim(),
@@ -671,19 +773,30 @@ export default function AdminPage() {
         phone: memberForm.phone.trim(),
         email: memberForm.email.trim(),
       };
-      const updated = membersList.map((m) =>
-        m.id === editingMember.id ? updatedMember : m
-      );
+
+      let finalSavedMember = newMember;
+      try {
+        const res = await fetch("/api/members", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newMember),
+        });
+        const data = await res.json();
+        if (data && data.success && data.data) {
+          finalSavedMember = data.data;
+        }
+      } catch (err) {
+        console.error("Failed to sync member to db:", err);
+      }
+
+      const updated = [
+        finalSavedMember,
+        ...membersList.filter((m) => m.id !== finalSavedMember.id),
+      ];
       setMembersList(updated);
       saveStoredMembers(updated);
-      fetch("/api/members", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedMember),
-      }).catch((err) => console.error("Failed to update member in db:", err));
       revalidateCollection("members");
       setShowAddMemberModal(false);
-      setEditingMember(null);
       setMemberForm({
         nameEn: "",
         nameNe: "",
@@ -700,59 +813,16 @@ export default function AdminPage() {
         photoUrl: "",
       });
       dialogAlert({
-        title: lang === "ne" ? "सदस्य सम्पादन भयो" : "Member Updated",
+        title: lang === "ne" ? "सदस्य थपियो" : "Member Added",
         description:
           lang === "ne"
-            ? `${updatedMember.nameNe} को विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।`
-            : `${updatedMember.nameEn}'s profile has been successfully updated.`,
+            ? `${finalSavedMember.nameNe} कार्यसमिति रोस्टरमा थपिनुभएको छ।`
+            : `${finalSavedMember.nameEn} has been added to the committee roster.`,
         type: "success",
       });
-      return;
+    } finally {
+      setIsSavingMember(false);
     }
-
-    const newMember: Member = {
-      id: `m-${Date.now()}`,
-      ...memberForm,
-      nameNe: memberForm.nameNe.trim(),
-      nameEn: memberForm.nameEn.trim(),
-      roleNe: memberForm.roleNe.trim(),
-      roleEn: memberForm.roleEn.trim(),
-      phone: memberForm.phone.trim(),
-      email: memberForm.email.trim(),
-    };
-    const updated = [newMember, ...membersList];
-    setMembersList(updated);
-    saveStoredMembers(updated);
-    fetch("/api/members", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newMember),
-    }).catch((err) => console.error("Failed to sync member to db:", err));
-    revalidateCollection("members");
-    setShowAddMemberModal(false);
-    setMemberForm({
-      nameEn: "",
-      nameNe: "",
-      roleEn: "",
-      roleNe: "",
-      committeeType: "current",
-      order: 10,
-      phone: "",
-      email: "",
-      bioEn: "",
-      bioNe: "",
-      tenureEn: "",
-      tenureNe: "",
-      photoUrl: "",
-    });
-    dialogAlert({
-      title: lang === "ne" ? "सदस्य थपियो" : "Member Added",
-      description:
-        lang === "ne"
-          ? `${newMember.nameNe} कार्यसमिति रोस्टरमा थपिनुभएको छ।`
-          : `${newMember.nameEn} has been added to the committee roster.`,
-      type: "success",
-    });
   };
 
   const deleteCloudinaryAsset = async (url?: string) => {
@@ -778,16 +848,45 @@ export default function AdminPage() {
       cancelText: t.cancelBtn,
     });
     if (confirmed) {
-      if (memberToDelete?.photoUrl) {
-        deleteCloudinaryAsset(memberToDelete.photoUrl);
+      setDeletingMemberId(id);
+      try {
+        if (memberToDelete?.photoUrl) {
+          deleteCloudinaryAsset(memberToDelete.photoUrl);
+        }
+        const res = await fetch(`/api/members?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          dialogAlert({
+            title: lang === "ne" ? "हटाउन सकिएन" : "Delete Failed",
+            description:
+              data?.error ||
+              (lang === "ne"
+                ? "सर्भरबाट सदस्य हटाउन सकिएन।"
+                : "Failed to remove member from server."),
+            type: "danger",
+          });
+          return;
+        }
+
+        const updated = membersList.filter((m) => m.id !== id);
+        setMembersList(updated);
+        saveStoredMembers(updated);
+        revalidateCollection("members");
+        dialogAlert({
+          title: lang === "ne" ? "सदस्य हटाइयो" : "Member Removed",
+          description:
+            lang === "ne"
+              ? "सदस्य सफलतापूर्वक हटाइएको छ।"
+              : "Member removed successfully.",
+          type: "success",
+        });
+      } catch (err) {
+        console.error("Failed to delete member from db:", err);
+      } finally {
+        setDeletingMemberId(null);
       }
-      const updated = membersList.filter((m) => m.id !== id);
-      setMembersList(updated);
-      saveStoredMembers(updated);
-      fetch(`/api/members?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      }).catch((err) => console.error("Failed to delete member from db:", err));
-      revalidateCollection("members");
     }
   };
 
@@ -810,7 +909,7 @@ export default function AdminPage() {
     setShowAddPubModal(true);
   };
 
-  const handleAddPub = (e: React.FormEvent) => {
+  const handleAddPub = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pubForm.titleNe.trim() || !pubForm.titleEn.trim()) {
       dialogAlert({
@@ -835,28 +934,103 @@ export default function AdminPage() {
       return;
     }
 
-    if (editingPub) {
-      const updatedPub: Publication = {
-        ...editingPub,
+    setIsSavingPub(true);
+    try {
+      if (editingPub) {
+        const updatedPub: Publication = {
+          ...editingPub,
+          ...pubForm,
+          titleNe: pubForm.titleNe.trim(),
+          titleEn: pubForm.titleEn.trim(),
+          categoryNe: pubForm.categoryNe.trim(),
+          categoryEn: pubForm.categoryEn.trim(),
+        };
+
+        let finalPub = updatedPub;
+        try {
+          const res = await fetch("/api/publications", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedPub),
+          });
+          const data = await res.json();
+          if (data && data.success && data.data) {
+            finalPub = data.data;
+          }
+        } catch (err) {
+          console.error("Failed to update pub in db:", err);
+        }
+
+        const updated = pubList.map((p) =>
+          p.id === editingPub.id ? finalPub : p
+        );
+        setPubList(updated);
+        saveStoredPublications(updated);
+        revalidateCollection("publications");
+        setShowAddPubModal(false);
+        setEditingPub(null);
+        setPubForm({
+          titleEn: "",
+          titleNe: "",
+          categoryEn: "Souvenir",
+          categoryNe: "स्मारिका",
+          publishedYearEn: "2081 BS (2024)",
+          publishedYearNe: "२०८१",
+          descriptionEn: "",
+          descriptionNe: "",
+          pdfUrl: "",
+          pages: 48,
+          fileSize: "4.2 MB",
+          coverImageUrl: "",
+        });
+        dialogAlert({
+          title: lang === "ne" ? "प्रकाशन सम्पादन भयो" : "Publication Updated",
+          description:
+            lang === "ne"
+              ? "प्रकाशन विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।"
+              : "Publication details updated successfully.",
+          type: "success",
+        });
+        return;
+      }
+
+      const generatedId =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `p-${Date.now()}`;
+
+      const newPub: Publication = {
+        id: generatedId,
         ...pubForm,
         titleNe: pubForm.titleNe.trim(),
         titleEn: pubForm.titleEn.trim(),
         categoryNe: pubForm.categoryNe.trim(),
         categoryEn: pubForm.categoryEn.trim(),
       };
-      const updated = pubList.map((p) =>
-        p.id === editingPub.id ? updatedPub : p
-      );
+
+      let finalSavedPub = newPub;
+      try {
+        const res = await fetch("/api/publications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newPub),
+        });
+        const data = await res.json();
+        if (data && data.success && data.data) {
+          finalSavedPub = data.data;
+        }
+      } catch (err) {
+        console.error("Failed to sync pub to db:", err);
+      }
+
+      const updated = [
+        finalSavedPub,
+        ...pubList.filter((p) => p.id !== finalSavedPub.id),
+      ];
       setPubList(updated);
       saveStoredPublications(updated);
-      fetch("/api/publications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedPub),
-      }).catch((err) => console.error("Failed to update pub in db:", err));
       revalidateCollection("publications");
       setShowAddPubModal(false);
-      setEditingPub(null);
       setPubForm({
         titleEn: "",
         titleNe: "",
@@ -872,56 +1046,16 @@ export default function AdminPage() {
         coverImageUrl: "",
       });
       dialogAlert({
-        title: lang === "ne" ? "प्रकाशन सम्पादन भयो" : "Publication Updated",
+        title: lang === "ne" ? "प्रकाशन थपियो" : "Publication Uploaded",
         description:
           lang === "ne"
-            ? "प्रकाशन विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।"
-            : "Publication details updated successfully.",
+            ? "नयाँ प्रकाशन डिजिटल सङ्ग्रहमा सफलतापूर्वक प्रकाशित भयो।"
+            : "New document added to the public PDF archive.",
         type: "success",
       });
-      return;
+    } finally {
+      setIsSavingPub(false);
     }
-
-    const newPub: Publication = {
-      id: `p-${Date.now()}`,
-      ...pubForm,
-      titleNe: pubForm.titleNe.trim(),
-      titleEn: pubForm.titleEn.trim(),
-      categoryNe: pubForm.categoryNe.trim(),
-      categoryEn: pubForm.categoryEn.trim(),
-    };
-    const updated = [newPub, ...pubList];
-    setPubList(updated);
-    saveStoredPublications(updated);
-    fetch("/api/publications", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newPub),
-    }).catch((err) => console.error("Failed to sync pub to db:", err));
-    revalidateCollection("publications");
-    setShowAddPubModal(false);
-    setPubForm({
-      titleEn: "",
-      titleNe: "",
-      categoryEn: "Souvenir",
-      categoryNe: "स्मारिका",
-      publishedYearEn: "2081 BS (2024)",
-      publishedYearNe: "२०८१",
-      descriptionEn: "",
-      descriptionNe: "",
-      pdfUrl: "",
-      pages: 48,
-      fileSize: "4.2 MB",
-      coverImageUrl: "",
-    });
-    dialogAlert({
-      title: lang === "ne" ? "प्रकाशन थपियो" : "Publication Uploaded",
-      description:
-        lang === "ne"
-          ? "नयाँ प्रकाशन डिजिटल सङ्ग्रहमा सफलतापूर्वक प्रकाशित भयो।"
-          : "New document added to the public PDF archive.",
-      type: "success",
-    });
   };
 
   const handleDeletePub = async (id: string) => {
@@ -934,19 +1068,49 @@ export default function AdminPage() {
       cancelText: t.cancelBtn,
     });
     if (confirmed) {
-      if (pubToDelete?.pdfUrl) {
-        deleteCloudinaryAsset(pubToDelete.pdfUrl);
+      setDeletingPubId(id);
+      try {
+        if (pubToDelete?.pdfUrl) {
+          deleteCloudinaryAsset(pubToDelete.pdfUrl);
+        }
+        if (pubToDelete?.coverImageUrl) {
+          deleteCloudinaryAsset(pubToDelete.coverImageUrl);
+        }
+
+        const res = await fetch(`/api/publications?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          dialogAlert({
+            title: lang === "ne" ? "हटाउन सकिएन" : "Delete Failed",
+            description:
+              data?.error ||
+              (lang === "ne"
+                ? "सर्भरबाट प्रकाशन हटाउन सकिएन।"
+                : "Failed to remove publication from server."),
+            type: "danger",
+          });
+          return;
+        }
+
+        const updated = pubList.filter((p) => p.id !== id);
+        setPubList(updated);
+        saveStoredPublications(updated);
+        revalidateCollection("publications");
+        dialogAlert({
+          title: lang === "ne" ? "प्रकाशन हटाइयो" : "Publication Removed",
+          description:
+            lang === "ne"
+              ? "प्रकाशन सफलतापूर्वक हटाइएको छ।"
+              : "Publication removed successfully.",
+          type: "success",
+        });
+      } catch (err) {
+        console.error("Failed to delete pub from db:", err);
+      } finally {
+        setDeletingPubId(null);
       }
-      if (pubToDelete?.coverImageUrl) {
-        deleteCloudinaryAsset(pubToDelete.coverImageUrl);
-      }
-      const updated = pubList.filter((p) => p.id !== id);
-      setPubList(updated);
-      saveStoredPublications(updated);
-      fetch(`/api/publications?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      }).catch((err) => console.error("Failed to delete pub from db:", err));
-      revalidateCollection("publications");
     }
   };
 
@@ -971,7 +1135,7 @@ export default function AdminPage() {
     setShowAddEventModal(true);
   };
 
-  const handleAddEvent = (e: React.FormEvent) => {
+  const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventForm.titleNe.trim() || !eventForm.titleEn.trim()) {
       dialogAlert({
@@ -1007,9 +1171,77 @@ export default function AdminPage() {
       return;
     }
 
-    if (editingEvent) {
-      const updatedEv: EventItem = {
-        ...editingEvent,
+    setIsSavingEvent(true);
+    try {
+      if (editingEvent) {
+        const updatedEv: EventItem = {
+          ...editingEvent,
+          ...eventForm,
+          titleNe: eventForm.titleNe.trim(),
+          titleEn: eventForm.titleEn.trim(),
+          dateNe: eventForm.dateNe.trim(),
+          dateEn: eventForm.dateEn.trim(),
+          locationNe: eventForm.locationNe.trim(),
+          locationEn: eventForm.locationEn.trim(),
+        };
+
+        let finalEv = updatedEv;
+        try {
+          const res = await fetch("/api/events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedEv),
+          });
+          const data = await res.json();
+          if (data && data.success && data.data) {
+            finalEv = data.data;
+          }
+        } catch (err) {
+          console.error("Failed to update event in db:", err);
+        }
+
+        const updated = eventsList.map((e) =>
+          e.id === editingEvent.id ? finalEv : e
+        );
+        setEventsList(updated);
+        saveStoredEvents(updated);
+        revalidateCollection("events");
+        setShowAddEventModal(false);
+        setEditingEvent(null);
+        setEventForm({
+          titleEn: "",
+          titleNe: "",
+          categoryEn: "General Assembly",
+          categoryNe: "साधारण सभा",
+          dateEn: "2081 Ashoj 12",
+          dateNe: "२०८१ असोज १२",
+          timeEn: "11:00 AM",
+          timeNe: "बिहान ११:०० बजे",
+          locationEn: "Kathmandu",
+          locationNe: "काठमाडौँ",
+          descriptionEn: "",
+          descriptionNe: "",
+          imageUrl: "",
+          status: "upcoming",
+        });
+        dialogAlert({
+          title: lang === "ne" ? "कार्यक्रम सम्पादन भयो" : "Event Updated",
+          description:
+            lang === "ne"
+              ? "कार्यक्रम विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।"
+              : "Event details have been updated.",
+          type: "success",
+        });
+        return;
+      }
+
+      const generatedId =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `e-${Date.now()}`;
+
+      const newEv: EventItem = {
+        id: generatedId,
         ...eventForm,
         titleNe: eventForm.titleNe.trim(),
         titleEn: eventForm.titleEn.trim(),
@@ -1018,19 +1250,30 @@ export default function AdminPage() {
         locationNe: eventForm.locationNe.trim(),
         locationEn: eventForm.locationEn.trim(),
       };
-      const updated = eventsList.map((e) =>
-        e.id === editingEvent.id ? updatedEv : e
-      );
+
+      let finalSavedEv = newEv;
+      try {
+        const res = await fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newEv),
+        });
+        const data = await res.json();
+        if (data && data.success && data.data) {
+          finalSavedEv = data.data;
+        }
+      } catch (err) {
+        console.error("Failed to sync event to db:", err);
+      }
+
+      const updated = [
+        finalSavedEv,
+        ...eventsList.filter((e) => e.id !== finalSavedEv.id),
+      ];
       setEventsList(updated);
       saveStoredEvents(updated);
-      fetch("/api/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedEv),
-      }).catch((err) => console.error("Failed to update event in db:", err));
       revalidateCollection("events");
       setShowAddEventModal(false);
-      setEditingEvent(null);
       setEventForm({
         titleEn: "",
         titleNe: "",
@@ -1048,60 +1291,16 @@ export default function AdminPage() {
         status: "upcoming",
       });
       dialogAlert({
-        title: lang === "ne" ? "कार्यक्रम सम्पादन भयो" : "Event Updated",
+        title: lang === "ne" ? "कार्यक्रम थपियो" : "Event Scheduled",
         description:
           lang === "ne"
-            ? "कार्यक्रम विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।"
-            : "Event details have been updated.",
+            ? "कार्यक्रम क्यालेन्डरमा दर्ता भएको छ।"
+            : "Event successfully added to schedule.",
         type: "success",
       });
-      return;
+    } finally {
+      setIsSavingEvent(false);
     }
-
-    const newEv: EventItem = {
-      id: `e-${Date.now()}`,
-      ...eventForm,
-      titleNe: eventForm.titleNe.trim(),
-      titleEn: eventForm.titleEn.trim(),
-      dateNe: eventForm.dateNe.trim(),
-      dateEn: eventForm.dateEn.trim(),
-      locationNe: eventForm.locationNe.trim(),
-      locationEn: eventForm.locationEn.trim(),
-    };
-    const updated = [newEv, ...eventsList];
-    setEventsList(updated);
-    saveStoredEvents(updated);
-    fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newEv),
-    }).catch((err) => console.error("Failed to sync event to db:", err));
-    revalidateCollection("events");
-    setShowAddEventModal(false);
-    setEventForm({
-      titleEn: "",
-      titleNe: "",
-      categoryEn: "General Assembly",
-      categoryNe: "साधारण सभा",
-      dateEn: "2081 Ashoj 12",
-      dateNe: "२०८१ असोज १२",
-      timeEn: "11:00 AM",
-      timeNe: "बिहान ११:०० बजे",
-      locationEn: "Kathmandu",
-      locationNe: "काठमाडौँ",
-      descriptionEn: "",
-      descriptionNe: "",
-      imageUrl: "",
-      status: "upcoming",
-    });
-    dialogAlert({
-      title: lang === "ne" ? "कार्यक्रम थपियो" : "Event Scheduled",
-      description:
-        lang === "ne"
-          ? "कार्यक्रम क्यालेन्डरमा दर्ता भएको छ।"
-          : "Event successfully added to schedule.",
-      type: "success",
-    });
   };
 
   const handleDeleteEvent = async (id: string) => {
@@ -1114,16 +1313,46 @@ export default function AdminPage() {
       cancelText: t.cancelBtn,
     });
     if (confirmed) {
-      if (eventToDelete?.imageUrl) {
-        deleteCloudinaryAsset(eventToDelete.imageUrl);
+      setDeletingEventId(id);
+      try {
+        if (eventToDelete?.imageUrl) {
+          deleteCloudinaryAsset(eventToDelete.imageUrl);
+        }
+
+        const res = await fetch(`/api/events?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          dialogAlert({
+            title: lang === "ne" ? "हटाउन सकिएन" : "Delete Failed",
+            description:
+              data?.error ||
+              (lang === "ne"
+                ? "सर्भरबाट कार्यक्रम हटाउन सकिएन।"
+                : "Failed to remove event from server."),
+            type: "danger",
+          });
+          return;
+        }
+
+        const updated = eventsList.filter((e) => e.id !== id);
+        setEventsList(updated);
+        saveStoredEvents(updated);
+        revalidateCollection("events");
+        dialogAlert({
+          title: lang === "ne" ? "कार्यक्रम हटाइयो" : "Event Removed",
+          description:
+            lang === "ne"
+              ? "कार्यक्रम सफलतापूर्वक हटाइएको छ।"
+              : "Event removed successfully.",
+          type: "success",
+        });
+      } catch (err) {
+        console.error("Failed to delete event from db:", err);
+      } finally {
+        setDeletingEventId(null);
       }
-      const updated = eventsList.filter((e) => e.id !== id);
-      setEventsList(updated);
-      saveStoredEvents(updated);
-      fetch(`/api/events?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      }).catch((err) => console.error("Failed to delete event from db:", err));
-      revalidateCollection("events");
     }
   };
 
@@ -1141,7 +1370,7 @@ export default function AdminPage() {
     setShowAddGalleryModal(true);
   };
 
-  const handleAddGallery = (e: React.FormEvent) => {
+  const handleAddGallery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!galleryForm.titleNe.trim() || !galleryForm.titleEn.trim()) {
       dialogAlert({
@@ -1166,26 +1395,94 @@ export default function AdminPage() {
       return;
     }
 
-    if (editingGallery) {
-      const updatedG: GalleryItem = {
-        ...editingGallery,
+    setIsSavingGallery(true);
+    try {
+      if (editingGallery) {
+        const updatedG: GalleryItem = {
+          ...editingGallery,
+          ...galleryForm,
+          titleNe: galleryForm.titleNe.trim(),
+          titleEn: galleryForm.titleEn.trim(),
+        };
+
+        let finalG = updatedG;
+        try {
+          const res = await fetch("/api/gallery", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedG),
+          });
+          const data = await res.json();
+          if (data && data.success && data.data) {
+            finalG = data.data;
+          }
+        } catch (err) {
+          console.error("Failed to update gallery in db:", err);
+        }
+
+        const updated = galleryList.map((g) =>
+          g.id === editingGallery.id ? finalG : g
+        );
+        setGalleryList(updated);
+        saveStoredGallery(updated);
+        revalidateCollection("gallery");
+        setShowAddGalleryModal(false);
+        setEditingGallery(null);
+        setGalleryForm({
+          titleEn: "",
+          titleNe: "",
+          categoryEn: "Education",
+          categoryNe: "शिक्षा",
+          dateEn: "2081 Shrawan",
+          dateNe: "२०८१ साउन",
+          imageUrl: "",
+        });
+        dialogAlert({
+          title: lang === "ne" ? "तस्बिर सम्पादन भयो" : "Photo Updated",
+          description:
+            lang === "ne"
+              ? "तस्बिर विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।"
+              : "Gallery photo details updated successfully.",
+          type: "success",
+        });
+        return;
+      }
+
+      const generatedId =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `g-${Date.now()}`;
+
+      const newG: GalleryItem = {
+        id: generatedId,
         ...galleryForm,
         titleNe: galleryForm.titleNe.trim(),
         titleEn: galleryForm.titleEn.trim(),
       };
-      const updated = galleryList.map((g) =>
-        g.id === editingGallery.id ? updatedG : g
-      );
+
+      let finalSavedG = newG;
+      try {
+        const res = await fetch("/api/gallery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newG),
+        });
+        const data = await res.json();
+        if (data && data.success && data.data) {
+          finalSavedG = data.data;
+        }
+      } catch (err) {
+        console.error("Failed to sync gallery to db:", err);
+      }
+
+      const updated = [
+        finalSavedG,
+        ...galleryList.filter((g) => g.id !== finalSavedG.id),
+      ];
       setGalleryList(updated);
       saveStoredGallery(updated);
-      fetch("/api/gallery", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedG),
-      }).catch((err) => console.error("Failed to update gallery in db:", err));
       revalidateCollection("gallery");
       setShowAddGalleryModal(false);
-      setEditingGallery(null);
       setGalleryForm({
         titleEn: "",
         titleNe: "",
@@ -1196,49 +1493,16 @@ export default function AdminPage() {
         imageUrl: "",
       });
       dialogAlert({
-        title: lang === "ne" ? "तस्बिर सम्पादन भयो" : "Photo Updated",
+        title: lang === "ne" ? "तस्बिर थपियो" : "Photo Added",
         description:
           lang === "ne"
-            ? "तस्बिर विवरण सफलतापूर्वक अद्यावधिक गरिएको छ।"
-            : "Gallery photo details updated successfully.",
+            ? "तस्बिर ग्यालरीमा सफलतापूर्वक थपियो।"
+            : "Photo added to gallery.",
         type: "success",
       });
-      return;
+    } finally {
+      setIsSavingGallery(false);
     }
-
-    const newG: GalleryItem = {
-      id: `g-${Date.now()}`,
-      ...galleryForm,
-      titleNe: galleryForm.titleNe.trim(),
-      titleEn: galleryForm.titleEn.trim(),
-    };
-    const updated = [newG, ...galleryList];
-    setGalleryList(updated);
-    saveStoredGallery(updated);
-    fetch("/api/gallery", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newG),
-    }).catch((err) => console.error("Failed to sync gallery to db:", err));
-    revalidateCollection("gallery");
-    setShowAddGalleryModal(false);
-    setGalleryForm({
-      titleEn: "",
-      titleNe: "",
-      categoryEn: "Education",
-      categoryNe: "शिक्षा",
-      dateEn: "2081 Shrawan",
-      dateNe: "२०८१ साउन",
-      imageUrl: "",
-    });
-    dialogAlert({
-      title: lang === "ne" ? "तस्बिर थपियो" : "Photo Added",
-      description:
-        lang === "ne"
-          ? "तस्बिर ग्यालरीमा सफलतापूर्वक थपियो।"
-          : "Photo added to gallery.",
-      type: "success",
-    });
   };
 
   const handleDeleteGallery = async (id: string) => {
@@ -1251,16 +1515,46 @@ export default function AdminPage() {
       cancelText: t.cancelBtn,
     });
     if (confirmed) {
-      if (galleryToDelete?.imageUrl) {
-        deleteCloudinaryAsset(galleryToDelete.imageUrl);
+      setDeletingGalleryId(id);
+      try {
+        if (galleryToDelete?.imageUrl) {
+          deleteCloudinaryAsset(galleryToDelete.imageUrl);
+        }
+
+        const res = await fetch(`/api/gallery?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          dialogAlert({
+            title: lang === "ne" ? "हटाउन सकिएन" : "Delete Failed",
+            description:
+              data?.error ||
+              (lang === "ne"
+                ? "सर्भरबाट तस्बिर हटाउन सकिएन।"
+                : "Failed to remove photo from server."),
+            type: "danger",
+          });
+          return;
+        }
+
+        const updated = galleryList.filter((g) => g.id !== id);
+        setGalleryList(updated);
+        saveStoredGallery(updated);
+        revalidateCollection("gallery");
+        dialogAlert({
+          title: lang === "ne" ? "तस्बिर हटाइयो" : "Photo Removed",
+          description:
+            lang === "ne"
+              ? "तस्बिर ग्यालरीबाट सफलतापूर्वक हटाइएको छ।"
+              : "Photo removed from gallery successfully.",
+          type: "success",
+        });
+      } catch (err) {
+        console.error("Failed to delete gallery from db:", err);
+      } finally {
+        setDeletingGalleryId(null);
       }
-      const updated = galleryList.filter((g) => g.id !== id);
-      setGalleryList(updated);
-      saveStoredGallery(updated);
-      fetch(`/api/gallery?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      }).catch((err) => console.error("Failed to delete gallery from db:", err));
-      revalidateCollection("gallery");
     }
   };
 
@@ -1328,97 +1622,119 @@ export default function AdminPage() {
       }
     }
 
-    if (editingUser) {
-      const payload: Partial<AdminUser> & { id: string } = {
-        id: editingUser.id,
-        name: userForm.name.trim(),
-        email: userForm.email.trim(),
-        role: userForm.role,
-        ...(userForm.password ? { password: userForm.password } : {}),
-      };
+    setIsSavingUser(true);
+    try {
+      if (editingUser) {
+        const payload: Partial<AdminUser> & { id: string } = {
+          id: editingUser.id,
+          name: userForm.name.trim(),
+          email: userForm.email.trim(),
+          role: userForm.role,
+          ...(userForm.password ? { password: userForm.password } : {}),
+        };
 
-      try {
-        const res = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) {
+        try {
+          const res = await fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            dialogAlert({
+              title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+              description:
+                data.error ||
+                (lang === "ne"
+                  ? "प्रशासक खाता अद्यावधिक गर्न सकिएन।"
+                  : "Failed to update administrator."),
+              type: "danger",
+            });
+            return;
+          }
+
+          if (data.users) {
+            setAdminUsersList(data.users);
+            saveAdminUsers(data.users);
+          }
+        } catch (err) {
           dialogAlert({
             title: lang === "ne" ? "कार्य असफल" : "Action Failed",
-            description: data.error || (lang === "ne" ? "प्रशासक खाता अद्यावधिक गर्न सकिएन।" : "Failed to update administrator."),
+            description:
+              lang === "ne"
+                ? "सर्भरसँग सम्पर्क हुन सकेन।"
+                : "Network or server error occurred.",
             type: "danger",
           });
           return;
         }
 
-        if (data.users) {
-          setAdminUsersList(data.users);
-          saveAdminUsers(data.users);
-        }
-      } catch (err) {
+        setShowAddUserModal(false);
+        setEditingUser(null);
+        setUserForm({ name: "", email: "", role: "admin", password: "" });
         dialogAlert({
-          title: lang === "ne" ? "कार्य असफल" : "Action Failed",
-          description: lang === "ne" ? "सर्भरसँग सम्पर्क हुन सकेन।" : "Network or server error occurred.",
-          type: "danger",
+          title: lang === "ne" ? "खाता अद्यावधिक भयो" : "Account Updated",
+          description: `${userForm.name} (${userForm.email}) ${lang === "ne" ? "सफलतापूर्वक अद्यावधिक भयो।" : "updated successfully."}`,
+          type: "success",
         });
-        return;
-      }
+      } else {
+        const newUserPayload = {
+          name: userForm.name.trim(),
+          email: userForm.email.trim(),
+          role: userForm.role,
+          password: userForm.password,
+          addedBy: session.email,
+        };
 
-      setShowAddUserModal(false);
-      setEditingUser(null);
-      setUserForm({ name: "", email: "", role: "admin", password: "" });
-      dialogAlert({
-        title: lang === "ne" ? "खाता अद्यावधिक भयो" : "Account Updated",
-        description: `${userForm.name} (${userForm.email}) ${lang === "ne" ? "सफलतापूर्वक अद्यावधिक भयो।" : "updated successfully."}`,
-        type: "success",
-      });
-    } else {
-      const newUserPayload = {
-        name: userForm.name.trim(),
-        email: userForm.email.trim(),
-        role: userForm.role,
-        password: userForm.password,
-        addedBy: session.email,
-      };
+        try {
+          const res = await fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newUserPayload),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            dialogAlert({
+              title: lang === "ne" ? "कार्य असफल" : "Action Failed",
+              description:
+                data.error ||
+                (lang === "ne"
+                  ? "नयाँ प्रशासक खाता सिर्जना गर्न सकिएन।"
+                  : "Failed to create administrator."),
+              type: "danger",
+            });
+            return;
+          }
 
-      try {
-        const res = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newUserPayload),
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) {
+          if (data.users) {
+            setAdminUsersList(data.users);
+            saveAdminUsers(data.users);
+          }
+        } catch (err) {
           dialogAlert({
             title: lang === "ne" ? "कार्य असफल" : "Action Failed",
-            description: data.error || (lang === "ne" ? "नयाँ प्रशासक खाता सिर्जना गर्न सकिएन।" : "Failed to create administrator."),
+            description:
+              lang === "ne"
+                ? "सर्भरसँग सम्पर्क हुन सकेन।"
+                : "Network or server error occurred.",
             type: "danger",
           });
           return;
         }
 
-        if (data.users) {
-          setAdminUsersList(data.users);
-          saveAdminUsers(data.users);
-        }
-      } catch (err) {
+        setShowAddUserModal(false);
+        setUserForm({ name: "", email: "", role: "admin", password: "" });
         dialogAlert({
-          title: lang === "ne" ? "कार्य असफल" : "Action Failed",
-          description: lang === "ne" ? "सर्भरसँग सम्पर्क हुन सकेन।" : "Network or server error occurred.",
-          type: "danger",
+          title:
+            lang === "ne"
+              ? "प्रशासक खाता सिर्जना भयो"
+              : "Administrator Created",
+          description: `${userForm.name} (${userForm.email}) ${t.userAddedSuccess}`,
+          type: "success",
         });
-        return;
       }
-
-      setShowAddUserModal(false);
-      setUserForm({ name: "", email: "", role: "admin", password: "" });
-      dialogAlert({
-        title: lang === "ne" ? "प्रशासक खाता सिर्जना भयो" : "Administrator Created",
-        description: `${userForm.name} (${userForm.email}) ${t.userAddedSuccess}`,
-        type: "success",
-      });
+    } finally {
+      setIsSavingUser(false);
     }
   };
 
@@ -1432,6 +1748,7 @@ export default function AdminPage() {
       return;
     }
 
+    setTogglingUserId(user.id);
     try {
       const res = await fetch("/api/users", {
         method: "POST",
@@ -1442,7 +1759,11 @@ export default function AdminPage() {
       if (!res.ok || !data.success) {
         dialogAlert({
           title: lang === "ne" ? "कार्य असफल" : "Action Failed",
-          description: data.error || (lang === "ne" ? "स्थिति अद्यावधिक गर्न सकिएन।" : "Failed to update user status."),
+          description:
+            data.error ||
+            (lang === "ne"
+              ? "स्थिति अद्यावधिक गर्न सकिएन।"
+              : "Failed to update user status."),
           type: "danger",
         });
         return;
@@ -1452,24 +1773,34 @@ export default function AdminPage() {
         setAdminUsersList(data.users);
         saveAdminUsers(data.users);
       }
+
+      dialogAlert({
+        title: lang === "ne" ? "स्थिति अद्यावधिक भयो" : "Status Updated",
+        description: `${user.name}: ${t.userStatusChanged}`,
+        type: "info",
+      });
     } catch {
       dialogAlert({
         title: lang === "ne" ? "कार्य असफल" : "Action Failed",
-        description: lang === "ne" ? "सर्भरसँग सम्पर्क हुन सकेन।" : "Network or server error occurred.",
+        description:
+          lang === "ne"
+            ? "सर्भरसँग सम्पर्क हुन सकेन।"
+            : "Network or server error occurred.",
         type: "danger",
       });
-      return;
+    } finally {
+      setTogglingUserId(null);
     }
-
-    dialogAlert({
-      title: lang === "ne" ? "स्थिति अद्यावधिक भयो" : "Status Updated",
-      description: `${user.name}: ${t.userStatusChanged}`,
-      type: "info",
-    });
   };
 
   const handleDeleteUser = async (user: AdminUser) => {
-    if (!session?.isSuperadmin) {
+    const isSuper =
+      session?.isSuperadmin ||
+      session?.role === "superadmin" ||
+      session?.email?.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
+      session?.email?.toLowerCase() === "admin@thorgaktm.org.np";
+
+    if (!isSuper) {
       dialogAlert({
         title: lang === "ne" ? "अनुमति अस्वीकृत" : "Permission Denied",
         description: t.superadminOnlyNotice,
@@ -1485,38 +1816,51 @@ export default function AdminPage() {
       cancelText: t.cancelBtn,
     });
     if (confirmed) {
+      setDeletingUserId(user.id);
       try {
-        const res = await fetch(`/api/users?id=${user.id}`, {
+        const res = await fetch(`/api/users?id=${encodeURIComponent(user.id)}`, {
           method: "DELETE",
         });
         const data = await res.json();
         if (!res.ok || !data.success) {
           dialogAlert({
             title: lang === "ne" ? "कार्य असफल" : "Action Failed",
-            description: data.error || (lang === "ne" ? "प्रशासक हटाउन सकिएन।" : "Failed to remove user."),
+            description:
+              data.error ||
+              (lang === "ne"
+                ? "प्रशासक हटाउन सकिएन।"
+                : "Failed to remove user."),
             type: "danger",
           });
           return;
         }
 
-        if (data.users) {
+        if (data.users && Array.isArray(data.users)) {
           setAdminUsersList(data.users);
           saveAdminUsers(data.users);
+        } else {
+          const updated = adminUsersList.filter((u) => u.id !== user.id);
+          setAdminUsersList(updated);
+          saveAdminUsers(updated);
         }
+
+        dialogAlert({
+          title: lang === "ne" ? "प्रशासक हटाइयो" : "User Removed",
+          description: t.userRemovedSuccess,
+          type: "success",
+        });
       } catch {
         dialogAlert({
           title: lang === "ne" ? "कार्य असफल" : "Action Failed",
-          description: lang === "ne" ? "सर्भरसँग सम्पर्क हुन सकेन।" : "Network or server error occurred.",
+          description:
+            lang === "ne"
+              ? "सर्भरसँग सम्पर्क हुन सकेन।"
+              : "Network or server error occurred.",
           type: "danger",
         });
-        return;
+      } finally {
+        setDeletingUserId(null);
       }
-
-      dialogAlert({
-        title: lang === "ne" ? "प्रशासक हटाइयो" : "User Removed",
-        description: t.userRemovedSuccess,
-        type: "success",
-      });
     }
   };
 
@@ -2256,9 +2600,11 @@ export default function AdminPage() {
               <div className="flex items-center gap-3">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
+                  disabled={isSavingHero}
+                  className="px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold shadow-sm transition-colors flex items-center gap-2"
                 >
-                  {t.saveChanges}
+                  {isSavingHero && <CircleNotch size={14} className="animate-spin" />}
+                  <span>{isSavingHero ? (lang === "ne" ? "सुरक्षित गर्दै..." : "Saving...") : t.saveChanges}</span>
                 </button>
               </div>
             </form>
@@ -2417,9 +2763,17 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       type="submit"
-                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                      disabled={isSavingMember}
+                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
                     >
-                      {editingMember ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes") : t.saveChanges}
+                      {isSavingMember && <CircleNotch size={14} className="animate-spin" />}
+                      <span>
+                        {isSavingMember
+                          ? (lang === "ne" ? "सुरक्षित गर्दै..." : "Saving...")
+                          : editingMember
+                          ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes")
+                          : t.saveChanges}
+                      </span>
                     </button>
                     {editingMember && (
                       <button
@@ -2538,11 +2892,16 @@ export default function AdminPage() {
                           </button>
                           <button
                             type="button"
+                            disabled={deletingMemberId === member.id}
                             onClick={() => handleDeleteMember(member.id)}
-                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                            className="p-1.5 text-red-500 hover:bg-red-500/10 disabled:opacity-60 rounded-control transition-colors"
                             title={t.deleteBtn}
                           >
-                            <Trash size={15} />
+                            {deletingMemberId === member.id ? (
+                              <CircleNotch size={15} className="animate-spin" />
+                            ) : (
+                              <Trash size={15} />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -2682,9 +3041,17 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       type="submit"
-                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                      disabled={isSavingPub}
+                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
                     >
-                      {editingPub ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes") : t.saveChanges}
+                      {isSavingPub && <CircleNotch size={14} className="animate-spin" />}
+                      <span>
+                        {isSavingPub
+                          ? (lang === "ne" ? "प्रकाशित गर्दै..." : "Publishing...")
+                          : editingPub
+                          ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes")
+                          : t.saveChanges}
+                      </span>
                     </button>
                     {editingPub && (
                       <button
@@ -2736,11 +3103,16 @@ export default function AdminPage() {
                         </button>
                         <button
                           type="button"
+                          disabled={deletingPubId === pub.id}
                           onClick={() => handleDeletePub(pub.id)}
-                          className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                          className="p-1.5 text-red-500 hover:bg-red-500/10 disabled:opacity-60 rounded-control transition-colors"
                           title={t.deleteBtn}
                         >
-                          <Trash size={15} />
+                          {deletingPubId === pub.id ? (
+                            <CircleNotch size={15} className="animate-spin" />
+                          ) : (
+                            <Trash size={15} />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -2883,9 +3255,17 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       type="submit"
-                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                      disabled={isSavingEvent}
+                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
                     >
-                      {editingEvent ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes") : t.saveChanges}
+                      {isSavingEvent && <CircleNotch size={14} className="animate-spin" />}
+                      <span>
+                        {isSavingEvent
+                          ? (lang === "ne" ? "दर्ता गर्दै..." : "Saving...")
+                          : editingEvent
+                          ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes")
+                          : t.saveChanges}
+                      </span>
                     </button>
                     {editingEvent && (
                       <button
@@ -2937,11 +3317,16 @@ export default function AdminPage() {
                         </button>
                         <button
                           type="button"
+                          disabled={deletingEventId === ev.id}
                           onClick={() => handleDeleteEvent(ev.id)}
-                          className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                          className="p-1.5 text-red-500 hover:bg-red-500/10 disabled:opacity-60 rounded-control transition-colors"
                           title={t.deleteBtn}
                         >
-                          <Trash size={15} />
+                          {deletingEventId === ev.id ? (
+                            <CircleNotch size={15} className="animate-spin" />
+                          ) : (
+                            <Trash size={15} />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -3056,9 +3441,17 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       type="submit"
-                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                      disabled={isSavingGallery}
+                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
                     >
-                      {editingGallery ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes") : t.saveChanges}
+                      {isSavingGallery && <CircleNotch size={14} className="animate-spin" />}
+                      <span>
+                        {isSavingGallery
+                          ? (lang === "ne" ? "अपलोड गर्दै..." : "Saving...")
+                          : editingGallery
+                          ? (lang === "ne" ? "परिवर्तन सुरक्षित गर्नुहोस्" : "Save Changes")
+                          : t.saveChanges}
+                      </span>
                     </button>
                     {editingGallery && (
                       <button
@@ -3105,11 +3498,16 @@ export default function AdminPage() {
                           </button>
                           <button
                             type="button"
+                            disabled={deletingGalleryId === g.id}
                             onClick={() => handleDeleteGallery(g.id)}
-                            className="p-1 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                            className="p-1 text-red-500 hover:bg-red-500/10 disabled:opacity-60 rounded-control transition-colors"
                             title={t.deleteBtn}
                           >
-                            <Trash size={14} />
+                            {deletingGalleryId === g.id ? (
+                              <CircleNotch size={14} className="animate-spin" />
+                            ) : (
+                              <Trash size={14} />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -3184,7 +3582,7 @@ export default function AdminPage() {
               </div>
 
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
                   if (
                     !contactSettingsState.contactHeadingNe.trim() ||
@@ -3252,38 +3650,60 @@ export default function AdminPage() {
                     return;
                   }
 
-                  const newContactData = {
-                    ...contactSettingsState,
-                    contactHeadingNe: contactSettingsState.contactHeadingNe.trim(),
-                    contactHeadingEn: contactSettingsState.contactHeadingEn.trim(),
-                    contactDescriptionNe: contactSettingsState.contactDescriptionNe.trim(),
-                    contactDescriptionEn: contactSettingsState.contactDescriptionEn.trim(),
-                    kathmanduTitleNe: contactSettingsState.kathmanduTitleNe.trim(),
-                    kathmanduTitleEn: contactSettingsState.kathmanduTitleEn.trim(),
-                    kathmanduSubtitleNe: contactSettingsState.kathmanduSubtitleNe.trim(),
-                    kathmanduSubtitleEn: contactSettingsState.kathmanduSubtitleEn.trim(),
-                    kathmanduAddressNe: contactSettingsState.kathmanduAddressNe.trim(),
-                    kathmanduAddressEn: contactSettingsState.kathmanduAddressEn.trim(),
-                    phone1: contactSettingsState.phone1.trim(),
-                    phone2: contactSettingsState.phone2.trim(),
-                    email: contactSettingsState.email.trim(),
-                  };
-                  saveStoredContactSettings(newContactData);
-                  fetch("/api/contact", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(newContactData),
-                  }).catch((err) => console.error("Failed to sync contact settings:", err));
-                  revalidateCollection("contact");
+                  setIsSavingContact(true);
+                  try {
+                    const newContactData = {
+                      ...contactSettingsState,
+                      contactHeadingNe: contactSettingsState.contactHeadingNe.trim(),
+                      contactHeadingEn: contactSettingsState.contactHeadingEn.trim(),
+                      contactDescriptionNe: contactSettingsState.contactDescriptionNe.trim(),
+                      contactDescriptionEn: contactSettingsState.contactDescriptionEn.trim(),
+                      kathmanduTitleNe: contactSettingsState.kathmanduTitleNe.trim(),
+                      kathmanduTitleEn: contactSettingsState.kathmanduTitleEn.trim(),
+                      kathmanduSubtitleNe: contactSettingsState.kathmanduSubtitleNe.trim(),
+                      kathmanduSubtitleEn: contactSettingsState.kathmanduSubtitleEn.trim(),
+                      kathmanduAddressNe: contactSettingsState.kathmanduAddressNe.trim(),
+                      kathmanduAddressEn: contactSettingsState.kathmanduAddressEn.trim(),
+                      phone1: contactSettingsState.phone1.trim(),
+                      phone2: contactSettingsState.phone2.trim(),
+                      email: contactSettingsState.email.trim(),
+                    };
 
-                  dialogAlert({
-                    title: lang === "ne" ? "सम्पर्क विवरण सुरक्षित भयो" : "Contact Settings Saved",
-                    description:
-                      lang === "ne"
-                        ? "मुख्य पृष्ठको सम्पर्क खण्ड र सचिवालय विवरणहरू सफलतापूर्वक सुरक्षित गरियो।"
-                        : "Landing page contact section and liaison secretariat details updated live.",
-                    type: "success",
-                  });
+                    const res = await fetch("/api/contact", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(newContactData),
+                    });
+                    const data = await res.json();
+                    if (data && data.success && data.data) {
+                      setContactSettingsState(data.data);
+                      saveStoredContactSettings(data.data);
+                    } else {
+                      saveStoredContactSettings(newContactData);
+                    }
+                    revalidateCollection("contact");
+
+                    dialogAlert({
+                      title: lang === "ne" ? "सम्पर्क विवरण सुरक्षित भयो" : "Contact Settings Saved",
+                      description:
+                        lang === "ne"
+                          ? "मुख्य पृष्ठको सम्पर्क खण्ड र सचिवालय विवरणहरू सफलतापूर्वक सुरक्षित गरियो।"
+                          : "Landing page contact section and liaison secretariat details updated live.",
+                      type: "success",
+                    });
+                  } catch (err) {
+                    console.error("Failed to sync contact settings:", err);
+                    dialogAlert({
+                      title: lang === "ne" ? "कार्य असफल" : "Save Failed",
+                      description:
+                        lang === "ne"
+                          ? "सर्भरसँग सम्पर्क हुन सकेन।"
+                          : "Network or server error occurred.",
+                      type: "danger",
+                    });
+                  } finally {
+                    setIsSavingContact(false);
+                  }
                 }}
                 className="space-y-6"
               >
@@ -3509,9 +3929,11 @@ export default function AdminPage() {
                 <div className="flex items-center gap-3">
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
+                    disabled={isSavingContact}
+                    className="px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold shadow-sm transition-colors flex items-center gap-2"
                   >
-                    {t.saveChanges}
+                    {isSavingContact && <CircleNotch size={14} className="animate-spin" />}
+                    <span>{isSavingContact ? (lang === "ne" ? "सुरक्षित गर्दै..." : "Saving...") : t.saveChanges}</span>
                   </button>
                 </div>
               </form>
@@ -3633,9 +4055,17 @@ export default function AdminPage() {
                   <div className="flex items-center gap-3">
                     <button
                       type="submit"
-                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                      disabled={isSavingUser}
+                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
                     >
-                      {editingUser ? t.saveChanges : t.addAdminUser}
+                      {isSavingUser && <CircleNotch size={14} className="animate-spin" />}
+                      <span>
+                        {isSavingUser
+                          ? (lang === "ne" ? "सुरक्षित गर्दै..." : "Saving...")
+                          : editingUser
+                          ? t.saveChanges
+                          : t.addAdminUser}
+                      </span>
                     </button>
                     {editingUser && (
                       <button
@@ -3682,7 +4112,7 @@ export default function AdminPage() {
                               <span className="text-xs font-bold text-fg truncate">{user.name}</span>
                               {isUserSuperadmin ? (
                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-chip bg-amber-500/20 text-amber-600 border border-amber-500/30">
-                                  {t.roleSuperadmin}
+                                   {t.roleSuperadmin}
                                 </span>
                               ) : (
                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-chip bg-tint text-muted border border-line capitalize">
@@ -3722,23 +4152,30 @@ export default function AdminPage() {
                               <>
                                 <button
                                   type="button"
+                                  disabled={togglingUserId === user.id}
                                   onClick={() => handleToggleUser(user)}
-                                  className={`px-2.5 py-1 rounded-control text-[11px] font-semibold transition-colors border ${
+                                  className={`px-2.5 py-1 rounded-control text-[11px] font-semibold transition-colors border disabled:opacity-60 flex items-center gap-1 ${
                                     user.isActive
                                       ? "border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
                                       : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
                                   }`}
                                 >
-                                  {user.isActive ? t.deactivate : t.activate}
+                                  {togglingUserId === user.id && <CircleNotch size={12} className="animate-spin" />}
+                                  <span>{user.isActive ? t.deactivate : t.activate}</span>
                                 </button>
 
                                 <button
                                   type="button"
+                                  disabled={deletingUserId === user.id}
                                   onClick={() => handleDeleteUser(user)}
-                                  className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                                  className="p-1.5 text-red-500 hover:bg-red-500/10 disabled:opacity-60 rounded-control transition-colors"
                                   title={t.deleteBtn}
                                 >
-                                  <Trash size={15} />
+                                  {deletingUserId === user.id ? (
+                                    <CircleNotch size={15} className="animate-spin" />
+                                  ) : (
+                                    <Trash size={15} />
+                                  )}
                                 </button>
                               </>
                             )}
@@ -3813,41 +4250,61 @@ export default function AdminPage() {
                 <div className="flex gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => {
-                      const next = { ...brandingState };
-                      saveStoredBranding(next);
-                      fetch("/api/branding", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(next),
-                      }).catch((err) => console.error("Failed to sync branding:", err));
-                      revalidateCollection("branding");
+                    disabled={isSavingBranding}
+                    onClick={async () => {
+                      setIsSavingBranding(true);
+                      try {
+                        const next = { ...brandingState };
+                        saveStoredBranding(next);
+                        await fetch("/api/branding", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(next),
+                        });
+                        revalidateCollection("branding");
 
-                      dialogAlert({
-                        title: lang === "ne" ? "लोगो सुरक्षित भयो" : "Logo Saved",
-                        description: lang === "ne" ? "साइट हेडरमा नयाँ लोगो लागू भएको छ।" : "New logo is now live in the site header.",
-                        type: "success",
-                      });
+                        dialogAlert({
+                          title: lang === "ne" ? "लोगो सुरक्षित भयो" : "Logo Saved",
+                          description:
+                            lang === "ne"
+                              ? "साइट हेडरमा नयाँ लोगो लागू भएको छ।"
+                              : "New logo is now live in the site header.",
+                          type: "success",
+                        });
+                      } catch (err) {
+                        console.error("Failed to sync branding:", err);
+                      } finally {
+                        setIsSavingBranding(false);
+                      }
                     }}
-                    className="px-4 py-1.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                    className="px-4 py-1.5 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold transition-colors flex items-center gap-1.5"
                   >
-                    {t.saveChanges}
+                    {isSavingBranding && <CircleNotch size={13} className="animate-spin" />}
+                    <span>{isSavingBranding ? (lang === "ne" ? "सुरक्षित गर्दै..." : "Saving...") : t.saveChanges}</span>
                   </button>
                   {brandingState.logoUrl && (
                     <button
                       type="button"
-                      onClick={() => {
-                        const next = { ...brandingState, logoUrl: "" };
-                        setBrandingState(next);
-                        saveStoredBranding(next);
-                        fetch("/api/branding", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(next),
-                        }).catch((err) => console.error("Failed to sync branding:", err));
-                        revalidateCollection("branding");
+                      disabled={isSavingBranding}
+                      onClick={async () => {
+                        setIsSavingBranding(true);
+                        try {
+                          const next = { ...brandingState, logoUrl: "" };
+                          setBrandingState(next);
+                          saveStoredBranding(next);
+                          await fetch("/api/branding", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(next),
+                          });
+                          revalidateCollection("branding");
+                        } catch (err) {
+                          console.error("Failed to sync branding:", err);
+                        } finally {
+                          setIsSavingBranding(false);
+                        }
                       }}
-                      className="px-4 py-1.5 rounded-control border border-line text-muted hover:text-fg text-xs font-medium transition-colors"
+                      className="px-4 py-1.5 rounded-control border border-line text-muted hover:text-fg disabled:opacity-60 text-xs font-medium transition-colors"
                     >
                       {lang === "ne" ? "लोगो हटाउनुहोस्" : "Remove Logo"}
                     </button>
@@ -3898,41 +4355,61 @@ export default function AdminPage() {
                 <div className="flex gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => {
-                      const next = { ...brandingState };
-                      saveStoredBranding(next);
-                      fetch("/api/branding", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(next),
-                      }).catch((err) => console.error("Failed to sync branding:", err));
-                      revalidateCollection("branding");
+                    disabled={isSavingBranding}
+                    onClick={async () => {
+                      setIsSavingBranding(true);
+                      try {
+                        const next = { ...brandingState };
+                        saveStoredBranding(next);
+                        await fetch("/api/branding", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(next),
+                        });
+                        revalidateCollection("branding");
 
-                      dialogAlert({
-                        title: lang === "ne" ? "फेभिकन सुरक्षित भयो" : "Favicon Saved",
-                        description: lang === "ne" ? "ब्राउजर ट्याबमा नयाँ फेभिकन लागू भएको छ।" : "New favicon is now active in browser tabs.",
-                        type: "success",
-                      });
+                        dialogAlert({
+                          title: lang === "ne" ? "फेभिकन सुरक्षित भयो" : "Favicon Saved",
+                          description:
+                            lang === "ne"
+                              ? "ब्राउजर ट्याबमा नयाँ फेभिकन लागू भएको छ।"
+                              : "New favicon is now active in browser tabs.",
+                          type: "success",
+                        });
+                      } catch (err) {
+                        console.error("Failed to sync branding:", err);
+                      } finally {
+                        setIsSavingBranding(false);
+                      }
                     }}
-                    className="px-4 py-1.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                    className="px-4 py-1.5 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold transition-colors flex items-center gap-1.5"
                   >
-                    {t.saveChanges}
+                    {isSavingBranding && <CircleNotch size={13} className="animate-spin" />}
+                    <span>{isSavingBranding ? (lang === "ne" ? "सुरक्षित गर्दै..." : "Saving...") : t.saveChanges}</span>
                   </button>
                   {brandingState.faviconUrl && (
                     <button
                       type="button"
-                      onClick={() => {
-                        const next = { ...brandingState, faviconUrl: "" };
-                        setBrandingState(next);
-                        saveStoredBranding(next);
-                        fetch("/api/branding", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(next),
-                        }).catch((err) => console.error("Failed to sync branding:", err));
-                        revalidateCollection("branding");
+                      disabled={isSavingBranding}
+                      onClick={async () => {
+                        setIsSavingBranding(true);
+                        try {
+                          const next = { ...brandingState, faviconUrl: "" };
+                          setBrandingState(next);
+                          saveStoredBranding(next);
+                          await fetch("/api/branding", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(next),
+                          });
+                          revalidateCollection("branding");
+                        } catch (err) {
+                          console.error("Failed to sync branding:", err);
+                        } finally {
+                          setIsSavingBranding(false);
+                        }
                       }}
-                      className="px-4 py-1.5 rounded-control border border-line text-muted hover:text-fg text-xs font-medium transition-colors"
+                      className="px-4 py-1.5 rounded-control border border-line text-muted hover:text-fg disabled:opacity-60 text-xs font-medium transition-colors"
                     >
                       {lang === "ne" ? "फेभिकन हटाउनुहोस्" : "Remove Favicon"}
                     </button>
@@ -3943,26 +4420,42 @@ export default function AdminPage() {
               {/* Save All */}
               <button
                 type="button"
-                onClick={() => {
-                  saveStoredBranding(brandingState);
-                  fetch("/api/branding", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(brandingState),
-                  }).catch((err) => console.error("Failed to sync branding:", err));
-                  revalidateCollection("branding");
+                disabled={isSavingBranding}
+                onClick={async () => {
+                  setIsSavingBranding(true);
+                  try {
+                    saveStoredBranding(brandingState);
+                    await fetch("/api/branding", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(brandingState),
+                    });
+                    revalidateCollection("branding");
 
-                  dialogAlert({
-                    title: lang === "ne" ? "ब्रान्डिङ सुरक्षित भयो" : "Branding Saved",
-                    description: lang === "ne"
-                      ? "लोगो र फेभिकन दुवै सफलतापूर्वक अद्यावधिक गरिएको छ।"
-                      : "Logo and favicon have been updated successfully across the site.",
-                    type: "success",
-                  });
+                    dialogAlert({
+                      title: lang === "ne" ? "ब्रान्डिङ सुरक्षित भयो" : "Branding Saved",
+                      description:
+                        lang === "ne"
+                          ? "लोगो र फेभिकन दुवै सफलतापूर्वक अद्यावधिक गरिएको छ।"
+                          : "Logo and favicon have been updated successfully across the site.",
+                      type: "success",
+                    });
+                  } catch (err) {
+                    console.error("Failed to sync branding:", err);
+                  } finally {
+                    setIsSavingBranding(false);
+                  }
                 }}
-                className="w-full py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
+                className="w-full py-2.5 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold shadow-sm transition-colors flex items-center justify-center gap-2"
               >
-                {lang === "ne" ? "सबै ब्रान्डिङ सुरक्षित गर्नुहोस्" : "Save All Branding"}
+                {isSavingBranding && <CircleNotch size={14} className="animate-spin" />}
+                <span>
+                  {isSavingBranding
+                    ? (lang === "ne" ? "सबै सुरक्षित गर्दै..." : "Saving All Branding...")
+                    : lang === "ne"
+                    ? "सबै ब्रान्डिङ सुरक्षित गर्नुहोस्"
+                    : "Save All Branding"}
+                </span>
               </button>
             </div>
           )}

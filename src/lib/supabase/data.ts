@@ -65,6 +65,17 @@ export function isValidUUID(id: string | null | undefined): boolean {
   return UUID_REGEX.test(id);
 }
 
+function generateUUID(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Site Settings (Hero, Branding, Contact, Admin Users)
 // ---------------------------------------------------------------------------
@@ -229,50 +240,47 @@ export async function fetchGallery(): Promise<GalleryItem[]> {
   return [];
 }
 
-export async function saveGalleryItem(item: GalleryItem): Promise<void> {
-  const isUUID = isValidUUID(item.id);
+export async function saveGalleryItem(item: GalleryItem): Promise<GalleryItem> {
+  const finalId = isValidUUID(item.id) ? item.id : generateUUID();
   const pg = getPgPool();
   if (pg) {
     try {
-      if (isUUID) {
-        await pg.query(
-          `INSERT INTO public.gallery (id, title_en, title_ne, category_en, category_ne, image_url, date_en, date_ne)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-           ON CONFLICT (id) DO UPDATE SET 
-             title_en = EXCLUDED.title_en,
-             title_ne = EXCLUDED.title_ne,
-             category_en = EXCLUDED.category_en,
-             category_ne = EXCLUDED.category_ne,
-             image_url = EXCLUDED.image_url,
-             date_en = EXCLUDED.date_en,
-             date_ne = EXCLUDED.date_ne;`,
-          [
-            item.id,
-            item.titleEn,
-            item.titleNe,
-            item.categoryEn,
-            item.categoryNe,
-            item.imageUrl,
-            item.dateEn,
-            item.dateNe,
-          ]
-        );
-      } else {
-        await pg.query(
-          `INSERT INTO public.gallery (title_en, title_ne, category_en, category_ne, image_url, date_en, date_ne)
-           VALUES ($1, $2, $3, $4, $5, $6, $7);`,
-          [
-            item.titleEn,
-            item.titleNe,
-            item.categoryEn,
-            item.categoryNe,
-            item.imageUrl,
-            item.dateEn,
-            item.dateNe,
-          ]
-        );
+      const res = await pg.query(
+        `INSERT INTO public.gallery (id, title_en, title_ne, category_en, category_ne, image_url, date_en, date_ne)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (id) DO UPDATE SET 
+           title_en = EXCLUDED.title_en,
+           title_ne = EXCLUDED.title_ne,
+           category_en = EXCLUDED.category_en,
+           category_ne = EXCLUDED.category_ne,
+           image_url = EXCLUDED.image_url,
+           date_en = EXCLUDED.date_en,
+           date_ne = EXCLUDED.date_ne
+         RETURNING *;`,
+        [
+          finalId,
+          item.titleEn,
+          item.titleNe,
+          item.categoryEn,
+          item.categoryNe,
+          item.imageUrl,
+          item.dateEn,
+          item.dateNe,
+        ]
+      );
+      if (res.rows && res.rows.length > 0) {
+        const row = res.rows[0];
+        return {
+          id: String(row.id),
+          titleEn: row.title_en ?? "",
+          titleNe: row.title_ne ?? "",
+          categoryEn: row.category_en ?? "",
+          categoryNe: row.category_ne ?? "",
+          imageUrl: row.image_url ?? "",
+          dateEn: row.date_en ?? "",
+          dateNe: row.date_ne ?? "",
+        };
       }
-      return;
     } catch (err) {
       console.warn("[saveGalleryItem] pg query failed:", err);
     }
@@ -282,6 +290,7 @@ export async function saveGalleryItem(item: GalleryItem): Promise<void> {
   try {
     const supabase = makeAdminClient();
     const payload: Record<string, unknown> = {
+      id: finalId,
       title_en: item.titleEn,
       title_ne: item.titleNe,
       category_en: item.categoryEn,
@@ -290,23 +299,33 @@ export async function saveGalleryItem(item: GalleryItem): Promise<void> {
       date_en: item.dateEn,
       date_ne: item.dateNe,
     };
-    if (isUUID) {
-      payload.id = item.id;
+    const { data } = await supabase.from("gallery").upsert(payload).select().single();
+    if (data) {
+      return {
+        id: String(data.id),
+        titleEn: data.title_en ?? "",
+        titleNe: data.title_ne ?? "",
+        categoryEn: data.category_en ?? "",
+        categoryNe: data.category_ne ?? "",
+        imageUrl: data.image_url ?? "",
+        dateEn: data.date_en ?? "",
+        dateNe: data.date_ne ?? "",
+      };
     }
-    await supabase.from("gallery").upsert(payload);
   } catch (err) {
     console.warn("[saveGalleryItem] Supabase fallback failed:", err);
   }
+
+  return { ...item, id: finalId };
 }
 
 export async function deleteGalleryItem(id: string): Promise<void> {
   if (!id) return;
-  if (!isValidUUID(id)) return;
 
   const pg = getPgPool();
   if (pg) {
     try {
-      await pg.query("DELETE FROM public.gallery WHERE id = $1", [id]);
+      await pg.query("DELETE FROM public.gallery WHERE id::text = $1", [id]);
       return;
     } catch (err) {
       console.warn("[deleteGalleryItem] pg query failed:", err);
@@ -388,72 +407,69 @@ export async function fetchEvents(): Promise<EventItem[]> {
   return [];
 }
 
-export async function saveEventItem(item: EventItem): Promise<void> {
-  const isUUID = isValidUUID(item.id);
+export async function saveEventItem(item: EventItem): Promise<EventItem> {
+  const finalId = isValidUUID(item.id) ? item.id : generateUUID();
   const pg = getPgPool();
   if (pg) {
     try {
-      if (isUUID) {
-        await pg.query(
-          `INSERT INTO public.events (id, title_en, title_ne, date_en, date_ne, time_en, time_ne, location_en, location_ne, description_en, description_ne, status, category_en, category_ne, image_url, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
-           ON CONFLICT (id) DO UPDATE SET 
-             title_en = EXCLUDED.title_en,
-             title_ne = EXCLUDED.title_ne,
-             date_en = EXCLUDED.date_en,
-             date_ne = EXCLUDED.date_ne,
-             time_en = EXCLUDED.time_en,
-             time_ne = EXCLUDED.time_ne,
-             location_en = EXCLUDED.location_en,
-             location_ne = EXCLUDED.location_ne,
-             description_en = EXCLUDED.description_en,
-             description_ne = EXCLUDED.description_ne,
-             status = EXCLUDED.status,
-             category_en = EXCLUDED.category_en,
-             category_ne = EXCLUDED.category_ne,
-             image_url = EXCLUDED.image_url,
-             updated_at = NOW();`,
-          [
-            item.id,
-            item.titleEn,
-            item.titleNe,
-            item.dateEn,
-            item.dateNe,
-            item.timeEn,
-            item.timeNe,
-            item.locationEn,
-            item.locationNe,
-            item.descriptionEn,
-            item.descriptionNe,
-            item.status,
-            item.categoryEn,
-            item.categoryNe,
-            item.imageUrl,
-          ]
-        );
-      } else {
-        await pg.query(
-          `INSERT INTO public.events (title_en, title_ne, date_en, date_ne, time_en, time_ne, location_en, location_ne, description_en, description_ne, status, category_en, category_ne, image_url, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW());`,
-          [
-            item.titleEn,
-            item.titleNe,
-            item.dateEn,
-            item.dateNe,
-            item.timeEn,
-            item.timeNe,
-            item.locationEn,
-            item.locationNe,
-            item.descriptionEn,
-            item.descriptionNe,
-            item.status,
-            item.categoryEn,
-            item.categoryNe,
-            item.imageUrl,
-          ]
-        );
+      const res = await pg.query(
+        `INSERT INTO public.events (id, title_en, title_ne, date_en, date_ne, time_en, time_ne, location_en, location_ne, description_en, description_ne, status, category_en, category_ne, image_url, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+         ON CONFLICT (id) DO UPDATE SET 
+           title_en = EXCLUDED.title_en,
+           title_ne = EXCLUDED.title_ne,
+           date_en = EXCLUDED.date_en,
+           date_ne = EXCLUDED.date_ne,
+           time_en = EXCLUDED.time_en,
+           time_ne = EXCLUDED.time_ne,
+           location_en = EXCLUDED.location_en,
+           location_ne = EXCLUDED.location_ne,
+           description_en = EXCLUDED.description_en,
+           description_ne = EXCLUDED.description_ne,
+           status = EXCLUDED.status,
+           category_en = EXCLUDED.category_en,
+           category_ne = EXCLUDED.category_ne,
+           image_url = EXCLUDED.image_url,
+           updated_at = NOW()
+         RETURNING *;`,
+        [
+          finalId,
+          item.titleEn,
+          item.titleNe,
+          item.dateEn,
+          item.dateNe,
+          item.timeEn,
+          item.timeNe,
+          item.locationEn,
+          item.locationNe,
+          item.descriptionEn,
+          item.descriptionNe,
+          item.status,
+          item.categoryEn,
+          item.categoryNe,
+          item.imageUrl,
+        ]
+      );
+      if (res.rows && res.rows.length > 0) {
+        const row = res.rows[0];
+        return {
+          id: String(row.id),
+          titleEn: row.title_en ?? "",
+          titleNe: row.title_ne ?? "",
+          dateEn: row.date_en ?? "",
+          dateNe: row.date_ne ?? "",
+          timeEn: row.time_en ?? "",
+          timeNe: row.time_ne ?? "",
+          locationEn: row.location_en ?? "",
+          locationNe: row.location_ne ?? "",
+          descriptionEn: row.description_en ?? "",
+          descriptionNe: row.description_ne ?? "",
+          status: row.status ?? "upcoming",
+          categoryEn: row.category_en ?? "",
+          categoryNe: row.category_ne ?? "",
+          imageUrl: row.image_url ?? "",
+        };
       }
-      return;
     } catch (err) {
       console.warn("[saveEventItem] pg query failed:", err);
     }
@@ -463,6 +479,7 @@ export async function saveEventItem(item: EventItem): Promise<void> {
   try {
     const supabase = makeAdminClient();
     const payload: Record<string, unknown> = {
+      id: finalId,
       title_en: item.titleEn,
       title_ne: item.titleNe,
       date_en: item.dateEn,
@@ -478,23 +495,40 @@ export async function saveEventItem(item: EventItem): Promise<void> {
       category_ne: item.categoryNe,
       image_url: item.imageUrl,
     };
-    if (isUUID) {
-      payload.id = item.id;
+    const { data } = await supabase.from("events").upsert(payload).select().single();
+    if (data) {
+      return {
+        id: String(data.id),
+        titleEn: data.title_en ?? "",
+        titleNe: data.title_ne ?? "",
+        dateEn: data.date_en ?? "",
+        dateNe: data.date_ne ?? "",
+        timeEn: data.time_en ?? "",
+        timeNe: data.time_ne ?? "",
+        locationEn: data.location_en ?? "",
+        locationNe: data.location_ne ?? "",
+        descriptionEn: data.description_en ?? "",
+        descriptionNe: data.description_ne ?? "",
+        status: data.status ?? "upcoming",
+        categoryEn: data.category_en ?? "",
+        categoryNe: data.category_ne ?? "",
+        imageUrl: data.image_url ?? "",
+      };
     }
-    await supabase.from("events").upsert(payload);
   } catch (err) {
     console.warn("[saveEventItem] Supabase fallback failed:", err);
   }
+
+  return { ...item, id: finalId };
 }
 
 export async function deleteEventItem(id: string): Promise<void> {
   if (!id) return;
-  if (!isValidUUID(id)) return;
 
   const pg = getPgPool();
   if (pg) {
     try {
-      await pg.query("DELETE FROM public.events WHERE id = $1", [id]);
+      await pg.query("DELETE FROM public.events WHERE id::text = $1", [id]);
       return;
     } catch (err) {
       console.warn("[deleteEventItem] pg query failed:", err);
@@ -574,69 +608,66 @@ export async function fetchMembers(): Promise<Member[]> {
   return [];
 }
 
-export async function saveMemberItem(item: Member): Promise<void> {
-  const isUUID = isValidUUID(item.id);
+export async function saveMemberItem(item: Member): Promise<Member> {
+  const finalId = isValidUUID(item.id) ? item.id : generateUUID();
   const pg = getPgPool();
   if (pg) {
     try {
-      if (isUUID) {
-        await pg.query(
-          `INSERT INTO public.members (id, name_en, name_ne, role_en, role_ne, committee_type, tenure_en, tenure_ne, phone, email, photo_url, bio_en, bio_ne, display_order, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
-           ON CONFLICT (id) DO UPDATE SET
-             name_en = EXCLUDED.name_en,
-             name_ne = EXCLUDED.name_ne,
-             role_en = EXCLUDED.role_en,
-             role_ne = EXCLUDED.role_ne,
-             committee_type = EXCLUDED.committee_type,
-             tenure_en = EXCLUDED.tenure_en,
-             tenure_ne = EXCLUDED.tenure_ne,
-             phone = EXCLUDED.phone,
-             email = EXCLUDED.email,
-             photo_url = EXCLUDED.photo_url,
-             bio_en = EXCLUDED.bio_en,
-             bio_ne = EXCLUDED.bio_ne,
-             display_order = EXCLUDED.display_order,
-             updated_at = NOW();`,
-          [
-            item.id,
-            item.nameEn,
-            item.nameNe,
-            item.roleEn,
-            item.roleNe,
-            item.committeeType,
-            item.tenureEn || null,
-            item.tenureNe || null,
-            item.phone || null,
-            item.email || null,
-            item.photoUrl,
-            item.bioEn || null,
-            item.bioNe || null,
-            item.order || 0,
-          ]
-        );
-      } else {
-        await pg.query(
-          `INSERT INTO public.members (name_en, name_ne, role_en, role_ne, committee_type, tenure_en, tenure_ne, phone, email, photo_url, bio_en, bio_ne, display_order, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW());`,
-          [
-            item.nameEn,
-            item.nameNe,
-            item.roleEn,
-            item.roleNe,
-            item.committeeType,
-            item.tenureEn || null,
-            item.tenureNe || null,
-            item.phone || null,
-            item.email || null,
-            item.photoUrl,
-            item.bioEn || null,
-            item.bioNe || null,
-            item.order || 0,
-          ]
-        );
+      const res = await pg.query(
+        `INSERT INTO public.members (id, name_en, name_ne, role_en, role_ne, committee_type, tenure_en, tenure_ne, phone, email, photo_url, bio_en, bio_ne, display_order, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           name_en = EXCLUDED.name_en,
+           name_ne = EXCLUDED.name_ne,
+           role_en = EXCLUDED.role_en,
+           role_ne = EXCLUDED.role_ne,
+           committee_type = EXCLUDED.committee_type,
+           tenure_en = EXCLUDED.tenure_en,
+           tenure_ne = EXCLUDED.tenure_ne,
+           phone = EXCLUDED.phone,
+           email = EXCLUDED.email,
+           photo_url = EXCLUDED.photo_url,
+           bio_en = EXCLUDED.bio_en,
+           bio_ne = EXCLUDED.bio_ne,
+           display_order = EXCLUDED.display_order,
+           updated_at = NOW()
+         RETURNING *;`,
+        [
+          finalId,
+          item.nameEn,
+          item.nameNe,
+          item.roleEn,
+          item.roleNe,
+          item.committeeType,
+          item.tenureEn || null,
+          item.tenureNe || null,
+          item.phone || null,
+          item.email || null,
+          item.photoUrl,
+          item.bioEn || null,
+          item.bioNe || null,
+          item.order || 0,
+        ]
+      );
+      if (res.rows && res.rows.length > 0) {
+        const row = res.rows[0];
+        return {
+          id: String(row.id),
+          nameEn: row.name_en ?? "",
+          nameNe: row.name_ne ?? "",
+          roleEn: row.role_en ?? "",
+          roleNe: row.role_ne ?? "",
+          committeeType: row.committee_type ?? "current",
+          tenureEn: row.tenure_en ?? undefined,
+          tenureNe: row.tenure_ne ?? undefined,
+          phone: row.phone ?? undefined,
+          email: row.email ?? undefined,
+          photoUrl: row.photo_url ?? "",
+          bioEn: row.bio_en ?? undefined,
+          bioNe: row.bio_ne ?? undefined,
+          order: row.display_order ?? 0,
+        };
       }
-      return;
     } catch (err) {
       console.warn("[saveMemberItem] pg query failed:", err);
     }
@@ -645,6 +676,7 @@ export async function saveMemberItem(item: Member): Promise<void> {
   try {
     const supabase = makeAdminClient();
     const payload: Record<string, unknown> = {
+      id: finalId,
       name_en: item.nameEn,
       name_ne: item.nameNe,
       role_en: item.roleEn,
@@ -659,23 +691,39 @@ export async function saveMemberItem(item: Member): Promise<void> {
       bio_ne: item.bioNe || null,
       display_order: item.order || 0,
     };
-    if (isUUID) {
-      payload.id = item.id;
+    const { data } = await supabase.from("members").upsert(payload).select().single();
+    if (data) {
+      return {
+        id: String(data.id),
+        nameEn: data.name_en ?? "",
+        nameNe: data.name_ne ?? "",
+        roleEn: data.role_en ?? "",
+        roleNe: data.role_ne ?? "",
+        committeeType: data.committee_type ?? "current",
+        tenureEn: data.tenure_en ?? undefined,
+        tenureNe: data.tenure_ne ?? undefined,
+        phone: data.phone ?? undefined,
+        email: data.email ?? undefined,
+        photoUrl: data.photo_url ?? "",
+        bioEn: data.bio_en ?? undefined,
+        bioNe: data.bio_ne ?? undefined,
+        order: data.display_order ?? 0,
+      };
     }
-    await supabase.from("members").upsert(payload);
   } catch (err) {
     console.warn("[saveMemberItem] Supabase fallback failed:", err);
   }
+
+  return { ...item, id: finalId };
 }
 
 export async function deleteMemberItem(id: string): Promise<void> {
   if (!id) return;
-  if (!isValidUUID(id)) return;
 
   const pg = getPgPool();
   if (pg) {
     try {
-      await pg.query("DELETE FROM public.members WHERE id = $1", [id]);
+      await pg.query("DELETE FROM public.members WHERE id::text = $1", [id]);
       return;
     } catch (err) {
       console.warn("[deleteMemberItem] pg query failed:", err);
@@ -753,66 +801,63 @@ export async function fetchPublications(): Promise<Publication[]> {
   return [];
 }
 
-export async function savePublicationItem(item: Publication): Promise<void> {
-  const isUUID = isValidUUID(item.id);
+export async function savePublicationItem(item: Publication): Promise<Publication> {
+  const finalId = isValidUUID(item.id) ? item.id : generateUUID();
   const pg = getPgPool();
   if (pg) {
     try {
-      if (isUUID) {
-        await pg.query(
-          `INSERT INTO public.publications (id, title_en, title_ne, category_en, category_ne, published_year_en, published_year_ne, file_size, pages, pdf_url, cover_image_url, description_en, description_ne, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
-           ON CONFLICT (id) DO UPDATE SET
-             title_en = EXCLUDED.title_en,
-             title_ne = EXCLUDED.title_ne,
-             category_en = EXCLUDED.category_en,
-             category_ne = EXCLUDED.category_ne,
-             published_year_en = EXCLUDED.published_year_en,
-             published_year_ne = EXCLUDED.published_year_ne,
-             file_size = EXCLUDED.file_size,
-             pages = EXCLUDED.pages,
-             pdf_url = EXCLUDED.pdf_url,
-             cover_image_url = EXCLUDED.cover_image_url,
-             description_en = EXCLUDED.description_en,
-             description_ne = EXCLUDED.description_ne,
-             updated_at = NOW();`,
-          [
-            item.id,
-            item.titleEn,
-            item.titleNe,
-            item.categoryEn,
-            item.categoryNe,
-            item.publishedYearEn,
-            item.publishedYearNe,
-            item.fileSize,
-            item.pages,
-            item.pdfUrl,
-            item.coverImageUrl || null,
-            item.descriptionEn || null,
-            item.descriptionNe || null,
-          ]
-        );
-      } else {
-        await pg.query(
-          `INSERT INTO public.publications (title_en, title_ne, category_en, category_ne, published_year_en, published_year_ne, file_size, pages, pdf_url, cover_image_url, description_en, description_ne, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW());`,
-          [
-            item.titleEn,
-            item.titleNe,
-            item.categoryEn,
-            item.categoryNe,
-            item.publishedYearEn,
-            item.publishedYearNe,
-            item.fileSize,
-            item.pages,
-            item.pdfUrl,
-            item.coverImageUrl || null,
-            item.descriptionEn || null,
-            item.descriptionNe || null,
-          ]
-        );
+      const res = await pg.query(
+        `INSERT INTO public.publications (id, title_en, title_ne, category_en, category_ne, published_year_en, published_year_ne, file_size, pages, pdf_url, cover_image_url, description_en, description_ne, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           title_en = EXCLUDED.title_en,
+           title_ne = EXCLUDED.title_ne,
+           category_en = EXCLUDED.category_en,
+           category_ne = EXCLUDED.category_ne,
+           published_year_en = EXCLUDED.published_year_en,
+           published_year_ne = EXCLUDED.published_year_ne,
+           file_size = EXCLUDED.file_size,
+           pages = EXCLUDED.pages,
+           pdf_url = EXCLUDED.pdf_url,
+           cover_image_url = EXCLUDED.cover_image_url,
+           description_en = EXCLUDED.description_en,
+           description_ne = EXCLUDED.description_ne,
+           updated_at = NOW()
+         RETURNING *;`,
+        [
+          finalId,
+          item.titleEn,
+          item.titleNe,
+          item.categoryEn,
+          item.categoryNe,
+          item.publishedYearEn,
+          item.publishedYearNe,
+          item.fileSize,
+          item.pages,
+          item.pdfUrl,
+          item.coverImageUrl || null,
+          item.descriptionEn || null,
+          item.descriptionNe || null,
+        ]
+      );
+      if (res.rows && res.rows.length > 0) {
+        const row = res.rows[0];
+        return {
+          id: String(row.id),
+          titleEn: row.title_en ?? "",
+          titleNe: row.title_ne ?? "",
+          categoryEn: row.category_en ?? "",
+          categoryNe: row.category_ne ?? "",
+          publishedYearEn: row.published_year_en ?? "",
+          publishedYearNe: row.published_year_ne ?? "",
+          fileSize: row.file_size ?? "",
+          pages: row.pages ?? 0,
+          pdfUrl: row.pdf_url ?? "",
+          coverImageUrl: row.cover_image_url ?? undefined,
+          descriptionEn: row.description_en ?? "",
+          descriptionNe: row.description_ne ?? "",
+        };
       }
-      return;
     } catch (err) {
       console.warn("[savePublicationItem] pg query failed:", err);
     }
@@ -821,6 +866,7 @@ export async function savePublicationItem(item: Publication): Promise<void> {
   try {
     const supabase = makeAdminClient();
     const payload: Record<string, unknown> = {
+      id: finalId,
       title_en: item.titleEn,
       title_ne: item.titleNe,
       category_en: item.categoryEn,
@@ -834,23 +880,38 @@ export async function savePublicationItem(item: Publication): Promise<void> {
       description_en: item.descriptionEn || null,
       description_ne: item.descriptionNe || null,
     };
-    if (isUUID) {
-      payload.id = item.id;
+    const { data } = await supabase.from("publications").upsert(payload).select().single();
+    if (data) {
+      return {
+        id: String(data.id),
+        titleEn: data.title_en ?? "",
+        titleNe: data.title_ne ?? "",
+        categoryEn: data.category_en ?? "",
+        categoryNe: data.category_ne ?? "",
+        publishedYearEn: data.published_year_en ?? "",
+        publishedYearNe: data.published_year_ne ?? "",
+        fileSize: data.file_size ?? "",
+        pages: data.pages ?? 0,
+        pdfUrl: data.pdf_url ?? "",
+        coverImageUrl: data.cover_image_url ?? undefined,
+        descriptionEn: data.description_en ?? "",
+        descriptionNe: data.description_ne ?? "",
+      };
     }
-    await supabase.from("publications").upsert(payload);
   } catch (err) {
     console.warn("[savePublicationItem] Supabase fallback failed:", err);
   }
+
+  return { ...item, id: finalId };
 }
 
 export async function deletePublicationItem(id: string): Promise<void> {
   if (!id) return;
-  if (!isValidUUID(id)) return;
 
   const pg = getPgPool();
   if (pg) {
     try {
-      await pg.query("DELETE FROM public.publications WHERE id = $1", [id]);
+      await pg.query("DELETE FROM public.publications WHERE id::text = $1", [id]);
       return;
     } catch (err) {
       console.warn("[deletePublicationItem] pg query failed:", err);
