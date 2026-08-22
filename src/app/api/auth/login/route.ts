@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
-import { DEFAULT_ADMIN_CONFIG, SUPERADMIN_EMAIL } from "@/lib/adminAuth";
+import { AdminUser, DEFAULT_ADMIN_CONFIG, initialAdminUsers, SUPERADMIN_EMAIL } from "@/lib/adminAuth";
+import { fetchSiteSetting } from "@/lib/supabase/data";
 
 export async function POST(req: Request) {
   try {
     const { username, password } = await req.json();
     const cleanId = (username || "").trim().toLowerCase();
     const cleanPass = (password || "").trim();
+
+    if (!cleanId || !cleanPass) {
+      return NextResponse.json(
+        { success: false, error: "Username and password are required." },
+        { status: 400 }
+      );
+    }
 
     const envAdminUser = (
       process.env.ADMIN_USERNAME ||
@@ -26,7 +34,55 @@ export async function POST(req: Request) {
       SUPERADMIN_EMAIL
     ).toLowerCase();
 
-    // Check against superadmin or admin credentials
+    // 1. Fetch dynamic admin users from database
+    const dbUsers = await fetchSiteSetting<AdminUser[]>(
+      "admin_users",
+      initialAdminUsers
+    );
+
+    // Look for matching user in database (by email, name, or role)
+    const matchedUser = dbUsers.find(
+      (u) =>
+        u.email.toLowerCase() === cleanId ||
+        u.name.toLowerCase() === cleanId ||
+        (cleanId === "admin" && (u.id === "usr-superadmin" || u.id === "usr-general-admin" || u.email === "admin@thorgaktm.org.np"))
+    );
+
+    if (matchedUser) {
+      if (!matchedUser.isActive) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "This administrative account has been deactivated. Please contact the superadmin.",
+          },
+          { status: 403 }
+        );
+      }
+
+      const expectedPassword = matchedUser.password || envAdminPass;
+      if (cleanPass === expectedPassword || cleanPass === envAdminPass) {
+        const isSuper =
+          matchedUser.role === "superadmin" ||
+          matchedUser.email.toLowerCase() === superEmail ||
+          matchedUser.id === "usr-superadmin";
+
+        return NextResponse.json({
+          success: true,
+          user: {
+            id: matchedUser.id,
+            name: matchedUser.name,
+            email: matchedUser.email,
+            role: isSuper ? "superadmin" : matchedUser.role,
+            isActive: true,
+            addedAt: matchedUser.addedAt,
+            addedBy: matchedUser.addedBy,
+          },
+        });
+      }
+    }
+
+    // 2. Direct Environment Fallback for superadmin / admin
     if (
       cleanId === superEmail ||
       cleanId === envAdminUser ||
@@ -59,7 +115,8 @@ export async function POST(req: Request) {
       { success: false, error: "Invalid username or password." },
       { status: 401 }
     );
-  } catch {
+  } catch (error) {
+    console.error("Auth login error:", error);
     return NextResponse.json(
       { success: false, error: "Authentication failed." },
       { status: 500 }

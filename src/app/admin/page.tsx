@@ -42,6 +42,7 @@ import {
   clearAdminSession,
   verifyAdminCredentials,
   getAdminUsers,
+  saveAdminUsers,
   addAdminUser,
   removeAdminUser,
   toggleAdminUserStatus,
@@ -144,6 +145,7 @@ const ADMIN_I18N = {
     editPub: "प्रकाशन सम्पादन",
     editEvent: "कार्यक्रम सम्पादन",
     editGallery: "तस्बिर सम्पादन",
+    editUser: "प्रशासक सम्पादन",
     editBtn: "सम्पादन",
     deleteBtn: "मेटाउनुहोस्",
     cancelBtn: "रद्द गर्नुहोस्",
@@ -152,6 +154,7 @@ const ADMIN_I18N = {
     superadminOnlyNotice: "केवल सुपर एडमिनले मात्र प्रशासक प्रयोगकर्ताहरू थप्न, सक्रिय/निष्क्रिय गर्न वा मेटाउन सक्छ।",
     addAdminUser: "प्रशासक थप्नुहोस्",
     addUserModalTitle: "नयाँ प्रशासक खाता दर्ता",
+    editUserModalTitle: "प्रशासक खाता सम्पादन / पासवर्ड परिवर्तन",
     userName: "पूरा नाम",
     userEmail: "आधिकारिक इमेल",
     userRole: "भूमिका",
@@ -225,6 +228,7 @@ const ADMIN_I18N = {
     editPub: "Edit Publication",
     editEvent: "Edit Event",
     editGallery: "Edit Photo",
+    editUser: "Edit Administrator",
     editBtn: "Edit",
     deleteBtn: "Delete",
     cancelBtn: "Cancel",
@@ -233,6 +237,7 @@ const ADMIN_I18N = {
     superadminOnlyNotice: "Only the superadmin configured in the environment file can add, deactivate, or remove administrator accounts.",
     addAdminUser: "Add Administrator",
     addUserModalTitle: "Register New Administrator",
+    editUserModalTitle: "Edit Administrator / Change Password",
     userName: "Full Name",
     userEmail: "Official Email",
     userRole: "Role",
@@ -342,6 +347,7 @@ export default function AdminPage() {
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showAddGalleryModal, setShowAddGalleryModal] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
 
   // New Admin User Form
   const [userForm, setUserForm] = useState({
@@ -424,6 +430,16 @@ export default function AdminPage() {
         if (data && Array.isArray(data) && data.length > 0) {
           setGalleryList(data);
           saveStoredGallery(data);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/users", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setAdminUsersList(data);
+          saveAdminUsers(data);
         }
       })
       .catch(() => {});
@@ -1257,19 +1273,23 @@ export default function AdminPage() {
   };
 
   // --- Admin User Access Management Handlers ---
-  const handleAddAdmin = (e: React.FormEvent) => {
+  const handleStartEditUser = (user: AdminUser) => {
+    setEditingUser(user);
+    setUserForm({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      password: user.password || "",
+    });
+    setShowAddUserModal(true);
+  };
+
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session?.isSuperadmin) {
+    if (!session) return;
+    if (!userForm.name.trim() || !isValidName(userForm.name)) {
       dialogAlert({
-        title: lang === "ne" ? "अनुमति अस्वीकृत" : "Permission Denied",
-        description: t.superadminOnlyNotice,
-        type: "danger",
-      });
-      return;
-    }
-    if (!isValidName(userForm.name)) {
-      dialogAlert({
-        title: lang === "ne" ? "अमान्य नाम" : "Invalid Name",
+        title: lang === "ne" ? "नाम आवश्यक छ" : "Name Required",
         description:
           lang === "ne"
             ? "कृपया प्रशासकको पूरा नाम (कम्तिमा २ अक्षर) लेख्नुहोस्।"
@@ -1289,36 +1309,84 @@ export default function AdminPage() {
       });
       return;
     }
-    const passCheck = isValidPassword(userForm.password);
-    if (!passCheck.isValid) {
-      dialogAlert({
-        title: lang === "ne" ? "कमजोर पासवर्ड" : "Weak Password",
-        description: lang === "ne" ? passCheck.errorNe : passCheck.errorEn,
-        type: "warning",
-      });
-      return;
+    if (!editingUser || userForm.password) {
+      const passCheck = isValidPassword(userForm.password);
+      if (!passCheck.isValid) {
+        dialogAlert({
+          title: lang === "ne" ? "कमजोर पासवर्ड" : "Weak Password",
+          description: lang === "ne" ? passCheck.errorNe : passCheck.errorEn,
+          type: "warning",
+        });
+        return;
+      }
     }
 
-    const created = addAdminUser({
-      name: userForm.name.trim(),
-      email: userForm.email.trim(),
-      role: userForm.role,
-      password: userForm.password,
-      addedBy: session.email,
-      isActive: true,
-    });
+    if (editingUser) {
+      const payload: Partial<AdminUser> & { id: string } = {
+        id: editingUser.id,
+        name: userForm.name.trim(),
+        email: userForm.email.trim(),
+        role: userForm.role,
+        ...(userForm.password ? { password: userForm.password } : {}),
+      };
 
-    setAdminUsersList(getAdminUsers());
-    setShowAddUserModal(false);
-    setUserForm({ name: "", email: "", role: "admin", password: "" });
-    dialogAlert({
-      title: lang === "ne" ? "प्रशासक खाता सिर्जना भयो" : "Administrator Created",
-      description: `${created.name} (${created.email}) ${t.userAddedSuccess}`,
-      type: "success",
-    });
+      try {
+        const res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.users) {
+          setAdminUsersList(data.users);
+          saveAdminUsers(data.users);
+        }
+      } catch {}
+
+      setShowAddUserModal(false);
+      setEditingUser(null);
+      setUserForm({ name: "", email: "", role: "admin", password: "" });
+      dialogAlert({
+        title: lang === "ne" ? "खाता अद्यावधिक भयो" : "Account Updated",
+        description: `${userForm.name} (${userForm.email}) ${lang === "ne" ? "सफलतापूर्वक अद्यावधिक भयो।" : "updated successfully."}`,
+        type: "success",
+      });
+    } else {
+      const newUserPayload = {
+        name: userForm.name.trim(),
+        email: userForm.email.trim(),
+        role: userForm.role,
+        password: userForm.password,
+        addedBy: session.email,
+      };
+
+      try {
+        const res = await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newUserPayload),
+        });
+        const data = await res.json();
+        if (data.users) {
+          setAdminUsersList(data.users);
+          saveAdminUsers(data.users);
+        }
+      } catch {
+        addAdminUser({ ...newUserPayload, isActive: true });
+        setAdminUsersList(getAdminUsers());
+      }
+
+      setShowAddUserModal(false);
+      setUserForm({ name: "", email: "", role: "admin", password: "" });
+      dialogAlert({
+        title: lang === "ne" ? "प्रशासक खाता सिर्जना भयो" : "Administrator Created",
+        description: `${userForm.name} (${userForm.email}) ${t.userAddedSuccess}`,
+        type: "success",
+      });
+    }
   };
 
-  const handleToggleUser = (user: AdminUser) => {
+  const handleToggleUser = async (user: AdminUser) => {
     if (!session?.isSuperadmin) {
       dialogAlert({
         title: lang === "ne" ? "अनुमति अस्वीकृत" : "Permission Denied",
@@ -1327,21 +1395,28 @@ export default function AdminPage() {
       });
       return;
     }
-    const res = toggleAdminUserStatus(user.id, session.email);
-    if (res.success) {
+
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: user.id, isActive: !user.isActive }),
+      });
+      const data = await res.json();
+      if (data.users) {
+        setAdminUsersList(data.users);
+        saveAdminUsers(data.users);
+      }
+    } catch {
+      toggleAdminUserStatus(user.id, session.email);
       setAdminUsersList(getAdminUsers());
-      dialogAlert({
-        title: lang === "ne" ? "स्थिति अद्यावधिक भयो" : "Status Updated",
-        description: `${user.name}: ${t.userStatusChanged}`,
-        type: "info",
-      });
-    } else {
-      dialogAlert({
-        title: lang === "ne" ? "कार्य असफल" : "Action Failed",
-        description: res.message || "",
-        type: "warning",
-      });
     }
+
+    dialogAlert({
+      title: lang === "ne" ? "स्थिति अद्यावधिक भयो" : "Status Updated",
+      description: `${user.name}: ${t.userStatusChanged}`,
+      type: "info",
+    });
   };
 
   const handleDeleteUser = async (user: AdminUser) => {
@@ -1361,21 +1436,25 @@ export default function AdminPage() {
       cancelText: t.cancelBtn,
     });
     if (confirmed) {
-      const res = removeAdminUser(user.id, session.email);
-      if (res.success) {
+      try {
+        const res = await fetch(`/api/users?id=${user.id}`, {
+          method: "DELETE",
+        });
+        const data = await res.json();
+        if (data.users) {
+          setAdminUsersList(data.users);
+          saveAdminUsers(data.users);
+        }
+      } catch {
+        removeAdminUser(user.id, session.email);
         setAdminUsersList(getAdminUsers());
-        dialogAlert({
-          title: lang === "ne" ? "प्रशासक हटाइयो" : "User Removed",
-          description: t.userRemovedSuccess,
-          type: "success",
-        });
-      } else {
-        dialogAlert({
-          title: lang === "ne" ? "कार्य असफल" : "Action Failed",
-          description: res.message || "",
-          type: "warning",
-        });
       }
+
+      dialogAlert({
+        title: lang === "ne" ? "प्रशासक हटाइयो" : "User Removed",
+        description: t.userRemovedSuccess,
+        type: "success",
+      });
     }
   };
 
@@ -3386,7 +3465,16 @@ export default function AdminPage() {
                 {session.isSuperadmin && (
                   <button
                     type="button"
-                    onClick={() => setShowAddUserModal(!showAddUserModal)}
+                    onClick={() => {
+                      if (showAddUserModal && editingUser) {
+                        setEditingUser(null);
+                        setUserForm({ name: "", email: "", role: "admin", password: "" });
+                      } else {
+                        setEditingUser(null);
+                        setUserForm({ name: "", email: "", role: "admin", password: "" });
+                        setShowAddUserModal(!showAddUserModal);
+                      }
+                    }}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors shadow-sm"
                   >
                     <Plus size={14} />
@@ -3395,10 +3483,27 @@ export default function AdminPage() {
                 )}
               </div>
 
-              {/* Add User Modal / Form (Superadmin only) */}
+              {/* Add/Edit User Modal / Form (Superadmin only) */}
               {showAddUserModal && session.isSuperadmin && (
-                <form onSubmit={handleAddAdmin} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
-                  <div className="text-xs font-bold uppercase tracking-wider text-accent">{t.addUserModalTitle}</div>
+                <form onSubmit={handleAddUser} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold uppercase tracking-wider text-accent">
+                      {editingUser ? t.editUserModalTitle : t.addUserModalTitle}
+                    </div>
+                    {editingUser && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingUser(null);
+                          setUserForm({ name: "", email: "", role: "admin", password: "" });
+                          setShowAddUserModal(false);
+                        }}
+                        className="text-xs text-muted hover:text-fg font-medium"
+                      >
+                        {t.cancelBtn}
+                      </button>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
@@ -3439,24 +3544,41 @@ export default function AdminPage() {
                       </select>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-fg">{t.userPassword} *</label>
+                      <label className="text-xs font-semibold text-fg">
+                        {t.userPassword} {editingUser ? (lang === "ne" ? "(नयाँ पासवर्ड राख्न मात्र लेख्नुहोस्)" : "(Optional: new password)") : "*"}
+                      </label>
                       <input
-                        required
+                        required={!editingUser}
                         type="text"
                         value={userForm.password}
                         onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                        placeholder="••••••••"
+                        placeholder={editingUser ? (lang === "ne" ? "यथावत राख्न खाली छोड्नुहोस्" : "Leave blank to keep unchanged") : "••••••••"}
                         className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
-                  >
-                    {t.addAdminUser}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold"
+                    >
+                      {editingUser ? t.saveChanges : t.addAdminUser}
+                    </button>
+                    {editingUser && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingUser(null);
+                          setUserForm({ name: "", email: "", role: "admin", password: "" });
+                          setShowAddUserModal(false);
+                        }}
+                        className="px-4 py-2 rounded-control border border-line bg-ground text-fg text-xs font-semibold hover:bg-tint"
+                      >
+                        {t.cancelBtn}
+                      </button>
+                    )}
+                  </div>
                 </form>
               )}
 
@@ -3512,29 +3634,42 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        {/* Actions (Only Superadmin can toggle or delete non-superadmin accounts) */}
-                        {session.isSuperadmin && !isUserSuperadmin && (
+                        {/* Actions (Superadmin can edit, toggle, delete) */}
+                        {session.isSuperadmin && (
                           <div className="flex items-center gap-2 self-end sm:self-center">
                             <button
                               type="button"
-                              onClick={() => handleToggleUser(user)}
-                              className={`px-2.5 py-1 rounded-control text-[11px] font-semibold transition-colors border ${
-                                user.isActive
-                                  ? "border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
-                                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
-                              }`}
+                              onClick={() => handleStartEditUser(user)}
+                              className="p-1.5 text-accent hover:bg-accent-soft rounded-control transition-colors"
+                              title={t.editUser}
                             >
-                              {user.isActive ? t.deactivate : t.activate}
+                              <PencilSimple size={15} />
                             </button>
 
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteUser(user)}
-                              className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
-                              title={t.deleteBtn}
-                            >
-                              <Trash size={15} />
-                            </button>
+                            {!isUserSuperadmin && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleUser(user)}
+                                  className={`px-2.5 py-1 rounded-control text-[11px] font-semibold transition-colors border ${
+                                    user.isActive
+                                      ? "border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
+                                      : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
+                                  }`}
+                                >
+                                  {user.isActive ? t.deactivate : t.activate}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteUser(user)}
+                                  className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                                  title={t.deleteBtn}
+                                >
+                                  <Trash size={15} />
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
