@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { fetchHeroContent, saveHeroContent } from "@/lib/supabase/data";
 import { HeroContent } from "@/data/mockData";
+import { verifyAuth } from "@/lib/authGuard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -30,6 +31,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) {
+    return auth.response!;
+  }
+
   try {
     const body = (await request.json()) as HeroContent;
     if (!body || !body.titleNe || !body.titleEn) {

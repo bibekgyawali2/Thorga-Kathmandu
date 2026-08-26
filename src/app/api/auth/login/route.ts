@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { AdminUser, DEFAULT_ADMIN_CONFIG, initialAdminUsers, SUPERADMIN_EMAIL } from "@/lib/adminAuth";
 import { fetchSiteSetting } from "@/lib/supabase/data";
+import { signJWT, AUTH_COOKIE_NAME, DEFAULT_JWT_EXPIRY_SECONDS } from "@/lib/jwt";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -58,6 +59,8 @@ export async function POST(req: Request) {
       (user.email && user.email.toLowerCase() === "superadmin@thorgaktm.org.np") ||
       user.id === "usr-superadmin";
 
+    let authenticatedUser: AdminUser | null = null;
+
     // 2. Direct match by specific username / email / name / prefix
     const directUser = dbUsers.find((u) => {
       const uEmail = (u.email || "").toLowerCase();
@@ -88,120 +91,107 @@ export async function POST(req: Request) {
         cleanPass === envAdminPass ||
         cleanPass === DEFAULT_ADMIN_CONFIG.password
       ) {
-        const isSuper = isSuperUser(directUser);
-        return NextResponse.json(
-          {
-            success: true,
-            user: {
-              id: directUser.id,
-              name: directUser.name,
-              email: directUser.email,
-              role: isSuper ? "superadmin" : directUser.role,
-              isActive: true,
-              addedAt: directUser.addedAt,
-              addedBy: directUser.addedBy,
-            },
-          },
-          { headers: NO_CACHE_HEADERS }
-        );
+        authenticatedUser = directUser;
       }
     }
 
-    // 3. Generic identifier ("admin", "superadmin", "administrator", or empty/default)
-    const isGenericAdminId =
-      cleanId === "admin" ||
-      cleanId === "superadmin" ||
-      cleanId === "administrator" ||
-      cleanId === envAdminUser ||
-      cleanId === superEmail ||
-      cleanId === "admin@thorgaktm.org.np" ||
-      cleanId === "superadmin@thorgaktm.org.np";
+    // 3. Generic identifier ("admin", "superadmin", "administrator", or default)
+    if (!authenticatedUser) {
+      const isGenericAdminId =
+        cleanId === "admin" ||
+        cleanId === "superadmin" ||
+        cleanId === "administrator" ||
+        cleanId === envAdminUser ||
+        cleanId === superEmail ||
+        cleanId === "admin@thorgaktm.org.np" ||
+        cleanId === "superadmin@thorgaktm.org.np";
 
-    if (isGenericAdminId) {
-      // Find ANY active user in db whose configured password matches cleanPass
-      const userWithPass = dbUsers.find((u) => {
-        if (!u.isActive) return false;
-        const p = u.password || envAdminPass;
-        return cleanPass === p;
-      });
+      if (isGenericAdminId) {
+        const userWithPass = dbUsers.find((u) => {
+          if (!u.isActive) return false;
+          const p = u.password || envAdminPass;
+          return cleanPass === p;
+        });
 
-      if (userWithPass) {
-        const isSuper = isSuperUser(userWithPass);
-        return NextResponse.json(
-          {
-            success: true,
-            user: {
-              id: userWithPass.id,
-              name: userWithPass.name,
-              email: userWithPass.email,
-              role: isSuper ? "superadmin" : userWithPass.role,
-              isActive: true,
-              addedAt: userWithPass.addedAt,
-              addedBy: userWithPass.addedBy,
-            },
-          },
-          { headers: NO_CACHE_HEADERS }
-        );
-      }
-
-      // Check environment / default password fallback
-      if (cleanPass === envAdminPass || cleanPass === DEFAULT_ADMIN_CONFIG.password) {
-        const primarySuper = dbUsers.find((u) => isSuperUser(u)) || {
-          id: "usr-superadmin",
-          name: "System Superadmin",
-          email: superEmail,
-          role: "superadmin" as const,
-          isActive: true,
-          addedAt: "2026-08-01",
-          addedBy: "System",
-        };
-
-        return NextResponse.json(
-          {
-            success: true,
-            user: {
-              id: primarySuper.id,
-              name: primarySuper.name,
-              email: primarySuper.email,
-              role: "superadmin",
-              isActive: true,
-              addedAt: primarySuper.addedAt,
-              addedBy: primarySuper.addedBy,
-            },
-          },
-          { headers: NO_CACHE_HEADERS }
-        );
+        if (userWithPass) {
+          authenticatedUser = userWithPass;
+        } else if (cleanPass === envAdminPass || cleanPass === DEFAULT_ADMIN_CONFIG.password) {
+          authenticatedUser = dbUsers.find((u) => isSuperUser(u)) || {
+            id: "usr-superadmin",
+            name: "System Superadmin",
+            email: superEmail,
+            role: "superadmin" as const,
+            isActive: true,
+            addedAt: "2026-08-01",
+            addedBy: "System",
+          };
+        }
       }
     }
 
     // 4. Global match: Check if cleanPass matches ANY active administrator in the database
-    const anyMatchingUser = dbUsers.find(
-      (u) => u.isActive && u.password && u.password === cleanPass
-    );
+    if (!authenticatedUser) {
+      const anyMatchingUser = dbUsers.find(
+        (u) => u.isActive && u.password && u.password === cleanPass
+      );
+      if (anyMatchingUser) {
+        authenticatedUser = anyMatchingUser;
+      }
+    }
 
-    if (anyMatchingUser) {
-      const isSuper = isSuperUser(anyMatchingUser);
+    if (!authenticatedUser) {
       return NextResponse.json(
-        {
-          success: true,
-          user: {
-            id: anyMatchingUser.id,
-            name: anyMatchingUser.name,
-            email: anyMatchingUser.email,
-            role: isSuper ? "superadmin" : anyMatchingUser.role,
-            isActive: true,
-            addedAt: anyMatchingUser.addedAt,
-            addedBy: anyMatchingUser.addedBy,
-          },
-        },
-        { headers: NO_CACHE_HEADERS }
+        { success: false, error: "Invalid username or password." },
+        { status: 401, headers: NO_CACHE_HEADERS }
       );
     }
 
-    return NextResponse.json(
-      { success: false, error: "Invalid username or password." },
-      { status: 401, headers: NO_CACHE_HEADERS }
+    const isSuper = isSuperUser(authenticatedUser);
+    const finalRole = isSuper ? "superadmin" : authenticatedUser.role;
+
+    // 5. Generate signed JWT token
+    const token = await signJWT(
+      {
+        sub: authenticatedUser.id,
+        email: authenticatedUser.email,
+        name: authenticatedUser.name,
+        role: finalRole,
+        isSuperadmin: isSuper,
+      },
+      DEFAULT_JWT_EXPIRY_SECONDS
     );
+
+    const expTimestamp = Math.floor(Date.now() / 1000) + DEFAULT_JWT_EXPIRY_SECONDS;
+
+    // 6. Build response and set secure HTTP-only cookie
+    const response = NextResponse.json(
+      {
+        success: true,
+        token,
+        exp: expTimestamp,
+        user: {
+          id: authenticatedUser.id,
+          name: authenticatedUser.name,
+          email: authenticatedUser.email,
+          role: finalRole,
+          isSuperadmin: isSuper,
+          isActive: true,
+          addedAt: authenticatedUser.addedAt,
+          addedBy: authenticatedUser.addedBy,
+        },
+      },
+      { headers: NO_CACHE_HEADERS }
+    );
+
+    response.cookies.set(AUTH_COOKIE_NAME, token, {
+      path: "/",
+      maxAge: DEFAULT_JWT_EXPIRY_SECONDS,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    return response;
   } catch (error) {
     console.error("Auth login error:", error);
     return NextResponse.json(

@@ -333,8 +333,13 @@ export async function deleteGalleryItem(id: string): Promise<void> {
   }
 
   try {
-    const supabase = makeAdminClient();
-    await supabase.from("gallery").delete().eq("id", id);
+    if (isValidUUID(id)) {
+      const supabase = makeAdminClient();
+      const { error } = await supabase.from("gallery").delete().eq("id", id);
+      if (error) {
+        console.warn("[deleteGalleryItem] Supabase fallback error:", error.message);
+      }
+    }
   } catch (err) {
     console.warn("[deleteGalleryItem] Supabase fallback failed:", err);
   }
@@ -536,8 +541,13 @@ export async function deleteEventItem(id: string): Promise<void> {
   }
 
   try {
-    const supabase = makeAdminClient();
-    await supabase.from("events").delete().eq("id", id);
+    if (isValidUUID(id)) {
+      const supabase = makeAdminClient();
+      const { error } = await supabase.from("events").delete().eq("id", id);
+      if (error) {
+        console.warn("[deleteEventItem] Supabase fallback error:", error.message);
+      }
+    }
   } catch (err) {
     console.warn("[deleteEventItem] Supabase fallback failed:", err);
   }
@@ -731,8 +741,13 @@ export async function deleteMemberItem(id: string): Promise<void> {
   }
 
   try {
-    const supabase = makeAdminClient();
-    await supabase.from("members").delete().eq("id", id);
+    if (isValidUUID(id)) {
+      const supabase = makeAdminClient();
+      const { error } = await supabase.from("members").delete().eq("id", id);
+      if (error) {
+        console.warn("[deleteMemberItem] Supabase fallback error:", error.message);
+      }
+    }
   } catch (err) {
     console.warn("[deleteMemberItem] Supabase fallback failed:", err);
   }
@@ -919,8 +934,13 @@ export async function deletePublicationItem(id: string): Promise<void> {
   }
 
   try {
-    const supabase = makeAdminClient();
-    await supabase.from("publications").delete().eq("id", id);
+    if (isValidUUID(id)) {
+      const supabase = makeAdminClient();
+      const { error } = await supabase.from("publications").delete().eq("id", id);
+      if (error) {
+        console.warn("[deletePublicationItem] Supabase fallback error:", error.message);
+      }
+    }
   } catch (err) {
     console.warn("[deletePublicationItem] Supabase fallback failed:", err);
   }

@@ -50,8 +50,16 @@ export function CloudinaryUploader({
       formData.append("file", file);
       formData.append("folder", folder);
 
+      const session = typeof window !== "undefined" ? JSON.parse(sessionStorage.getItem("thorga_admin_session") || localStorage.getItem("thorga_admin_session") || "{}") : null;
+      const headers: Record<string, string> = {};
+      if (session?.token) {
+        headers["Authorization"] = `Bearer ${session.token}`;
+      }
+
       const response = await fetch("/api/upload", {
         method: "POST",
+        credentials: "include",
+        headers,
         body: formData,
       });
 
@@ -76,9 +84,15 @@ export function CloudinaryUploader({
   const handleRemoveFile = async () => {
     if (value && value.includes("cloudinary.com")) {
       try {
+        const session = typeof window !== "undefined" ? JSON.parse(sessionStorage.getItem("thorga_admin_session") || localStorage.getItem("thorga_admin_session") || "{}") : null;
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (session?.token) {
+          headers["Authorization"] = `Bearer ${session.token}`;
+        }
         await fetch("/api/upload", {
           method: "DELETE",
-          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          headers,
           body: JSON.stringify({ url: value }),
         });
       } catch (err) {

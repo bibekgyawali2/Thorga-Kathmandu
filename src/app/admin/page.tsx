@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore } from "react";
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -40,14 +40,11 @@ import {
   getAdminSession,
   setAdminSession,
   clearAdminSession,
-  verifyAdminCredentials,
+  subscribeAdminSession,
   getAdminUsers,
   saveAdminUsers,
-  addAdminUser,
-  removeAdminUser,
-  toggleAdminUserStatus,
-  DEFAULT_ADMIN_CONFIG,
 } from "@/lib/adminAuth";
+import { isJWTExpired } from "@/lib/jwt";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
 import { useDialog } from "@/components/Dialog";
 import {
@@ -452,7 +449,12 @@ export default function AdminPage() {
       })
       .catch(() => {});
 
-    fetch("/api/users", { cache: "no-store" })
+    const currentSession = getAdminSession();
+    const userHeaders: Record<string, string> = {};
+    if (currentSession?.token) {
+      userHeaders["Authorization"] = `Bearer ${currentSession.token}`;
+    }
+    fetch("/api/users", { cache: "no-store", credentials: "include", headers: userHeaders })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && Array.isArray(data)) {
@@ -539,6 +541,138 @@ export default function AdminPage() {
     }
   };
 
+  const handleAutoLogout = useCallback(
+    async (reason?: string) => {
+      try {
+        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      } catch {}
+      clearAdminSession();
+      setSession(null);
+      if (reason) {
+        dialogAlert({
+          title: lang === "ne" ? "सत्र समाप्त भयो" : "Session Expired",
+          description: reason,
+          type: "warning",
+        });
+      }
+    },
+    [lang, dialogAlert]
+  );
+
+  const adminFetch = useCallback(
+    async (url: string, options: RequestInit = {}): Promise<Response> => {
+      const currentSession = getAdminSession();
+      if (!currentSession || !currentSession.isAuthenticated || (currentSession.token && isJWTExpired(currentSession.token))) {
+        await handleAutoLogout(
+          lang === "ne"
+            ? "सत्र समाप्त भएको छ। कृपया पुन: लगइन गर्नुहोस्।"
+            : "Your session has expired. Please log in again."
+        );
+        throw new Error("Session expired");
+      }
+
+      const headers = new Headers(options.headers || {});
+      if (currentSession.token && !headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${currentSession.token}`);
+      }
+
+      const response = await fetch(url, {
+        ...options,
+        credentials: "include",
+        headers,
+      });
+
+      if (response.status === 401) {
+        let errorMsg =
+          lang === "ne"
+            ? "सत्र समाप्त भएको छ। कृपया पुन: लगइन गर्नुहोस्।"
+            : "Your session has expired. Please log in again.";
+        try {
+          const clone = response.clone();
+          const json = await clone.json();
+          if (json?.error) errorMsg = json.error;
+        } catch {}
+
+        await handleAutoLogout(errorMsg);
+      }
+
+      return response;
+    },
+    [lang, handleAutoLogout]
+  );
+
+  // Production-grade JWT session freshness lifecycle and expiration timers
+  useEffect(() => {
+    const unsubscribe = subscribeAdminSession((newSession) => {
+      setSession(newSession);
+    });
+
+    if (!session || !session.isAuthenticated) {
+      return () => unsubscribe();
+    }
+
+    const checkSessionFreshness = () => {
+      const activeSession = getAdminSession();
+      if (!activeSession || !activeSession.isAuthenticated || (activeSession.token && isJWTExpired(activeSession.token))) {
+        handleAutoLogout(
+          lang === "ne"
+            ? "सत्र समाप्त भएको छ। कृपया पुन: लगइन गर्नुहोस्।"
+            : "Your session has expired. Please log in again."
+        );
+        return;
+      }
+
+      if (activeSession.expiresAt && Date.now() >= activeSession.expiresAt) {
+        handleAutoLogout(
+          lang === "ne"
+            ? "सत्रको समय समाप्त भयो। कृपया पुन: लगइन गर्नुहोस्।"
+            : "Your session has expired. Please log in again."
+        );
+        return;
+      }
+    };
+
+    checkSessionFreshness();
+
+    const timeRemaining = Math.max(
+      500,
+      (session.expiresAt || session.loginTime + 24 * 60 * 60 * 1000) - Date.now()
+    );
+
+    const expiryTimer = setTimeout(() => {
+      handleAutoLogout(
+        lang === "ne"
+          ? "सत्रको समय समाप्त भयो। कृपया पुन: लगइन गर्नुहोस्।"
+          : "Your session has expired. Please log in again."
+      );
+    }, timeRemaining);
+
+    const heartbeat = setInterval(() => {
+      checkSessionFreshness();
+    }, 15000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        checkSessionFreshness();
+      }
+    };
+
+    const handleFocus = () => {
+      checkSessionFreshness();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(expiryTimer);
+      clearInterval(heartbeat);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [session, lang, handleAutoLogout]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoggingIn(true);
@@ -547,13 +681,14 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: loginUser, password: loginPass }),
       });
       const data = await res.json();
       if (res.ok && data.success && data.user) {
-        setAdminSession(data.user);
-        setSession(getAdminSession());
+        const newSession = setAdminSession(data.user, data.token, data.exp);
+        setSession(newSession);
         setLoginError(false);
         setLoginErrorMessage("");
       } else {
@@ -568,7 +703,10 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {}
     clearAdminSession();
     setSession(null);
   };
@@ -594,7 +732,7 @@ export default function AdminPage() {
 
     setIsSavingHero(true);
     try {
-      const res = await fetch("/api/hero", {
+      const res = await adminFetch("/api/hero", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(heroState),
@@ -711,7 +849,7 @@ export default function AdminPage() {
 
         let finalMember = updatedMember;
         try {
-          const res = await fetch("/api/members", {
+          const res = await adminFetch("/api/members", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedMember),
@@ -776,7 +914,7 @@ export default function AdminPage() {
 
       let finalSavedMember = newMember;
       try {
-        const res = await fetch("/api/members", {
+        const res = await adminFetch("/api/members", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newMember),
@@ -828,7 +966,7 @@ export default function AdminPage() {
   const deleteCloudinaryAsset = async (url?: string) => {
     if (!url || !url.includes("cloudinary.com")) return;
     try {
-      await fetch("/api/upload", {
+      await adminFetch("/api/upload", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
@@ -853,7 +991,7 @@ export default function AdminPage() {
         if (memberToDelete?.photoUrl) {
           deleteCloudinaryAsset(memberToDelete.photoUrl);
         }
-        const res = await fetch(`/api/members?id=${encodeURIComponent(id)}`, {
+        const res = await adminFetch(`/api/members?id=${encodeURIComponent(id)}`, {
           method: "DELETE",
         });
         const data = await res.json();
@@ -882,7 +1020,8 @@ export default function AdminPage() {
               : "Member removed successfully.",
           type: "success",
         });
-      } catch (err) {
+      } catch (err: unknown) {
+        if (err instanceof Error && err.message === "Session expired") return;
         console.error("Failed to delete member from db:", err);
       } finally {
         setDeletingMemberId(null);
@@ -948,7 +1087,7 @@ export default function AdminPage() {
 
         let finalPub = updatedPub;
         try {
-          const res = await fetch("/api/publications", {
+          const res = await adminFetch("/api/publications", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedPub),
@@ -1010,7 +1149,7 @@ export default function AdminPage() {
 
       let finalSavedPub = newPub;
       try {
-        const res = await fetch("/api/publications", {
+        const res = await adminFetch("/api/publications", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newPub),
@@ -1077,7 +1216,7 @@ export default function AdminPage() {
           deleteCloudinaryAsset(pubToDelete.coverImageUrl);
         }
 
-        const res = await fetch(`/api/publications?id=${encodeURIComponent(id)}`, {
+        const res = await adminFetch(`/api/publications?id=${encodeURIComponent(id)}`, {
           method: "DELETE",
         });
         const data = await res.json();
@@ -1187,7 +1326,7 @@ export default function AdminPage() {
 
         let finalEv = updatedEv;
         try {
-          const res = await fetch("/api/events", {
+          const res = await adminFetch("/api/events", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedEv),
@@ -1253,7 +1392,7 @@ export default function AdminPage() {
 
       let finalSavedEv = newEv;
       try {
-        const res = await fetch("/api/events", {
+        const res = await adminFetch("/api/events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newEv),
@@ -1319,7 +1458,7 @@ export default function AdminPage() {
           deleteCloudinaryAsset(eventToDelete.imageUrl);
         }
 
-        const res = await fetch(`/api/events?id=${encodeURIComponent(id)}`, {
+        const res = await adminFetch(`/api/events?id=${encodeURIComponent(id)}`, {
           method: "DELETE",
         });
         const data = await res.json();
@@ -1407,7 +1546,7 @@ export default function AdminPage() {
 
         let finalG = updatedG;
         try {
-          const res = await fetch("/api/gallery", {
+          const res = await adminFetch("/api/gallery", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedG),
@@ -1462,7 +1601,7 @@ export default function AdminPage() {
 
       let finalSavedG = newG;
       try {
-        const res = await fetch("/api/gallery", {
+        const res = await adminFetch("/api/gallery", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newG),
@@ -1521,7 +1660,7 @@ export default function AdminPage() {
           deleteCloudinaryAsset(galleryToDelete.imageUrl);
         }
 
-        const res = await fetch(`/api/gallery?id=${encodeURIComponent(id)}`, {
+        const res = await adminFetch(`/api/gallery?id=${encodeURIComponent(id)}`, {
           method: "DELETE",
         });
         const data = await res.json();
@@ -1634,7 +1773,7 @@ export default function AdminPage() {
         };
 
         try {
-          const res = await fetch("/api/users", {
+          const res = await adminFetch("/api/users", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -1657,7 +1796,7 @@ export default function AdminPage() {
             setAdminUsersList(data.users);
             saveAdminUsers(data.users);
           }
-        } catch (err) {
+        } catch {
           dialogAlert({
             title: lang === "ne" ? "कार्य असफल" : "Action Failed",
             description:
@@ -1687,7 +1826,7 @@ export default function AdminPage() {
         };
 
         try {
-          const res = await fetch("/api/users", {
+          const res = await adminFetch("/api/users", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(newUserPayload),
@@ -1710,7 +1849,7 @@ export default function AdminPage() {
             setAdminUsersList(data.users);
             saveAdminUsers(data.users);
           }
-        } catch (err) {
+        } catch {
           dialogAlert({
             title: lang === "ne" ? "कार्य असफल" : "Action Failed",
             description:
@@ -1750,7 +1889,7 @@ export default function AdminPage() {
 
     setTogglingUserId(user.id);
     try {
-      const res = await fetch("/api/users", {
+      const res = await adminFetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: user.id, isActive: !user.isActive }),
@@ -1818,7 +1957,7 @@ export default function AdminPage() {
     if (confirmed) {
       setDeletingUserId(user.id);
       try {
-        const res = await fetch(`/api/users?id=${encodeURIComponent(user.id)}`, {
+        const res = await adminFetch(`/api/users?id=${encodeURIComponent(user.id)}`, {
           method: "DELETE",
         });
         const data = await res.json();
@@ -3669,7 +3808,7 @@ export default function AdminPage() {
                       email: contactSettingsState.email.trim(),
                     };
 
-                    const res = await fetch("/api/contact", {
+                    const res = await adminFetch("/api/contact", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify(newContactData),
@@ -4265,7 +4404,7 @@ export default function AdminPage() {
                       try {
                         const next = { ...brandingState };
                         saveStoredBranding(next);
-                        await fetch("/api/branding", {
+                        await adminFetch("/api/branding", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(next),
@@ -4301,7 +4440,7 @@ export default function AdminPage() {
                           const next = { ...brandingState, logoUrl: "" };
                           setBrandingState(next);
                           saveStoredBranding(next);
-                          await fetch("/api/branding", {
+                          await adminFetch("/api/branding", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(next),
@@ -4370,7 +4509,7 @@ export default function AdminPage() {
                       try {
                         const next = { ...brandingState };
                         saveStoredBranding(next);
-                        await fetch("/api/branding", {
+                        await adminFetch("/api/branding", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify(next),
@@ -4406,7 +4545,7 @@ export default function AdminPage() {
                           const next = { ...brandingState, faviconUrl: "" };
                           setBrandingState(next);
                           saveStoredBranding(next);
-                          await fetch("/api/branding", {
+                          await adminFetch("/api/branding", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(next),
@@ -4434,7 +4573,7 @@ export default function AdminPage() {
                   setIsSavingBranding(true);
                   try {
                     saveStoredBranding(brandingState);
-                    await fetch("/api/branding", {
+                    await adminFetch("/api/branding", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify(brandingState),

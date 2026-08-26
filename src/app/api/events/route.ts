@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { fetchEvents, saveEventItem, deleteEventItem } from "@/lib/supabase/data";
 import { EventItem } from "@/data/mockData";
+import { verifyAuth } from "@/lib/authGuard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -30,8 +31,20 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) {
+    return auth.response!;
+  }
+
   try {
     const body = (await request.json()) as EventItem;
+    if (!body.titleEn || !body.titleNe || !body.dateEn || !body.dateNe) {
+      return new Response(
+        JSON.stringify({ error: "Event title and date in both English and Nepali are required." }),
+        { status: 400, headers: NO_CACHE_HEADERS }
+      );
+    }
+
     const saved = await saveEventItem(body);
     return new Response(JSON.stringify({ success: true, data: saved }), {
       status: 200,
@@ -47,6 +60,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) {
+    return auth.response!;
+  }
+
   try {
     const id = request.nextUrl.searchParams.get("id");
     if (!id) {

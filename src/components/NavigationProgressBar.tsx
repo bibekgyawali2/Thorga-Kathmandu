@@ -9,10 +9,13 @@ export default function NavigationProgressBar() {
   const [isLoading, setIsLoading] = useState(false);
   const [, startTransition] = useTransition();
 
-  // Reset loading when route finishes changing
-  useEffect(() => {
+  const currentPath = `${pathname}?${searchParams?.toString() || ""}`;
+  const [prevPath, setPrevPath] = useState(currentPath);
+
+  if (prevPath !== currentPath) {
+    setPrevPath(currentPath);
     setIsLoading(false);
-  }, [pathname, searchParams]);
+  }
 
   useEffect(() => {
     const handleAnchorClick = (e: MouseEvent) => {

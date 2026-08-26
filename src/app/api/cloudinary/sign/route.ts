@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { generateUploadSignature } from "@/lib/cloudinary";
+import { verifyAuth } from "@/lib/authGuard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,7 +12,12 @@ const NO_CACHE_HEADERS = {
   Expires: "0",
 };
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) {
+    return auth.response!;
+  }
+
   try {
     const body = await request.json();
     const { paramsToSign } = body;

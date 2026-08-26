@@ -70,7 +70,6 @@ import {
   ShieldCheck,
   ArrowRight,
   Sparkle,
-  CircleNotch,
   X,
 } from "@phosphor-icons/react";
 

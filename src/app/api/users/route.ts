@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { AdminUser, initialAdminUsers, SUPERADMIN_EMAIL } from "@/lib/adminAuth";
 import { fetchSiteSetting, saveSiteSetting } from "@/lib/supabase/data";
+import { verifyAuth } from "@/lib/authGuard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,13 +13,23 @@ const NO_CACHE_HEADERS = {
   Expires: "0",
 };
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (!auth.authorized) {
+    return auth.response!;
+  }
+
   try {
     const users = await fetchSiteSetting<AdminUser[]>(
       "admin_users",
       initialAdminUsers
     );
-    return NextResponse.json(users, { headers: NO_CACHE_HEADERS });
+    // Sanitize passwords from response
+    const sanitized = users.map((u) => ({
+      ...u,
+      password: u.password ? "••••••••" : undefined,
+    }));
+    return NextResponse.json(sanitized, { headers: NO_CACHE_HEADERS });
   } catch (error) {
     console.error("Failed to fetch admin users:", error);
     return NextResponse.json(initialAdminUsers, {
@@ -28,7 +39,12 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await verifyAuth(req, "admin");
+  if (!auth.authorized) {
+    return auth.response!;
+  }
+
   try {
     const body = await req.json();
     const currentUsers = await fetchSiteSetting<AdminUser[]>(
@@ -42,6 +58,14 @@ export async function POST(req: Request) {
       // Update existing user
       const exists = currentUsers.some((u) => u.id === body.id);
       if (exists) {
+        // Only superadmin can change another user's role to superadmin
+        if (body.role === "superadmin" && !auth.user?.isSuperadmin) {
+          return NextResponse.json(
+            { success: false, error: "Only the superadmin can assign the superadmin role." },
+            { status: 403, headers: NO_CACHE_HEADERS }
+          );
+        }
+
         updatedUsers = currentUsers.map((u) => {
           if (u.id === body.id) {
             return {
@@ -64,7 +88,7 @@ export async function POST(req: Request) {
           role: body.role || "admin",
           password: body.password || "thorga2081@admin",
           addedAt: body.addedAt || new Date().toISOString().split("T")[0],
-          addedBy: body.addedBy || "Superadmin",
+          addedBy: auth.user?.name || "Superadmin",
           isActive: body.isActive !== undefined ? body.isActive : true,
         };
         updatedUsers = [newUser, ...currentUsers];
@@ -78,15 +102,21 @@ export async function POST(req: Request) {
         role: body.role || "admin",
         password: body.password || "thorga2081@admin",
         addedAt: new Date().toISOString().split("T")[0],
-        addedBy: body.addedBy || "Superadmin",
+        addedBy: auth.user?.name || "Superadmin",
         isActive: true,
       };
       updatedUsers = [newUser, ...currentUsers];
     }
 
     await saveSiteSetting("admin_users", updatedUsers);
+
+    const sanitized = updatedUsers.map((u) => ({
+      ...u,
+      password: u.password ? "••••••••" : undefined,
+    }));
+
     return NextResponse.json(
-      { success: true, users: updatedUsers },
+      { success: true, users: sanitized },
       { headers: NO_CACHE_HEADERS }
     );
   } catch (error) {
@@ -98,7 +128,12 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
+  const auth = await verifyAuth(req, "superadmin");
+  if (!auth.authorized) {
+    return auth.response!;
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
@@ -134,8 +169,13 @@ export async function DELETE(req: Request) {
     const updatedUsers = currentUsers.filter((u) => u.id !== id);
     await saveSiteSetting("admin_users", updatedUsers);
 
+    const sanitized = updatedUsers.map((u) => ({
+      ...u,
+      password: u.password ? "••••••••" : undefined,
+    }));
+
     return NextResponse.json(
-      { success: true, users: updatedUsers },
+      { success: true, users: sanitized },
       { headers: NO_CACHE_HEADERS }
     );
   } catch (error) {

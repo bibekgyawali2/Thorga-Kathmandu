@@ -1,3 +1,5 @@
+import { decodeJWT, isJWTExpired } from "./jwt";
+
 export type AdminRole = "superadmin" | "admin" | "editor";
 
 export interface AdminUser {
@@ -13,11 +15,13 @@ export interface AdminUser {
 
 export interface AdminSession {
   isAuthenticated: boolean;
+  token: string;
   username: string;
   email: string;
   role: AdminRole;
   isSuperadmin: boolean;
   loginTime: number;
+  expiresAt: number; // Unix timestamp in milliseconds
 }
 
 export const SUPERADMIN_EMAIL =
@@ -26,7 +30,8 @@ export const SUPERADMIN_EMAIL =
   "superadmin@thorgaktm.org.np";
 
 const ADMIN_USERS_STORAGE_KEY = "thorga_admin_users";
-const ADMIN_SESSION_STORAGE_KEY = "thorga_admin_session";
+export const ADMIN_SESSION_STORAGE_KEY = "thorga_admin_session";
+export const ADMIN_AUTH_SYNC_EVENT = "thorga_admin_auth_sync";
 
 export const DEFAULT_ADMIN_CONFIG = {
   username: process.env.NEXT_PUBLIC_ADMIN_USERNAME || "admin",
@@ -184,54 +189,142 @@ export function toggleAdminUserStatus(
   return { success: true };
 }
 
+// ---------------------------------------------------------------------------
+// Production-Grade Admin Session Management & JWT Synchronization
+// ---------------------------------------------------------------------------
+
+let sessionListeners: Array<(session: AdminSession | null) => void> = [];
+
+export function subscribeAdminSession(callback: (session: AdminSession | null) => void) {
+  sessionListeners.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === ADMIN_SESSION_STORAGE_KEY || e.key === ADMIN_AUTH_SYNC_EVENT) {
+      const current = getAdminSession();
+      callback(current);
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", handleStorage);
+  }
+
+  return () => {
+    sessionListeners = sessionListeners.filter((l) => l !== callback);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", handleStorage);
+    }
+  };
+}
+
+function notifySessionChange(session: AdminSession | null) {
+  sessionListeners.forEach((l) => {
+    try {
+      l(session);
+    } catch {}
+  });
+}
+
 export function getAdminSession(): AdminSession | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
+    const raw =
+      sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY) ||
+      localStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
+
     if (!raw) return null;
     const session: AdminSession = JSON.parse(raw);
-    if (Date.now() - session.loginTime > 24 * 60 * 60 * 1000) {
-      sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+
+    // Check token expiration via JWT claims
+    if (session.token && isJWTExpired(session.token)) {
+      clearAdminSession();
       return null;
     }
-    // Dynamically ensure superadmin status for environment credentials and superadmin roles
+
+    // Check expiration timestamp
+    if (session.expiresAt && Date.now() >= session.expiresAt) {
+      clearAdminSession();
+      return null;
+    }
+
+    // Fallback: 24h expiration check from loginTime
+    if (Date.now() - session.loginTime > 24 * 60 * 60 * 1000) {
+      clearAdminSession();
+      return null;
+    }
+
+    // Ensure superadmin status for designated master accounts
     const isSuper =
       session.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
       session.email.toLowerCase() === "admin@thorgaktm.org.np" ||
       session.username.toLowerCase() === DEFAULT_ADMIN_CONFIG.username.toLowerCase() ||
       session.role === "superadmin";
+
     if (isSuper && (!session.isSuperadmin || session.role !== "superadmin")) {
       session.isSuperadmin = true;
       session.role = "superadmin";
-      sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(session));
+      saveSessionToStorage(session);
     }
+
     return session;
   } catch {
     return null;
   }
 }
 
-export function setAdminSession(user: AdminUser): void {
-  if (typeof window === "undefined") return;
+function saveSessionToStorage(session: AdminSession) {
+  try {
+    const json = JSON.stringify(session);
+    sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, json);
+    localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, json);
+    localStorage.setItem(ADMIN_AUTH_SYNC_EVENT, Date.now().toString());
+  } catch {}
+}
+
+export function setAdminSession(
+  user: Partial<AdminUser> & { id: string; name: string; email: string; role?: AdminRole },
+  token?: string,
+  expSeconds?: number
+): AdminSession {
   const isSuper =
-    user.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
-    user.email.toLowerCase() === "admin@thorgaktm.org.np" ||
+    user.email?.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
+    user.email?.toLowerCase() === "admin@thorgaktm.org.np" ||
     user.role === "superadmin" ||
     user.id === "usr-superadmin";
+
+  let expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+  if (expSeconds) {
+    expiresAt = expSeconds * 1000;
+  } else if (token) {
+    const decoded = decodeJWT(token);
+    if (decoded?.exp) {
+      expiresAt = decoded.exp * 1000;
+    }
+  }
+
   const session: AdminSession = {
     isAuthenticated: true,
+    token: token || "",
     username: user.name,
     email: user.email,
-    role: isSuper ? "superadmin" : user.role,
+    role: isSuper ? "superadmin" : user.role || "admin",
     isSuperadmin: isSuper,
     loginTime: Date.now(),
+    expiresAt,
   };
-  sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(session));
+
+  saveSessionToStorage(session);
+  notifySessionChange(session);
+  return session;
 }
 
 export function clearAdminSession(): void {
   if (typeof window === "undefined") return;
-  sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+  try {
+    sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+    localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+    localStorage.setItem(ADMIN_AUTH_SYNC_EVENT, `logout-${Date.now()}`);
+  } catch {}
+  notifySessionChange(null);
 }
 
 export function verifyAdminCredentials(

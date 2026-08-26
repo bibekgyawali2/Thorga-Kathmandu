@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadToCloudinary, deleteFromCloudinary } from "@/lib/cloudinary";
+import { verifyAuth } from "@/lib/authGuard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -23,6 +24,11 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 export async function POST(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) {
+    return auth.response!;
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -84,6 +90,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = await verifyAuth(request);
+  if (!auth.authorized) {
+    return auth.response!;
+  }
+
   try {
     const body = await request.json();
     const { url, publicId } = body;
