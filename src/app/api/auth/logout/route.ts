@@ -29,6 +29,13 @@ export async function POST() {
   return response;
 }
 
+/**
+ * Logout is a state change, so it is POST only. Accepting GET would let any
+ * page sign an administrator out with an <img> tag pointing at this route.
+ */
 export async function GET() {
-  return POST();
+  return NextResponse.json(
+    { success: false, error: "Use POST to sign out." },
+    { status: 405, headers: { ...NO_CACHE_HEADERS, Allow: "POST" } }
+  );
 }

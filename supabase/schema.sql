@@ -105,15 +105,22 @@ CREATE POLICY "Allow public read on members" ON public.members FOR SELECT USING 
 CREATE POLICY "Allow public read on events" ON public.events FOR SELECT USING (true);
 CREATE POLICY "Allow public read on publications" ON public.publications FOR SELECT USING (true);
 CREATE POLICY "Allow public read on gallery" ON public.gallery FOR SELECT USING (true);
-CREATE POLICY "Allow public read on site_settings" ON public.site_settings FOR SELECT USING (true);
+-- Only presentation settings are publicly readable. The admin_users roster
+-- also lives in this table, and the anon key is public by design, so a
+-- blanket USING (true) would publish every administrator record.
+CREATE POLICY "Allow public read on presentation settings" ON public.site_settings
+  FOR SELECT USING (key IN ('hero', 'branding', 'contact'));
 
--- Public Insert for Inquiries
-CREATE POLICY "Allow public insert on inquiries" ON public.inquiries FOR INSERT WITH CHECK (true);
+-- Inquiries carry personal contact details and are never publicly readable or
+-- writable. Submissions go through /api/inquiries, which validates and rate
+-- limits them, then writes with the service role (which bypasses RLS).
+--
+-- Administrators are authenticated by the application's own signed JWT, not by
+-- Supabase Auth, so no "authenticated" role policies are defined: they would
+-- never match, and granting them only widens the surface.
 
--- Authenticated Admin Full Access Policies
-CREATE POLICY "Allow admin full access on members" ON public.members FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow admin full access on events" ON public.events FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow admin full access on publications" ON public.publications FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow admin full access on gallery" ON public.gallery FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow admin full access on inquiries" ON public.inquiries FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Allow admin full access on site_settings" ON public.site_settings FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Indexes for the queries the application issues.
+CREATE INDEX IF NOT EXISTS idx_inquiries_created_at ON public.inquiries (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_gallery_created_at ON public.gallery (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_events_status ON public.events (status);
+CREATE INDEX IF NOT EXISTS idx_members_committee_type ON public.members (committee_type, display_order);

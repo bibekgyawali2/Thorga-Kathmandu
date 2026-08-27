@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Mukta, Geist, Geist_Mono } from "next/font/google";
 import { DialogProvider } from "@/components/Dialog";
+import { ToastProvider } from "@/components/Toast";
 import NavigationProgressBar from "@/components/NavigationProgressBar";
 import FaviconInjector from "@/components/FaviconInjector";
 import "./globals.css";
@@ -55,7 +56,9 @@ export default function RootLayout({
           <NavigationProgressBar />
           <FaviconInjector />
         </Suspense>
-        <DialogProvider>{children}</DialogProvider>
+        <ToastProvider>
+          <DialogProvider>{children}</DialogProvider>
+        </ToastProvider>
       </body>
     </html>
   );

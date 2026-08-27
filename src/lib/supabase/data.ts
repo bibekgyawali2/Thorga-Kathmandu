@@ -27,7 +27,13 @@ function getPgPool(): Pool | null {
     try {
       pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false },
+        // Verify the server certificate. Set DATABASE_CA_CERT when the
+        // provider uses a private CA; only an explicit
+        // DATABASE_SSL_INSECURE=true opt-in disables verification, and that
+        // should never be set in production.
+        ssl: process.env.DATABASE_CA_CERT
+          ? { ca: process.env.DATABASE_CA_CERT }
+          : { rejectUnauthorized: process.env.DATABASE_SSL_INSECURE !== "true" },
         max: 5,
         connectionTimeoutMillis: 5000,
       });
@@ -943,5 +949,152 @@ export async function deletePublicationItem(id: string): Promise<void> {
     }
   } catch (err) {
     console.warn("[deletePublicationItem] Supabase fallback failed:", err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Contact inquiries
+//
+// Inquiries used to be written to the visiting browser's localStorage, which
+// meant a message never reached the organisation. These persist to the
+// inquiries table so the admin panel can actually read them.
+// ---------------------------------------------------------------------------
+
+export interface InquiryRecord {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  message: string;
+  date: string;
+  read: boolean;
+}
+
+function mapInquiryRow(row: Record<string, unknown>): InquiryRecord {
+  const created = row.created_at ? String(row.created_at) : "";
+  return {
+    id: String(row.id),
+    name: (row.full_name as string) ?? "",
+    phone: (row.phone as string) ?? "",
+    email: (row.email as string) ?? "",
+    message: (row.message as string) ?? "",
+    date: created ? created.split("T")[0] : new Date().toISOString().split("T")[0],
+    read: Boolean(row.is_read),
+  };
+}
+
+export async function fetchInquiries(): Promise<InquiryRecord[]> {
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        "SELECT id, full_name, phone, email, message, is_read, created_at FROM public.inquiries ORDER BY created_at DESC LIMIT 500"
+      );
+      if (res.rows) return res.rows.map(mapInquiryRow);
+    } catch (err) {
+      console.warn("[fetchInquiries] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("inquiries")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (!error && data) return data.map(mapInquiryRow);
+  } catch (err) {
+    console.warn("[fetchInquiries] supabase query failed:", err);
+  }
+
+  return [];
+}
+
+export async function saveInquiry(input: {
+  name: string;
+  phone: string;
+  email?: string;
+  message: string;
+}): Promise<InquiryRecord> {
+  const finalId = generateUUID();
+
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        `INSERT INTO public.inquiries (id, full_name, phone, email, message)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, full_name, phone, email, message, is_read, created_at;`,
+        [finalId, input.name, input.phone, input.email ?? null, input.message]
+      );
+      if (res.rows && res.rows.length > 0) return mapInquiryRow(res.rows[0]);
+    } catch (err) {
+      console.warn("[saveInquiry] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("inquiries")
+      .insert({
+        id: finalId,
+        full_name: input.name,
+        phone: input.phone,
+        email: input.email ?? null,
+        message: input.message,
+      })
+      .select()
+      .single();
+    if (!error && data) return mapInquiryRow(data);
+    if (error) throw error;
+  } catch (err) {
+    console.warn("[saveInquiry] supabase insert failed:", err);
+    throw err instanceof Error ? err : new Error("Failed to store inquiry.");
+  }
+
+  throw new Error("Failed to store inquiry.");
+}
+
+export async function markInquiryRead(id: string, read: boolean): Promise<void> {
+  if (!id) return;
+
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      await pg.query("UPDATE public.inquiries SET is_read = $2 WHERE id::text = $1", [id, read]);
+      return;
+    } catch (err) {
+      console.warn("[markInquiryRead] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    await supabase.from("inquiries").update({ is_read: read }).eq("id", id);
+  } catch (err) {
+    console.warn("[markInquiryRead] supabase update failed:", err);
+  }
+}
+
+export async function deleteInquiry(id: string): Promise<void> {
+  if (!id) return;
+
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      await pg.query("DELETE FROM public.inquiries WHERE id::text = $1", [id]);
+      return;
+    } catch (err) {
+      console.warn("[deleteInquiry] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    await supabase.from("inquiries").delete().eq("id", id);
+  } catch (err) {
+    console.warn("[deleteInquiry] supabase delete failed:", err);
   }
 }

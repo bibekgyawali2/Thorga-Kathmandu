@@ -23,6 +23,7 @@ import {
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
 import { useRemoteData } from "@/hooks/useRemoteData";
+import { DataStatus } from "@/components/DataStatus";
 
 export default function EventsPage() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
@@ -31,7 +32,7 @@ export default function EventsPage() {
     getStoredEventsSnapshot,
     getServerEventsSnapshot
   );
-  useRemoteData<EventItem[]>("/api/events", saveStoredEvents);
+  const remote = useRemoteData<EventItem[]>("/api/events", saveStoredEvents);
   const [statusFilter, setStatusFilter] = useState<"upcoming" | "completed">("upcoming");
 
   const filteredEvents = events.filter((e) => e.status === statusFilter);
@@ -39,6 +40,7 @@ export default function EventsPage() {
   return (
     <div className="min-h-screen bg-ground text-fg font-sans flex flex-col justify-between selection:bg-accent selection:text-on-accent">
       <SiteHeader lang={lang} setLang={setLang} />
+      <DataStatus error={remote.error} refetch={remote.refetch} lang={lang} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
         {/* Breadcrumb Navigation */}

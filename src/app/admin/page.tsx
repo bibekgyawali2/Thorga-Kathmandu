@@ -27,8 +27,6 @@ import {
   saveStoredPublications,
   getStoredGallerySnapshot,
   saveStoredGallery,
-  getStoredInquiriesSnapshot,
-  saveStoredInquiries,
   getStoredBrandingSnapshot,
   saveStoredBranding,
 } from "@/data/mockData";
@@ -47,6 +45,7 @@ import {
 import { isJWTExpired } from "@/lib/jwt";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
 import { useDialog } from "@/components/Dialog";
+import { useToast } from "@/components/Toast";
 import {
   isValidName,
   isValidPhone,
@@ -289,13 +288,15 @@ async function revalidateCollection(
     | "settings"
 ) {
   try {
-    const secret = process.env.NEXT_PUBLIC_REVALIDATE_SECRET ?? "";
+    // Authenticated by the admin session cookie. The shared revalidate secret
+    // is deliberately not read here: a NEXT_PUBLIC_ copy of it would be
+    // published in the browser bundle for anyone to reuse.
     await fetch(`/api/revalidate?tag=${tag}`, {
       method: "POST",
-      headers: secret ? { "x-revalidate-secret": secret } : {},
+      credentials: "include",
     });
   } catch {
-    // Non-critical: localStorage is the source of truth; revalidation is best-effort
+    // Best effort. A failed purge only means content refreshes a little later.
   }
 }
 
@@ -306,6 +307,7 @@ export default function AdminPage() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
   const theme = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerThemeSnapshot);
   const { alert: dialogAlert, confirm: dialogConfirm } = useDialog();
+  const toast = useToast();
 
   const toggleAdminLang = () => {
     const next = lang === "ne" ? "en" : "ne";
@@ -334,7 +336,9 @@ export default function AdminPage() {
   const [pubList, setPubList] = useState<Publication[]>(() => getStoredPublicationsSnapshot());
   const [eventsList, setEventsList] = useState<EventItem[]>(() => getStoredEventsSnapshot());
   const [galleryList, setGalleryList] = useState<GalleryItem[]>(() => getStoredGallerySnapshot());
-  const [inquiriesList, setInquiriesList] = useState<Inquiry[]>(() => getStoredInquiriesSnapshot());
+  const [inquiriesList, setInquiriesList] = useState<Inquiry[]>([]);
+  const [inquiriesLoading, setInquiriesLoading] = useState(true);
+  const [inquiriesError, setInquiriesError] = useState(false);
   const [adminUsersList, setAdminUsersList] = useState<AdminUser[]>(() => getAdminUsers());
   const [brandingState, setBrandingState] = useState<BrandingSettings>(() => getStoredBrandingSnapshot());
 
@@ -463,6 +467,17 @@ export default function AdminPage() {
         }
       })
       .catch(() => {});
+
+    // Public contact messages, read from the database rather than from this
+    // browser's storage.
+    fetch("/api/inquiries", { cache: "no-store", credentials: "include", headers: userHeaders })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data)) setInquiriesList(data);
+        else setInquiriesError(true);
+      })
+      .catch(() => setInquiriesError(true))
+      .finally(() => setInquiriesLoading(false));
   }, []);
 
   // Member States
@@ -1705,10 +1720,23 @@ export default function AdminPage() {
       confirmText: t.deleteBtn,
       cancelText: t.cancelBtn,
     });
-    if (confirmed) {
-      const updated = inquiriesList.filter((inq) => inq.id !== id);
-      setInquiriesList(updated);
-      saveStoredInquiries(updated);
+    if (!confirmed) return;
+
+    const previous = inquiriesList;
+    // Optimistic removal, rolled back if the server rejects the delete.
+    setInquiriesList((current) => current.filter((inq) => inq.id !== id));
+
+    try {
+      const res = await adminFetch(`/api/inquiries?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!res || !res.ok) throw new Error("Delete failed");
+    } catch {
+      setInquiriesList(previous);
+      toast.error(
+        lang === "ne" ? "हटाउन सकिएन" : "Could not delete",
+        lang === "ne" ? "कृपया पुनः प्रयास गर्नुहोस्।" : "Please try again."
+      );
     }
   };
 
@@ -2097,7 +2125,7 @@ export default function AdminPage() {
             </div>
 
             {loginError && (
-              <div className="p-3 rounded-control border border-red-500/30 bg-red-500/10 text-red-500 text-xs text-center leading-relaxed">
+              <div className="p-3 rounded-control border border-danger/30 bg-danger/10 text-danger text-xs text-center leading-relaxed">
                 {loginErrorMessage || t.loginError}
               </div>
             )}
@@ -2341,7 +2369,7 @@ export default function AdminPage() {
               <EnvelopeSimple size={16} />
               <span>{t.inquiries}</span>
             </span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-chip bg-red-700 text-white font-semibold">
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-chip bg-danger text-white font-semibold">
               {inquiriesList.length}
             </span>
           </button>
@@ -2407,7 +2435,7 @@ export default function AdminPage() {
         <div className="p-3 border-t border-line bg-surface flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${
-              session.isSuperadmin ? "bg-amber-500/20 text-amber-500" : "bg-accent-soft text-accent"
+              session.isSuperadmin ? "bg-warning/20 text-warning" : "bg-accent-soft text-accent"
             }`}>
               {session.isSuperadmin ? "S" : "A"}
             </div>
@@ -2415,7 +2443,7 @@ export default function AdminPage() {
               <div className="text-xs font-bold text-fg truncate">{session.username}</div>
               <div className="text-[10px] text-muted flex items-center gap-1">
                 <span className="capitalize font-mono">{session.role}</span>
-                {session.isSuperadmin && <span className="text-[9px] px-1 bg-amber-500/20 text-amber-600 rounded">Super</span>}
+                {session.isSuperadmin && <span className="text-[9px] px-1 bg-warning/20 text-warning rounded">Super</span>}
               </div>
             </div>
           </div>
@@ -2432,7 +2460,7 @@ export default function AdminPage() {
             <button
               type="button"
               onClick={handleLogout}
-              className="p-1.5 rounded-control text-red-500 hover:bg-red-500/10 transition-colors"
+              className="p-1.5 rounded-control text-danger hover:bg-danger/10 transition-colors"
               aria-label={t.logout}
               title={t.logout}
             >
@@ -2513,7 +2541,7 @@ export default function AdminPage() {
                 <div className="p-4 rounded-card border border-line bg-surface space-y-1">
                   <div className="text-xs text-muted flex items-center justify-between">
                     <span>{t.inquiries}</span>
-                    <EnvelopeSimple size={16} className="text-red-500" />
+                    <EnvelopeSimple size={16} className="text-danger" />
                   </div>
                   <div className="text-2xl font-bold font-mono text-fg">{inquiriesList.length}</div>
                 </div>
@@ -2521,7 +2549,7 @@ export default function AdminPage() {
                 <div className="p-4 rounded-card border border-line bg-surface space-y-1">
                   <div className="text-xs text-muted flex items-center justify-between">
                     <span>{t.adminAccess}</span>
-                    <ShieldCheck size={16} className="text-amber-500" />
+                    <ShieldCheck size={16} className="text-warning" />
                   </div>
                   <div className="text-2xl font-bold font-mono text-fg">{adminUsersList.length}</div>
                 </div>
@@ -3033,7 +3061,7 @@ export default function AdminPage() {
                             type="button"
                             disabled={deletingMemberId === member.id}
                             onClick={() => handleDeleteMember(member.id)}
-                            className="p-1.5 text-red-500 hover:bg-red-500/10 disabled:opacity-60 rounded-control transition-colors"
+                            className="p-1.5 text-danger hover:bg-danger/10 disabled:opacity-60 rounded-control transition-colors"
                             title={t.deleteBtn}
                           >
                             {deletingMemberId === member.id ? (
@@ -3244,7 +3272,7 @@ export default function AdminPage() {
                           type="button"
                           disabled={deletingPubId === pub.id}
                           onClick={() => handleDeletePub(pub.id)}
-                          className="p-1.5 text-red-500 hover:bg-red-500/10 disabled:opacity-60 rounded-control transition-colors"
+                          className="p-1.5 text-danger hover:bg-danger/10 disabled:opacity-60 rounded-control transition-colors"
                           title={t.deleteBtn}
                         >
                           {deletingPubId === pub.id ? (
@@ -3458,7 +3486,7 @@ export default function AdminPage() {
                           type="button"
                           disabled={deletingEventId === ev.id}
                           onClick={() => handleDeleteEvent(ev.id)}
-                          className="p-1.5 text-red-500 hover:bg-red-500/10 disabled:opacity-60 rounded-control transition-colors"
+                          className="p-1.5 text-danger hover:bg-danger/10 disabled:opacity-60 rounded-control transition-colors"
                           title={t.deleteBtn}
                         >
                           {deletingEventId === ev.id ? (
@@ -3639,7 +3667,7 @@ export default function AdminPage() {
                             type="button"
                             disabled={deletingGalleryId === g.id}
                             onClick={() => handleDeleteGallery(g.id)}
-                            className="p-1 text-red-500 hover:bg-red-500/10 disabled:opacity-60 rounded-control transition-colors"
+                            className="p-1 text-danger hover:bg-danger/10 disabled:opacity-60 rounded-control transition-colors"
                             title={t.deleteBtn}
                           >
                             {deletingGalleryId === g.id ? (
@@ -3666,7 +3694,48 @@ export default function AdminPage() {
               </div>
 
               <div className="space-y-3">
-                {inquiriesList.length === 0 ? (
+                {inquiriesLoading ? (
+                  // Skeletons match the shape of the rows they replace so the
+                  // layout does not jump when the data lands.
+                  <div className="space-y-3" aria-busy="true">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="p-4 border border-line rounded-card bg-surface space-y-2 animate-pulse"
+                      >
+                        <div className="h-3 w-40 rounded-chip bg-tint" />
+                        <div className="h-3 w-full rounded-chip bg-tint" />
+                        <div className="h-3 w-2/3 rounded-chip bg-tint" />
+                      </div>
+                    ))}
+                  </div>
+                ) : inquiriesError ? (
+                  <div className="p-8 text-center border border-line rounded-card bg-surface space-y-3">
+                    <p className="text-xs text-danger font-semibold">
+                      {lang === "ne"
+                        ? "सन्देशहरू लोड गर्न सकिएन।"
+                        : "Could not load messages."}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setInquiriesError(false);
+                        setInquiriesLoading(true);
+                        adminFetch("/api/inquiries")
+                          .then((res) => (res.ok ? res.json() : null))
+                          .then((data) => {
+                            if (data && Array.isArray(data)) setInquiriesList(data);
+                            else setInquiriesError(true);
+                          })
+                          .catch(() => setInquiriesError(true))
+                          .finally(() => setInquiriesLoading(false));
+                      }}
+                      className="px-4 py-2 rounded-control bg-accent text-on-accent text-xs font-semibold"
+                    >
+                      {lang === "ne" ? "पुनः प्रयास" : "Retry"}
+                    </button>
+                  </div>
+                ) : inquiriesList.length === 0 ? (
                   <div className="p-8 text-center text-xs text-muted border border-line rounded-card bg-surface">
                     {t.noInquiries}
                   </div>
@@ -3691,7 +3760,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => handleDeleteInquiry(inq.id)}
-                            className="p-1 text-red-500 hover:bg-red-500/10 rounded-control transition-colors"
+                            className="p-1 text-danger hover:bg-danger/10 rounded-control transition-colors"
                             title={t.deleteBtn}
                           >
                             <Trash size={14} />
@@ -4243,7 +4312,7 @@ export default function AdminPage() {
                         <div className="flex items-center gap-3 min-w-0">
                           <div className={`w-9 h-9 rounded-control flex items-center justify-center font-bold text-xs flex-shrink-0 ${
                             isUserSuperadmin
-                              ? "bg-amber-500/20 text-amber-600"
+                              ? "bg-warning/20 text-warning"
                               : "bg-accent-soft text-accent"
                           }`}>
                             {isUserSuperadmin ? <ShieldCheck size={18} /> : <UserGear size={18} />}
@@ -4258,7 +4327,7 @@ export default function AdminPage() {
                                 </span>
                               )}
                               {isUserSuperadmin ? (
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-chip bg-amber-500/20 text-amber-600 border border-amber-500/30">
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-chip bg-warning/20 text-warning border border-warning/30">
                                    {t.roleSuperadmin}
                                 </span>
                               ) : (
@@ -4274,7 +4343,7 @@ export default function AdminPage() {
                               <span>Added {user.addedAt}</span>
                               <span>•</span>
                               <span className={`inline-flex items-center gap-1 font-medium ${
-                                user.isActive ? "text-emerald-500" : "text-red-500"
+                                user.isActive ? "text-accent" : "text-danger"
                               }`}>
                                 {user.isActive ? <CheckCircle size={12} weight="fill" /> : <XCircle size={12} weight="fill" />}
                                 <span>{user.isActive ? t.activeStatus : t.inactiveStatus}</span>
@@ -4304,8 +4373,8 @@ export default function AdminPage() {
                                   onClick={() => handleToggleUser(user)}
                                   className={`px-2.5 py-1 rounded-control text-[11px] font-semibold transition-colors border disabled:opacity-60 flex items-center gap-1 ${
                                     user.isActive
-                                      ? "border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
-                                      : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
+                                      ? "border-warning/30 bg-warning/10 text-warning hover:bg-warning/20"
+                                      : "border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
                                   }`}
                                 >
                                   {togglingUserId === user.id && <CircleNotch size={12} className="animate-spin" />}
@@ -4316,7 +4385,7 @@ export default function AdminPage() {
                                   type="button"
                                   disabled={deletingUserId === user.id}
                                   onClick={() => handleDeleteUser(user)}
-                                  className="p-1.5 text-red-500 hover:bg-red-500/10 disabled:opacity-60 rounded-control transition-colors"
+                                  className="p-1.5 text-danger hover:bg-danger/10 disabled:opacity-60 rounded-control transition-colors"
                                   title={t.deleteBtn}
                                 >
                                   {deletingUserId === user.id ? (

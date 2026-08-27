@@ -15,6 +15,7 @@ import {
   saveStoredMembers,
 } from "@/data/mockData";
 import { useRemoteData } from "@/hooks/useRemoteData";
+import { DataStatus } from "@/components/DataStatus";
 import {
   Clock,
   ArrowLeft,
@@ -82,13 +83,14 @@ export default function PastLeadersPage() {
     getStoredMembersSnapshot,
     getServerMembersSnapshot
   );
-  useRemoteData<Member[]>("/api/members", saveStoredMembers);
+  const remote = useRemoteData<Member[]>("/api/members", saveStoredMembers);
 
   const pastMembers = members.filter((m) => m.committeeType === "past");
 
   return (
     <div className="min-h-screen bg-ground text-fg font-sans flex flex-col justify-between selection:bg-accent selection:text-on-accent">
       <SiteHeader lang={lang} setLang={setLang} />
+      <DataStatus error={remote.error} refetch={remote.refetch} lang={lang} />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
         {/* Breadcrumb Navigation */}

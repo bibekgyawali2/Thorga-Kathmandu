@@ -7,6 +7,10 @@ export interface AdminUser {
   name: string;
   email: string;
   role: AdminRole;
+  /**
+   * PBKDF2 hash produced by lib/password.ts. Only ever populated on the
+   * server. API responses mask this field and the client never receives it.
+   */
   password?: string;
   addedAt: string;
   addedBy: string;
@@ -24,72 +28,44 @@ export interface AdminSession {
   expiresAt: number; // Unix timestamp in milliseconds
 }
 
+/**
+ * Display-only copy of the superadmin address, used by the admin UI to label
+ * the protected account. Authorization decisions are made on the server from
+ * process.env.SUPERADMIN_EMAIL and the signed JWT claims, never from this.
+ */
 export const SUPERADMIN_EMAIL =
-  process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL ||
-  process.env.SUPERADMIN_EMAIL ||
-  "superadmin@thorgaktm.org.np";
+  process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL || "superadmin@thorgaktm.org.np";
 
 const ADMIN_USERS_STORAGE_KEY = "thorga_admin_users";
 export const ADMIN_SESSION_STORAGE_KEY = "thorga_admin_session";
 export const ADMIN_AUTH_SYNC_EVENT = "thorga_admin_auth_sync";
 
-export const DEFAULT_ADMIN_CONFIG = {
-  username: process.env.NEXT_PUBLIC_ADMIN_USERNAME || "admin",
-  password: process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "thorga2081@admin",
-  superadminEmail: SUPERADMIN_EMAIL,
-};
-
+/**
+ * Seed roster used when the database has no admin_users record yet.
+ * Deliberately carries no password: an account only becomes usable once a
+ * password is set through the admin API, which hashes it before storage.
+ */
 export const initialAdminUsers: AdminUser[] = [
   {
     id: "usr-superadmin",
     name: "System Superadmin",
     email: SUPERADMIN_EMAIL,
     role: "superadmin",
-    password: DEFAULT_ADMIN_CONFIG.password,
     addedAt: "2026-08-01",
     addedBy: "System Environment",
     isActive: true,
   },
-  {
-    id: "usr-general-admin",
-    name: "Forum Administrator",
-    email: "admin@thorgaktm.org.np",
-    role: "admin",
-    password: DEFAULT_ADMIN_CONFIG.password,
-    addedAt: "2026-08-15",
-    addedBy: SUPERADMIN_EMAIL,
-    isActive: true,
-  },
 ];
 
+/** Local cache of the roster for the admin UI. Never holds password material. */
 export function getAdminUsers(): AdminUser[] {
   if (typeof window === "undefined") return initialAdminUsers;
   try {
     const raw = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(initialAdminUsers));
-      return initialAdminUsers;
-    }
+    if (!raw) return initialAdminUsers;
     const users: AdminUser[] = JSON.parse(raw);
-    const hasSuperadmin = users.some(
-      (u) => u.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase()
-    );
-    if (!hasSuperadmin) {
-      const superUser: AdminUser = {
-        id: "usr-superadmin",
-        name: "System Superadmin",
-        email: SUPERADMIN_EMAIL,
-        role: "superadmin",
-        password: DEFAULT_ADMIN_CONFIG.password,
-        addedAt: new Date().toISOString().split("T")[0],
-        addedBy: "Environment Config",
-        isActive: true,
-      };
-      const updated = [superUser, ...users];
-      localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    }
-    return users;
+    if (!Array.isArray(users)) return initialAdminUsers;
+    return users.map((u) => ({ ...u, password: undefined }));
   } catch {
     return initialAdminUsers;
   }
@@ -98,99 +74,20 @@ export function getAdminUsers(): AdminUser[] {
 export function saveAdminUsers(users: AdminUser[]): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(users));
-  } catch {}
-}
-
-export function addAdminUser(
-  newUser: Omit<AdminUser, "id" | "addedAt">
-): AdminUser {
-  const users = getAdminUsers();
-  const created: AdminUser = {
-    id: `usr-${Date.now()}`,
-    ...newUser,
-    addedAt: new Date().toISOString().split("T")[0],
-  };
-  const updated = [created, ...users];
-  saveAdminUsers(updated);
-  return created;
-}
-
-export function removeAdminUser(
-  id: string,
-  currentSessionEmail: string
-): { success: boolean; message?: string } {
-  const isSuperadmin =
-    currentSessionEmail.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
-    currentSessionEmail.toLowerCase() === "admin@thorgaktm.org.np" ||
-    getAdminSession()?.isSuperadmin === true;
-  if (!isSuperadmin) {
-    return {
-      success: false,
-      message: "Only the superadmin can remove administrative users.",
-    };
+    const stripped = users.map((u) => ({ ...u, password: undefined }));
+    localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(stripped));
+  } catch {
+    // Storage unavailable. The API remains the source of truth.
   }
-
-  const users = getAdminUsers();
-  const target = users.find((u) => u.id === id);
-  if (!target) {
-    return { success: false, message: "User not found." };
-  }
-  if (
-    target.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
-    target.id === "usr-superadmin"
-  ) {
-    return {
-      success: false,
-      message:
-        "Cannot remove the primary superadmin account configured in the environment.",
-    };
-  }
-
-  const updated = users.filter((u) => u.id !== id);
-  saveAdminUsers(updated);
-  return { success: true };
-}
-
-export function toggleAdminUserStatus(
-  id: string,
-  currentSessionEmail: string
-): { success: boolean; message?: string } {
-  const isSuperadmin =
-    currentSessionEmail.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
-    currentSessionEmail.toLowerCase() === "admin@thorgaktm.org.np" ||
-    getAdminSession()?.isSuperadmin === true;
-  if (!isSuperadmin) {
-    return {
-      success: false,
-      message: "Only the superadmin can change user access status.",
-    };
-  }
-
-  const users = getAdminUsers();
-  const target = users.find((u) => u.id === id);
-  if (!target) {
-    return { success: false, message: "User not found." };
-  }
-  if (
-    target.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
-    target.id === "usr-superadmin"
-  ) {
-    return {
-      success: false,
-      message: "Cannot deactivate the primary superadmin account.",
-    };
-  }
-
-  const updated = users.map((u) =>
-    u.id === id ? { ...u, isActive: !u.isActive } : u
-  );
-  saveAdminUsers(updated);
-  return { success: true };
 }
 
 // ---------------------------------------------------------------------------
-// Production-Grade Admin Session Management & JWT Synchronization
+// Session management
+//
+// The signed JWT is the only authority on identity and role. Everything below
+// reads its claims rather than trusting the values written into storage, so a
+// visitor editing localStorage cannot promote themselves in the UI, and the
+// server would reject the forged claim regardless.
 // ---------------------------------------------------------------------------
 
 let sessionListeners: Array<(session: AdminSession | null) => void> = [];
@@ -199,8 +96,7 @@ export function subscribeAdminSession(callback: (session: AdminSession | null) =
   sessionListeners.push(callback);
   const handleStorage = (e: StorageEvent) => {
     if (e.key === ADMIN_SESSION_STORAGE_KEY || e.key === ADMIN_AUTH_SYNC_EVENT) {
-      const current = getAdminSession();
-      callback(current);
+      callback(getAdminSession());
     }
   };
 
@@ -220,7 +116,9 @@ function notifySessionChange(session: AdminSession | null) {
   sessionListeners.forEach((l) => {
     try {
       l(session);
-    } catch {}
+    } catch {
+      // A failing subscriber must not stop the others from being notified.
+    }
   });
 }
 
@@ -232,40 +130,36 @@ export function getAdminSession(): AdminSession | null {
       localStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
 
     if (!raw) return null;
-    const session: AdminSession = JSON.parse(raw);
+    const stored: AdminSession = JSON.parse(raw);
 
-    // Check token expiration via JWT claims
-    if (session.token && isJWTExpired(session.token)) {
+    // A session without a token cannot be trusted at all.
+    if (!stored.token || isJWTExpired(stored.token)) {
       clearAdminSession();
       return null;
     }
 
-    // Check expiration timestamp
-    if (session.expiresAt && Date.now() >= session.expiresAt) {
+    const claims = decodeJWT(stored.token);
+    if (!claims) {
       clearAdminSession();
       return null;
     }
 
-    // Fallback: 24h expiration check from loginTime
-    if (Date.now() - session.loginTime > 24 * 60 * 60 * 1000) {
+    if (stored.expiresAt && Date.now() >= stored.expiresAt) {
       clearAdminSession();
       return null;
     }
 
-    // Ensure superadmin status for designated master accounts
-    const isSuper =
-      session.email.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
-      session.email.toLowerCase() === "admin@thorgaktm.org.np" ||
-      session.username.toLowerCase() === DEFAULT_ADMIN_CONFIG.username.toLowerCase() ||
-      session.role === "superadmin";
-
-    if (isSuper && (!session.isSuperadmin || session.role !== "superadmin")) {
-      session.isSuperadmin = true;
-      session.role = "superadmin";
-      saveSessionToStorage(session);
-    }
-
-    return session;
+    // Rebuild from token claims so edited storage cannot change identity.
+    return {
+      isAuthenticated: true,
+      token: stored.token,
+      username: claims.name,
+      email: claims.email,
+      role: claims.role,
+      isSuperadmin: claims.isSuperadmin === true,
+      loginTime: claims.iat ? claims.iat * 1000 : stored.loginTime,
+      expiresAt: claims.exp ? claims.exp * 1000 : stored.expiresAt,
+    };
   } catch {
     return null;
   }
@@ -277,7 +171,9 @@ function saveSessionToStorage(session: AdminSession) {
     sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, json);
     localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, json);
     localStorage.setItem(ADMIN_AUTH_SYNC_EVENT, Date.now().toString());
-  } catch {}
+  } catch {
+    // Storage unavailable. The httpOnly cookie still carries the session.
+  }
 }
 
 export function setAdminSession(
@@ -285,29 +181,22 @@ export function setAdminSession(
   token?: string,
   expSeconds?: number
 ): AdminSession {
-  const isSuper =
-    user.email?.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
-    user.email?.toLowerCase() === "admin@thorgaktm.org.np" ||
-    user.role === "superadmin" ||
-    user.id === "usr-superadmin";
+  const claims = token ? decodeJWT(token) : null;
 
   let expiresAt = Date.now() + 24 * 60 * 60 * 1000;
-  if (expSeconds) {
+  if (claims?.exp) {
+    expiresAt = claims.exp * 1000;
+  } else if (expSeconds) {
     expiresAt = expSeconds * 1000;
-  } else if (token) {
-    const decoded = decodeJWT(token);
-    if (decoded?.exp) {
-      expiresAt = decoded.exp * 1000;
-    }
   }
 
   const session: AdminSession = {
     isAuthenticated: true,
     token: token || "",
-    username: user.name,
-    email: user.email,
-    role: isSuper ? "superadmin" : user.role || "admin",
-    isSuperadmin: isSuper,
+    username: claims?.name ?? user.name,
+    email: claims?.email ?? user.email,
+    role: claims?.role ?? user.role ?? "editor",
+    isSuperadmin: claims?.isSuperadmin === true,
     loginTime: Date.now(),
     expiresAt,
   };
@@ -323,99 +212,8 @@ export function clearAdminSession(): void {
     sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
     localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
     localStorage.setItem(ADMIN_AUTH_SYNC_EVENT, `logout-${Date.now()}`);
-  } catch {}
+  } catch {
+    // Nothing to clear.
+  }
   notifySessionChange(null);
-}
-
-export function verifyAdminCredentials(
-  identifier: string,
-  pass: string
-): { success: boolean; user?: AdminUser; message?: string } {
-  const cleanId = identifier.trim().toLowerCase();
-  const cleanPass = pass.trim();
-
-  const isSuperEmail = (email?: string) =>
-    email?.toLowerCase() === SUPERADMIN_EMAIL.toLowerCase() ||
-    email?.toLowerCase() === "admin@thorgaktm.org.np" ||
-    email?.toLowerCase() === "superadmin@thorgaktm.org.np";
-
-  const users = getAdminUsers();
-
-  // 1. Direct match by email, name, or email prefix
-  const directUser = users.find((u) => {
-    const uEmail = (u.email || "").toLowerCase();
-    const uName = (u.name || "").toLowerCase();
-    const uPrefix = uEmail.split("@")[0].toLowerCase();
-    return uEmail === cleanId || uName === cleanId || uPrefix === cleanId;
-  });
-
-  if (directUser) {
-    if (!directUser.isActive) {
-      return {
-        success: false,
-        message:
-          "This administrative account has been deactivated. Please contact the superadmin.",
-      };
-    }
-    const userPass = directUser.password || DEFAULT_ADMIN_CONFIG.password;
-    if (cleanPass === userPass || cleanPass === DEFAULT_ADMIN_CONFIG.password) {
-      return {
-        success: true,
-        user: {
-          ...directUser,
-          role: isSuperEmail(directUser.email) || directUser.role === "superadmin" ? "superadmin" : directUser.role,
-        },
-      };
-    }
-  }
-
-  // 2. Generic login identifier ("admin", "superadmin", or default)
-  const isGeneric =
-    cleanId === "admin" ||
-    cleanId === "superadmin" ||
-    cleanId === "administrator" ||
-    cleanId === DEFAULT_ADMIN_CONFIG.username.toLowerCase() ||
-    isSuperEmail(cleanId);
-
-  if (isGeneric) {
-    const userWithMatchingPass = users.find(
-      (u) => u.isActive && (u.password === cleanPass || cleanPass === DEFAULT_ADMIN_CONFIG.password)
-    );
-    if (userWithMatchingPass) {
-      return {
-        success: true,
-        user: {
-          ...userWithMatchingPass,
-          role: isSuperEmail(userWithMatchingPass.email) || userWithMatchingPass.role === "superadmin" ? "superadmin" : userWithMatchingPass.role,
-        },
-      };
-    }
-
-    if (cleanPass === DEFAULT_ADMIN_CONFIG.password) {
-      const superUser: AdminUser = {
-        id: "usr-superadmin",
-        name: "System Superadmin",
-        email: SUPERADMIN_EMAIL,
-        role: "superadmin",
-        addedAt: "2026-08-01",
-        addedBy: "System",
-        isActive: true,
-      };
-      return { success: true, user: superUser };
-    }
-  }
-
-  // 3. Fallback: Any active user with this password
-  const anyUser = users.find((u) => u.isActive && u.password && u.password === cleanPass);
-  if (anyUser) {
-    return {
-      success: true,
-      user: {
-        ...anyUser,
-        role: isSuperEmail(anyUser.email) || anyUser.role === "superadmin" ? "superadmin" : anyUser.role,
-      },
-    };
-  }
-
-  return { success: false, message: "Invalid credentials." };
 }

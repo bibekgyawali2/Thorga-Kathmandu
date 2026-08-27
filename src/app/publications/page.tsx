@@ -25,6 +25,7 @@ import {
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
 import { useRemoteData } from "@/hooks/useRemoteData";
+import { DataStatus } from "@/components/DataStatus";
 
 export default function PublicationsPage() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
@@ -33,7 +34,7 @@ export default function PublicationsPage() {
     getStoredPublicationsSnapshot,
     getServerPublicationsSnapshot
   );
-  useRemoteData<Publication[]>("/api/publications", saveStoredPublications);
+  const remote = useRemoteData<Publication[]>("/api/publications", saveStoredPublications);
   const [search, setSearch] = useState("");
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
 
@@ -50,6 +51,7 @@ export default function PublicationsPage() {
   return (
     <div className="min-h-screen bg-ground text-fg font-sans flex flex-col justify-between selection:bg-accent selection:text-on-accent">
       <SiteHeader lang={lang} setLang={setLang} />
+      <DataStatus error={remote.error} refetch={remote.refetch} lang={lang} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
         {/* Breadcrumb Navigation */}

@@ -143,7 +143,7 @@ export function CloudinaryUploader({
             <button
               type="button"
               onClick={handleRemoveFile}
-              className="p-2 rounded-control text-red-500 hover:bg-red-500/10 transition-colors"
+              className="p-2 rounded-control text-danger hover:bg-danger/10 transition-colors"
               title="Remove and Delete File"
             >
               <X size={14} />
@@ -162,7 +162,7 @@ export function CloudinaryUploader({
 
         {/* Error Alert */}
         {errorMsg && (
-          <div className="p-2.5 rounded-control border border-red-500/30 bg-red-500/10 text-red-500 text-xs flex items-center gap-2">
+          <div className="p-2.5 rounded-control border border-danger/30 bg-danger/10 text-danger text-xs flex items-center gap-2">
             <WarningCircle size={14} className="flex-shrink-0" />
             <span>{errorMsg}</span>
           </div>
@@ -172,7 +172,7 @@ export function CloudinaryUploader({
         {value && !errorMsg && (
           <div className="p-2.5 rounded-control border border-line bg-tint flex items-center gap-3">
             {isPdf ? (
-              <div className="w-10 h-10 rounded-control bg-red-500/10 text-red-500 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-control bg-danger/10 text-danger flex items-center justify-center flex-shrink-0">
                 <FilePdf size={22} weight="duotone" />
               </div>
             ) : isValidImageSrc(value) ? (

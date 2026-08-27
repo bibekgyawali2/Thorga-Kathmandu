@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { revalidateTag } from "next/cache";
+import { verifyAuth } from "@/lib/authGuard";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -28,12 +29,20 @@ const NO_CACHE_HEADERS = {
  * POST /api/revalidate?tag=<gallery|events|members|publications>
  */
 export async function POST(request: NextRequest) {
-  // Optional secret check
+  // Cache purging is an authenticated operation. Accept either the shared
+  // revalidate secret (for webhooks and deploy hooks) or a signed admin
+  // session. An unconfigured secret does not open the endpoint up.
   const secret = process.env.REVALIDATE_SECRET;
-  if (secret) {
-    const authHeader = request.headers.get("x-revalidate-secret");
-    if (authHeader !== secret) {
-      return Response.json({ error: "Unauthorized" }, { status: 401, headers: NO_CACHE_HEADERS });
+  const providedSecret = request.headers.get("x-revalidate-secret");
+  const secretMatches = Boolean(secret && providedSecret && providedSecret === secret);
+
+  if (!secretMatches) {
+    const auth = await verifyAuth(request);
+    if (!auth.authorized) {
+      return Response.json(
+        { error: "Unauthorized" },
+        { status: 401, headers: NO_CACHE_HEADERS }
+      );
     }
   }
 

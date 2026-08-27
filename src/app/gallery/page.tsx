@@ -22,6 +22,7 @@ import {
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
 import { useRemoteData } from "@/hooks/useRemoteData";
+import { DataStatus } from "@/components/DataStatus";
 
 export default function GalleryPage() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
@@ -30,7 +31,7 @@ export default function GalleryPage() {
     getStoredGallerySnapshot,
     getServerGallerySnapshot
   );
-  useRemoteData<GalleryItem[]>("/api/gallery", saveStoredGallery);
+  const remote = useRemoteData<GalleryItem[]>("/api/gallery", saveStoredGallery);
   const [category, setCategory] = useState("all");
   const [activePhoto, setActivePhoto] = useState<GalleryItem | null>(null);
 
@@ -49,6 +50,7 @@ export default function GalleryPage() {
   return (
     <div className="min-h-screen bg-ground text-fg font-sans flex flex-col justify-between selection:bg-accent selection:text-on-accent">
       <SiteHeader lang={lang} setLang={setLang} />
+      <DataStatus error={remote.error} refetch={remote.refetch} lang={lang} />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
         {/* Breadcrumb Navigation */}

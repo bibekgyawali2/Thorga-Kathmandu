@@ -40,9 +40,9 @@ import {
   getStoredGallerySnapshot,
   getServerGallerySnapshot,
   saveStoredGallery,
-  addStoredInquiry,
 } from "@/data/mockData";
 import { useRemoteData } from "@/hooks/useRemoteData";
+import { DataStatus } from "@/components/DataStatus";
 import {
   isValidName,
   isValidPhone,
@@ -51,6 +51,7 @@ import {
   isValidImageSrc,
 } from "@/lib/validation";
 import { useDialog } from "@/components/Dialog";
+import { useToast } from "@/components/Toast";
 import {
   Users,
   BookOpen,
@@ -162,7 +163,7 @@ export default function MainPortal() {
   useRemoteData<HeroContent>("/api/hero", saveStoredHeroContent);
   useRemoteData<BrandingSettings>("/api/branding", saveStoredBranding);
   useRemoteData<ContactSettings>("/api/contact", saveStoredContactSettings);
-  useRemoteData<Member[]>("/api/members", saveStoredMembers);
+  const membersRemote = useRemoteData<Member[]>("/api/members", saveStoredMembers);
   useRemoteData<EventItem[]>("/api/events", saveStoredEvents);
   useRemoteData<Publication[]>("/api/publications", saveStoredPublications);
   useRemoteData<GalleryItem[]>("/api/gallery", saveStoredGallery);
@@ -174,6 +175,8 @@ export default function MainPortal() {
   const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean; message?: boolean }>({});
   const [committeeFilter, setCommitteeFilter] = useState<"current" | "advisor" | "all">("current");
   const { alert: dialogAlert } = useDialog();
+  const toast = useToast();
+  const [isSubmittingInquiry, setIsSubmittingInquiry] = useState(false);
 
   const validateField = (field: "name" | "phone" | "email" | "message", value: string) => {
     let error: string | undefined = undefined;
@@ -205,8 +208,9 @@ export default function MainPortal() {
     return error;
   };
 
-  const handleInquirySubmit = (e: React.FormEvent) => {
+  const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingInquiry) return;
     setTouched({ name: true, phone: true, email: true, message: true });
 
     const errName = validateField("name", inquiryForm.name);
@@ -226,24 +230,53 @@ export default function MainPortal() {
       return;
     }
 
-    addStoredInquiry({
-      name: inquiryForm.name.trim(),
-      phone: inquiryForm.phone.trim(),
-      email: inquiryForm.email.trim(),
-      message: inquiryForm.message.trim(),
-    });
-    setContactSubmitted(true);
-    setInquiryForm({ name: "", phone: "", email: "", message: "" });
-    setFormErrors({});
-    setTouched({});
-    dialogAlert({
-      title: lang === "ne" ? "सन्देश प्राप्त भयो" : "Inquiry Submitted",
-      description:
+    setIsSubmittingInquiry(true);
+    try {
+      const response = await fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: inquiryForm.name.trim(),
+          phone: inquiryForm.phone.trim(),
+          email: inquiryForm.email.trim(),
+          message: inquiryForm.message.trim(),
+        }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        // The form keeps its contents so nothing the visitor typed is lost.
+        toast.error(
+          lang === "ne" ? "सन्देश पठाउन सकिएन" : "Message could not be sent",
+          result?.error ||
+            (lang === "ne"
+              ? "कृपया पुनः प्रयास गर्नुहोस् वा सचिवालयमा फोन गर्नुहोस्।"
+              : "Please try again, or call the secretariat directly.")
+        );
+        return;
+      }
+
+      setContactSubmitted(true);
+      setInquiryForm({ name: "", phone: "", email: "", message: "" });
+      setFormErrors({});
+      setTouched({});
+      toast.success(
+        lang === "ne" ? "सन्देश प्राप्त भयो" : "Inquiry submitted",
         lang === "ne"
-          ? "तपाईंको सन्देश सचिवालयमा सफलतापूर्वक दर्ता भएको छ। हामी छिट्टै सम्पर्क गर्नेछौं।"
-          : "Your message has been registered with the secretariat. We will be in touch shortly.",
-      type: "success",
-    });
+          ? "तपाईंको सन्देश सचिवालयमा दर्ता भयो। हामी छिट्टै सम्पर्क गर्नेछौं।"
+          : "Your message has reached the secretariat. We will be in touch shortly."
+      );
+    } catch {
+      toast.error(
+        lang === "ne" ? "सञ्जाल त्रुटि" : "Network error",
+        lang === "ne"
+          ? "इन्टरनेट जडान जाँच गरी पुनः प्रयास गर्नुहोस्।"
+          : "Check your connection and try again."
+      );
+    } finally {
+      setIsSubmittingInquiry(false);
+    }
   };
 
   // Filtered members for Executive Committee section
@@ -261,6 +294,7 @@ export default function MainPortal() {
   return (
     <div className="min-h-[100dvh] bg-ground text-fg font-sans selection:bg-accent selection:text-on-accent">
       <SiteHeader lang={lang} setLang={setLang} />
+      <DataStatus error={membersRemote.error} refetch={membersRemote.refetch} lang={lang} />
 
       {/* SECTION 1: HERO (Full Background Image with Content on Top) */}
       <section className="relative overflow-hidden min-h-[75vh] lg:min-h-[85vh] flex items-center border-b border-line">
@@ -890,12 +924,12 @@ export default function MainPortal() {
                         placeholder={lang === "ne" ? "तपाईंको नाम" : "Your full name"}
                         className={`w-full px-3.5 py-2.5 rounded-control border bg-surface text-fg text-xs transition-colors focus:outline-none ${
                           touched.name && formErrors.name
-                            ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                            ? "border-danger focus:border-danger focus:ring-1 focus:ring-danger"
                             : "border-line focus:border-accent"
                         }`}
                       />
                       {touched.name && formErrors.name && (
-                        <p className="text-[11px] text-red-500 font-medium">{formErrors.name}</p>
+                        <p className="text-[11px] text-danger font-medium">{formErrors.name}</p>
                       )}
                     </div>
 
@@ -917,12 +951,12 @@ export default function MainPortal() {
                         placeholder="+977 98..."
                         className={`w-full px-3.5 py-2.5 rounded-control border bg-surface text-fg text-xs transition-colors focus:outline-none ${
                           touched.phone && formErrors.phone
-                            ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                            ? "border-danger focus:border-danger focus:ring-1 focus:ring-danger"
                             : "border-line focus:border-accent"
                         }`}
                       />
                       {touched.phone && formErrors.phone && (
-                        <p className="text-[11px] text-red-500 font-medium">{formErrors.phone}</p>
+                        <p className="text-[11px] text-danger font-medium">{formErrors.phone}</p>
                       )}
                     </div>
                   </div>
@@ -946,12 +980,12 @@ export default function MainPortal() {
                       placeholder="example@mail.com"
                       className={`w-full px-3.5 py-2.5 rounded-control border bg-surface text-fg text-xs transition-colors focus:outline-none ${
                         touched.email && formErrors.email
-                          ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                          ? "border-danger focus:border-danger focus:ring-1 focus:ring-danger"
                           : "border-line focus:border-accent"
                       }`}
                     />
                     {touched.email && formErrors.email && (
-                      <p className="text-[11px] text-red-500 font-medium">{formErrors.email}</p>
+                      <p className="text-[11px] text-danger font-medium">{formErrors.email}</p>
                     )}
                   </div>
 
@@ -974,21 +1008,32 @@ export default function MainPortal() {
                       placeholder={lang === "ne" ? "तपाईंको जिज्ञासा यहाँ लेख्नुहोस् (कम्तिमा १० अक्षर)..." : "Write your query here (min 10 characters)..."}
                       className={`w-full px-3.5 py-2.5 rounded-control border bg-surface text-fg text-xs transition-colors focus:outline-none ${
                         touched.message && formErrors.message
-                          ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                          ? "border-danger focus:border-danger focus:ring-1 focus:ring-danger"
                           : "border-line focus:border-accent"
                       }`}
                     />
                     {touched.message && formErrors.message && (
-                      <p className="text-[11px] text-red-500 font-medium">{formErrors.message}</p>
+                      <p className="text-[11px] text-danger font-medium">{formErrors.message}</p>
                     )}
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    disabled={isSubmittingInquiry}
+                    aria-busy={isSubmittingInquiry}
+                    className="w-full py-3 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    <EnvelopeSimple size={16} />
-                    <span>{lang === "ne" ? "सन्देश पठाउनुहोस्" : "Submit Inquiry"}</span>
+                    {isSubmittingInquiry ? (
+                      <>
+                        <span className="spinner" aria-hidden="true" />
+                        <span>{lang === "ne" ? "पठाउँदै..." : "Sending..."}</span>
+                      </>
+                    ) : (
+                      <>
+                        <EnvelopeSimple size={16} />
+                        <span>{lang === "ne" ? "सन्देश पठाउनुहोस्" : "Submit Inquiry"}</span>
+                      </>
+                    )}
                   </button>
                 </form>
               )}

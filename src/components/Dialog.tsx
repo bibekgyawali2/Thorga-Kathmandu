@@ -127,11 +127,11 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
   const getIcon = () => {
     switch (type) {
       case "success":
-        return <CheckCircle size={24} className="text-emerald-500 flex-shrink-0" weight="fill" />;
+        return <CheckCircle size={24} className="text-accent flex-shrink-0" weight="fill" />;
       case "warning":
-        return <WarningCircle size={24} className="text-amber-500 flex-shrink-0" weight="fill" />;
+        return <WarningCircle size={24} className="text-warning flex-shrink-0" weight="fill" />;
       case "danger":
-        return <WarningOctagon size={24} className="text-red-500 flex-shrink-0" weight="fill" />;
+        return <WarningOctagon size={24} className="text-danger flex-shrink-0" weight="fill" />;
       case "info":
       default:
         return <Info size={24} className="text-accent flex-shrink-0" weight="fill" />;
@@ -141,11 +141,11 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
   const getConfirmBtnClass = () => {
     switch (type) {
       case "danger":
-        return "bg-red-600 hover:bg-red-700 text-white";
+        return "bg-danger hover:bg-danger text-white";
       case "warning":
-        return "bg-amber-600 hover:bg-amber-700 text-white";
+        return "bg-warning hover:bg-warning text-white";
       case "success":
-        return "bg-emerald-600 hover:bg-emerald-700 text-white";
+        return "bg-accent hover:bg-accent text-white";
       case "info":
       default:
         return "bg-accent hover:bg-accent-hover text-on-accent";
@@ -262,11 +262,11 @@ export function Dialog({
   const getIcon = () => {
     switch (type) {
       case "success":
-        return <CheckCircle size={24} className="text-emerald-500 flex-shrink-0" weight="fill" />;
+        return <CheckCircle size={24} className="text-accent flex-shrink-0" weight="fill" />;
       case "warning":
-        return <WarningCircle size={24} className="text-amber-500 flex-shrink-0" weight="fill" />;
+        return <WarningCircle size={24} className="text-warning flex-shrink-0" weight="fill" />;
       case "danger":
-        return <WarningOctagon size={24} className="text-red-500 flex-shrink-0" weight="fill" />;
+        return <WarningOctagon size={24} className="text-danger flex-shrink-0" weight="fill" />;
       case "info":
       default:
         return <Info size={24} className="text-accent flex-shrink-0" weight="fill" />;
@@ -276,11 +276,11 @@ export function Dialog({
   const getConfirmBtnClass = () => {
     switch (type) {
       case "danger":
-        return "bg-red-600 hover:bg-red-700 text-white";
+        return "bg-danger hover:bg-danger text-white";
       case "warning":
-        return "bg-amber-600 hover:bg-amber-700 text-white";
+        return "bg-warning hover:bg-warning text-white";
       case "success":
-        return "bg-emerald-600 hover:bg-emerald-700 text-white";
+        return "bg-accent hover:bg-accent text-white";
       case "info":
       default:
         return "bg-accent hover:bg-accent-hover text-on-accent";

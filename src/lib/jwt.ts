@@ -19,13 +19,38 @@ export interface JWTPayload {
   exp: number; // Expiration time (Unix timestamp in seconds)
 }
 
+const MIN_SECRET_LENGTH = 32;
+
+/**
+ * Per-process development fallback. Never a committed constant: a hardcoded
+ * secret in the repository lets anyone who can read the source forge an admin
+ * token. Restarting the dev server invalidates dev sessions, which is the
+ * correct trade for not shipping a known signing key.
+ */
+let devSecret: string | null = null;
+
 function getJwtSecret(): string {
-  const secret =
-    process.env.JWT_SECRET ||
-    process.env.ADMIN_PASSWORD ||
-    process.env.NEXT_PUBLIC_ADMIN_PASSWORD ||
-    "thorga-kathmandu-samparka-tatha-bikash-manch-jwt-secret-key-2081-secure-prod";
-  return secret;
+  const secret = process.env.JWT_SECRET;
+
+  if (secret && secret.length >= MIN_SECRET_LENGTH) return secret;
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      secret
+        ? `JWT_SECRET must be at least ${MIN_SECRET_LENGTH} characters.`
+        : "JWT_SECRET is not set. Refusing to sign or verify admin tokens."
+    );
+  }
+
+  if (!devSecret) {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    devSecret = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    console.warn(
+      "[jwt] JWT_SECRET is not set. Using an ephemeral development secret. " +
+        "Set JWT_SECRET in .env.local before deploying."
+    );
+  }
+  return devSecret;
 }
 
 // ---------------------------------------------------------------------------
