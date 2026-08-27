@@ -43,6 +43,7 @@ import {
 } from "@/data/mockData";
 import { useRemoteData } from "@/hooks/useRemoteData";
 import { DataStatus } from "@/components/DataStatus";
+import { HeroCarousel, type HeroSlide } from "@/components/HeroCarousel";
 import {
   isValidName,
   isValidPhone,
@@ -291,74 +292,100 @@ export default function MainPortal() {
   const upcomingEventsShowcase = events.filter((e) => e.status === "upcoming").slice(0, 2);
   const galleryShowcase = gallery.slice(0, 3);
 
+  const heroSlides: HeroSlide[] = [
+    ...(isValidImageSrc(heroContent.imageUrl)
+      ? [
+          {
+            id: "hero-primary",
+            imageUrl: heroContent.imageUrl,
+            titleNe: heroContent.titleNe,
+            titleEn: heroContent.titleEn,
+            captionNe: heroContent.imageCaptionNe,
+            captionEn: heroContent.imageCaptionEn,
+          },
+        ]
+      : []),
+    ...gallery
+      .filter((item) => isValidImageSrc(item.imageUrl))
+      .slice(0, 5)
+      .map((item) => ({
+        id: item.id,
+        imageUrl: item.imageUrl,
+        titleNe: item.titleNe,
+        titleEn: item.titleEn,
+        captionNe: item.titleNe,
+        captionEn: item.titleEn,
+      })),
+  ];
+
   return (
     <div className="min-h-[100dvh] bg-ground text-fg font-sans selection:bg-accent selection:text-on-accent">
       <SiteHeader lang={lang} setLang={setLang} />
       <DataStatus error={membersRemote.error} refetch={membersRemote.refetch} lang={lang} />
 
-      {/* SECTION 1: HERO (Full Background Image with Content on Top) */}
-      <section className="relative overflow-hidden min-h-[75vh] lg:min-h-[85vh] flex items-center border-b border-line">
-        {/* Full Background Image */}
-        {isValidImageSrc(heroContent.imageUrl) && (
-          <div className="absolute inset-0">
-            <Image
-              src={heroContent.imageUrl}
-              alt={lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
-              fill
-              sizes="100vw"
-              className="object-cover object-center"
-              priority
-            />
-            {/* Soft, light overlay to preserve natural photo brightness and colors */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/25 to-transparent" />
-            <div className="absolute inset-0 bg-black/10" />
-          </div>
-        )}
+      {/* SECTION 1: HERO CAROUSEL (full bleed, institutional portal style) */}
+      <HeroCarousel slides={heroSlides} lang={lang} />
 
-        {/* Content Container on Top */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
-          <div className="max-w-3xl space-y-6">
-            {/* Top Ribbon Tag */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-chip bg-black/40 backdrop-blur-md border border-white/25 text-white text-xs font-semibold shadow-md">
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <Globe size={14} className="text-accent" />
-              <span className="tracking-wide">{lang === "ne" ? heroContent.badgeNe : heroContent.badgeEn}</span>
+      {/* SECTION 1b: WELCOME BAND (carries the page h1 and primary actions) */}
+      <section className="bg-ground border-b border-line">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            <div className="lg:col-span-8 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
+                <Globe size={14} weight="duotone" />
+                <span>{lang === "ne" ? heroContent.badgeNe : heroContent.badgeEn}</span>
+              </div>
+
+              <h1 className="text-2xl sm:text-3xl lg:text-[2.5rem] font-extrabold tracking-tight text-fg leading-[1.2]">
+                {lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
+              </h1>
+
+              <p className="text-base sm:text-lg leading-relaxed text-muted max-w-[65ch]">
+                {lang === "ne" ? heroContent.descriptionNe : heroContent.descriptionEn}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Link
+                  href="/committee"
+                  className="px-5 py-3 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-sm font-bold transition-colors flex items-center gap-2"
+                >
+                  <Users size={17} />
+                  <span>{lang === "ne" ? "कार्यसमिति" : "Executive Committee"}</span>
+                </Link>
+                <Link
+                  href="/publications"
+                  className="px-5 py-3 rounded-control border border-line bg-surface hover:bg-tint text-fg text-sm font-bold transition-colors flex items-center gap-2"
+                >
+                  <BookOpen size={17} />
+                  <span>{lang === "ne" ? "प्रकाशन" : "Publications"}</span>
+                </Link>
+                <a
+                  href="#contact"
+                  className="px-3 py-3 text-sm font-semibold text-accent hover:text-accent-hover transition-colors flex items-center gap-1.5"
+                >
+                  <span>{lang === "ne" ? "सम्पर्क गर्नुहोस्" : "Get in touch"}</span>
+                  <ArrowRight size={15} />
+                </a>
+              </div>
             </div>
 
-            {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)]">
-              {lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
-            </h1>
-
-            {/* Subtitle / Description */}
-            <p className="text-base sm:text-lg lg:text-xl max-w-[60ch] leading-relaxed text-white/95 font-medium drop-shadow-[0_1px_6px_rgba(0,0,0,0.85)]">
-              {lang === "ne" ? heroContent.descriptionNe : heroContent.descriptionEn}
-            </p>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
-              <Link
-                href="/committee"
-                className="px-6 py-3.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-lg transition-all flex items-center gap-2"
-              >
-                <Users size={18} />
-                <span>{lang === "ne" ? "कार्यसमिति सदस्यहरू" : "Executive Committee"}</span>
-              </Link>
-              <Link
-                href="/publications"
-                className="px-6 py-3.5 rounded-control bg-black/40 hover:bg-black/60 backdrop-blur-md text-white text-xs font-bold border border-white/30 shadow-lg transition-all flex items-center gap-2"
-              >
-                <BookOpen size={18} />
-                <span>{lang === "ne" ? "स्मारिका तथा प्रकाशन" : "Explore Publications"}</span>
-              </Link>
-              <a
-                href="#contact"
-                className="px-5 py-3.5 rounded-control text-white hover:text-accent text-xs font-semibold drop-shadow-[0_1px_6px_rgba(0,0,0,0.9)] transition-all flex items-center gap-1.5"
-              >
-                <span>{lang === "ne" ? "सम्पर्क फाराम" : "Get in Touch"}</span>
-                <ArrowRight size={14} />
-              </a>
-            </div>
+            {/* Office locator card, mirroring the reference layout's right rail */}
+            <aside className="lg:col-span-4">
+              <div className="rounded-card border border-line bg-surface p-5 space-y-3">
+                <div className="flex items-center gap-2 text-accent">
+                  <ShieldCheck size={18} weight="duotone" />
+                  <span className="text-sm font-bold">
+                    {lang === "ne" ? "सम्पर्क सचिवालय" : "Liaison Secretariat"}
+                  </span>
+                </div>
+                <p className="text-xs leading-relaxed text-muted">
+                  {lang === "ne" ? heroContent.imageSubtitleNe : heroContent.imageSubtitleEn}
+                </p>
+                <div className="pt-3 border-t border-line text-xs text-muted leading-relaxed">
+                  {lang === "ne" ? heroContent.imageCaptionNe : heroContent.imageCaptionEn}
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </section>
