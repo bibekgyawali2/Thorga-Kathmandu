@@ -131,23 +131,25 @@ function Portrait({
   lang,
   sizeClass,
   textClass,
+  imgFit = "contain",
 }: {
   member: Member;
   lang: Language;
   sizeClass: string;
   textClass: string;
+  imgFit?: "cover" | "contain";
 }) {
   const name = lang === "ne" ? member.nameNe : member.nameEn;
 
   if (hasRealPhoto(member.photoUrl)) {
     return (
-      <div className={`relative overflow-hidden bg-tint ${sizeClass}`}>
+      <div className={`relative overflow-hidden ${sizeClass}`}>
         <Image
           src={member.photoUrl}
           alt={name}
           fill
           sizes="(max-width: 640px) 100vw, 300px"
-          className="object-cover"
+          className={imgFit === "contain" ? "object-contain" : "object-cover"}
         />
       </div>
     );
@@ -478,16 +480,17 @@ export default function MainPortal() {
                   key={member.id}
                   className="rounded-card border border-line bg-ground overflow-hidden flex flex-col justify-between hover:border-accent hover:shadow-e1 transition-all group"
                 >
-                  {/* Top Portrait Photo Frame - Compact Height */}
-                  <div className="relative h-44 w-full bg-tint overflow-hidden">
+                  {/* Top Portrait Photo Frame - Full Uncropped Image */}
+                  <div className="relative h-64 sm:h-72 w-full bg-tint/60 overflow-hidden flex items-center justify-center p-2">
                     <Portrait
                       member={member}
                       lang={lang}
                       sizeClass="w-full h-full"
                       textClass="text-3xl"
+                      imgFit="contain"
                     />
-                    <div className="absolute top-2.5 left-2.5">
-                      <span className="inline-block px-2 py-0.5 rounded-chip text-[11px] font-bold bg-accent text-on-accent shadow-e1">
+                    <div className="absolute top-2.5 left-2.5 z-10">
+                      <span className="inline-block px-2.5 py-1 rounded-chip text-[11px] font-bold bg-accent text-on-accent shadow-e1">
                         {lang === "ne" ? member.roleNe : member.roleEn}
                       </span>
                     </div>
