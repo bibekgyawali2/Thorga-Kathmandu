@@ -162,11 +162,11 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="dialog-title"
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-surface border border-line rounded-card max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150"
+            className="bg-surface border border-line rounded-card max-w-md w-full p-6 shadow-e3 space-y-5 animate-in zoom-in-95 duration-200"
           >
             <div className="flex items-start gap-4">
               <div className="p-2 rounded-control bg-tint border border-line flex items-center justify-center">
@@ -210,7 +210,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                 type="button"
                 ref={confirmBtnRef}
                 onClick={() => handleClose(true)}
-                className={`px-5 py-2 rounded-control text-xs font-semibold shadow-sm transition-colors ${getConfirmBtnClass()}`}
+                className={`px-5 py-2 rounded-control text-xs font-semibold shadow-e1 transition-colors ${getConfirmBtnClass()}`}
               >
                 {options.confirmText || (options.showCancel ? "Confirm" : "OK")}
               </button>
@@ -291,11 +291,11 @@ export function Dialog({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-surface border border-line rounded-card max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150"
+        className="bg-surface border border-line rounded-card max-w-md w-full p-6 shadow-e3 space-y-5 animate-in zoom-in-95 duration-200"
       >
         <div className="flex items-start gap-4">
           <div className="p-2 rounded-control bg-tint border border-line flex items-center justify-center">
@@ -336,7 +336,7 @@ export function Dialog({
               if (onConfirm) onConfirm();
               onClose();
             }}
-            className={`px-5 py-2 rounded-control text-xs font-semibold shadow-sm transition-colors ${getConfirmBtnClass()}`}
+            className={`px-5 py-2 rounded-control text-xs font-semibold shadow-e1 transition-colors ${getConfirmBtnClass()}`}
           >
             {confirmText}
           </button>

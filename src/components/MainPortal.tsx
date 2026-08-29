@@ -349,7 +349,7 @@ export default function MainPortal() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Pillar 01 */}
-            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow)] group">
+            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-e2 group">
               <div className="space-y-3">
                 <div className="text-accent">
                   <Heart size={26} weight="duotone" />
@@ -366,7 +366,7 @@ export default function MainPortal() {
             </article>
 
             {/* Pillar 02 */}
-            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow)] group">
+            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-e2 group">
               <div className="space-y-3">
                 <div className="text-accent">
                   <GraduationCap size={26} weight="duotone" />
@@ -383,7 +383,7 @@ export default function MainPortal() {
             </article>
 
             {/* Pillar 03 */}
-            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow)] group">
+            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-e2 group">
               <div className="space-y-3">
                 <div className="text-accent">
                   <Buildings size={26} weight="duotone" />
@@ -400,7 +400,7 @@ export default function MainPortal() {
             </article>
 
             {/* Pillar 04 */}
-            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow)] group">
+            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-e2 group">
               <div className="space-y-3">
                 <div className="text-accent">
                   <Tree size={26} weight="duotone" />
@@ -440,7 +440,7 @@ export default function MainPortal() {
                 onClick={() => setCommitteeFilter("current")}
                 className={`px-3.5 py-1.5 rounded-control text-xs font-semibold transition-colors ${
                   committeeFilter === "current"
-                    ? "bg-accent text-on-accent shadow-sm"
+                    ? "bg-accent text-on-accent shadow-e1"
                     : "bg-surface border border-line text-fg hover:bg-tint"
                 }`}
               >
@@ -451,7 +451,7 @@ export default function MainPortal() {
                 onClick={() => setCommitteeFilter("advisor")}
                 className={`px-3.5 py-1.5 rounded-control text-xs font-semibold transition-colors ${
                   committeeFilter === "advisor"
-                    ? "bg-accent text-on-accent shadow-sm"
+                    ? "bg-accent text-on-accent shadow-e1"
                     : "bg-surface border border-line text-fg hover:bg-tint"
                 }`}
               >
@@ -462,7 +462,7 @@ export default function MainPortal() {
                 onClick={() => setCommitteeFilter("all")}
                 className={`px-3.5 py-1.5 rounded-control text-xs font-semibold transition-colors ${
                   committeeFilter === "all"
-                    ? "bg-accent text-on-accent shadow-sm"
+                    ? "bg-accent text-on-accent shadow-e1"
                     : "bg-surface border border-line text-fg hover:bg-tint"
                 }`}
               >
@@ -470,7 +470,7 @@ export default function MainPortal() {
               </button>
               <Link
                 href="/committee"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors ml-2"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1 transition-colors ml-2"
               >
                 <span>{lang === "ne" ? "पूर्ण सूची" : "Full Directory"}</span>
                 <ArrowRight size={14} />
@@ -490,7 +490,7 @@ export default function MainPortal() {
               {filteredCommitteeMembers.slice(0, 8).map((member) => (
                 <article
                   key={member.id}
-                  className="rounded-card border border-line bg-ground overflow-hidden flex flex-col justify-between hover:border-accent hover:shadow-sm transition-all group"
+                  className="rounded-card border border-line bg-ground overflow-hidden flex flex-col justify-between hover:border-accent hover:shadow-e1 transition-all group"
                 >
                   {/* Top Portrait Photo Frame - Compact Height */}
                   <div className="relative h-44 w-full bg-tint overflow-hidden">
@@ -501,7 +501,7 @@ export default function MainPortal() {
                       textClass="text-3xl"
                     />
                     <div className="absolute top-2.5 left-2.5">
-                      <span className="inline-block px-2 py-0.5 rounded-chip text-[11px] font-bold bg-accent text-on-accent shadow-sm">
+                      <span className="inline-block px-2 py-0.5 rounded-chip text-[11px] font-bold bg-accent text-on-accent shadow-e1">
                         {lang === "ne" ? member.roleNe : member.roleEn}
                       </span>
                     </div>
@@ -571,7 +571,7 @@ export default function MainPortal() {
 
             <Link
               href="/publications"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1 transition-colors"
             >
               <span>{lang === "ne" ? "सबै प्रकाशनहरू हेर्नुहोस्" : "View All Publications"}</span>
               <ArrowRight size={15} />
@@ -602,7 +602,7 @@ export default function MainPortal() {
                         className="object-cover opacity-40 group-hover:opacity-60 transition-opacity"
                       />
                     )}
-                    <div className="relative z-10 w-36 h-40 rounded-control shadow-md p-3 flex flex-col justify-between bg-surface border border-line">
+                    <div className="relative z-10 w-36 h-40 rounded-control shadow-e2 p-3 flex flex-col justify-between bg-surface border border-line">
                       <FileText size={22} className="text-accent" weight="duotone" />
                       <div className="text-[11px] font-bold text-fg line-clamp-2">
                         {lang === "ne" ? pub.titleNe : pub.titleEn}
@@ -632,7 +632,7 @@ export default function MainPortal() {
                         href={pub.pdfUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                       >
                         <Download size={14} />
                         <span>{lang === "ne" ? "डाउनलोड" : "Download"}</span>
@@ -671,7 +671,7 @@ export default function MainPortal() {
 
             <Link
               href="/events"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1 transition-colors"
             >
               <span>{lang === "ne" ? "सबै कार्यक्रमहरू हेर्नुहोस्" : "View All Events"}</span>
               <ArrowRight size={15} />
@@ -704,7 +704,7 @@ export default function MainPortal() {
                     ) : (
                       <Calendar size={36} className="text-accent" weight="duotone" />
                     )}
-                    <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface text-[10px] font-bold text-accent shadow-sm">
+                    <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface text-[10px] font-bold text-accent shadow-e1">
                       {lang === "ne" ? event.categoryNe : event.categoryEn}
                     </div>
                   </div>
@@ -752,7 +752,7 @@ export default function MainPortal() {
 
             <Link
               href="/gallery"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1 transition-colors"
             >
               <span>{lang === "ne" ? "सबै तस्बिरहरू हेर्नुहोस्" : "Explore Full Gallery"}</span>
               <ArrowRight size={15} />
@@ -772,7 +772,7 @@ export default function MainPortal() {
                 <Link
                   key={item.id}
                   href="/gallery"
-                  className="relative h-64 rounded-card overflow-hidden border border-line bg-surface group shadow-sm hover:border-accent transition-all flex items-center justify-center"
+                  className="relative h-64 rounded-card overflow-hidden border border-line bg-surface group shadow-e1 hover:border-accent transition-all flex items-center justify-center"
                 >
                   {isValidImageSrc(item.imageUrl) ? (
                     <Image
@@ -780,7 +780,7 @@ export default function MainPortal() {
                       alt={item.titleEn}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="object-cover group-hover:scale-105 transition-transform duration-200"
                     />
                   ) : (
                     <Sparkle size={36} className="text-accent" weight="duotone" />
@@ -835,7 +835,7 @@ export default function MainPortal() {
                   <button
                     type="button"
                     onClick={() => setContactSubmitted(false)}
-                    className="px-5 py-2.5 rounded-control bg-accent text-on-accent text-xs font-semibold shadow-sm hover:bg-accent-hover transition-colors"
+                    className="px-5 py-2.5 rounded-control bg-accent text-on-accent text-xs font-semibold shadow-e1 hover:bg-accent-hover transition-colors"
                   >
                     {lang === "ne" ? "अर्को सन्देश पठाउनुहोस्" : "Send Another Message"}
                   </button>
@@ -844,7 +844,7 @@ export default function MainPortal() {
                 <form
                   onSubmit={handleInquirySubmit}
                   noValidate
-                  className="rounded-card border border-line bg-ground p-6 sm:p-8 space-y-5 shadow-sm"
+                  className="rounded-card border border-line bg-ground p-6 sm:p-8 space-y-5 shadow-e1"
                 >
                   <div className="text-sm font-bold text-fg border-b border-line pb-3 flex items-center justify-between">
                     <span>{lang === "ne" ? "सम्पर्क फाराम" : "Online Inquiry Form"}</span>
@@ -967,7 +967,7 @@ export default function MainPortal() {
                     type="submit"
                     disabled={isSubmittingInquiry}
                     aria-busy={isSubmittingInquiry}
-                    className="w-full py-3 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full py-3 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold shadow-e1 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     {isSubmittingInquiry ? (
                       <>
@@ -987,7 +987,7 @@ export default function MainPortal() {
 
             {/* Right Column: Liaison Secretariat Card */}
             <div className="lg:col-span-5 space-y-4">
-              <div className="rounded-card border border-line bg-ground p-6 sm:p-7 space-y-5 shadow-sm hover:border-accent transition-all">
+              <div className="rounded-card border border-line bg-ground p-6 sm:p-7 space-y-5 shadow-e1 hover:border-accent transition-all">
                 <div className="flex items-center gap-3.5">
                   <div className="w-11 h-11 rounded-control bg-accent-soft text-accent flex items-center justify-center flex-shrink-0">
                     <Buildings size={22} weight="duotone" />
@@ -1047,7 +1047,7 @@ export default function MainPortal() {
       {/* PDF PREVIEW MODAL */}
       {activePdfPreview && (
         <div className="fixed inset-0 z-50 bg-fg/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-surface border border-line rounded-card max-w-2xl w-full p-6 space-y-6 shadow-2xl">
+          <div className="bg-surface border border-line rounded-card max-w-2xl w-full p-6 space-y-6 shadow-e3">
             <div className="flex items-center justify-between border-b border-line pb-4">
               <div className="flex items-center gap-2 truncate">
                 <FileText size={22} className="text-accent flex-shrink-0" weight="duotone" />
@@ -1081,7 +1081,7 @@ export default function MainPortal() {
                 href={activePdfPreview.pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1"
               >
                 <Download size={16} />
                 <span>{lang === "ne" ? "पूर्ण PDF दस्तावेज डाउनलोड गर्नुहोस्" : "Download Complete PDF"}</span>

@@ -2135,7 +2135,7 @@ export default function AdminPage() {
         </header>
 
         <main className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-sm rounded-card border border-line bg-surface p-6 sm:p-8 space-y-6 shadow-sm">
+          <div className="w-full max-w-sm rounded-card border border-line bg-surface p-6 sm:p-8 space-y-6 shadow-e1">
             <div className="space-y-1.5 text-center">
               <div className="w-10 h-10 rounded-control bg-accent-soft text-accent mx-auto flex items-center justify-center mb-2">
                 <LockKey size={20} />
@@ -2180,7 +2180,7 @@ export default function AdminPage() {
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="w-full py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
+                className="w-full py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1 transition-all flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
               >
                 {isLoggingIn ? (
                   <>
@@ -2820,7 +2820,7 @@ export default function AdminPage() {
                 <button
                   type="submit"
                   disabled={isSavingHero}
-                  className="px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold shadow-sm transition-colors flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold shadow-e1 transition-colors flex items-center gap-2"
                 >
                   {isSavingHero && <CircleNotch size={14} className="animate-spin" />}
                   <span>{isSavingHero ? (lang === "ne" ? "सुरक्षित गर्दै..." : "Saving...") : t.saveChanges}</span>
@@ -2898,7 +2898,7 @@ export default function AdminPage() {
                       setShowAddMemberModal(true);
                     }
                   }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
                   <span>{showAddMemberModal ? t.closeBtn : t.addMember}</span>
@@ -2906,7 +2906,7 @@ export default function AdminPage() {
               </div>
 
               {showAddMemberModal && (
-                <form onSubmit={handleAddMember} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                <form onSubmit={handleAddMember} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-e1">
                   <div className="flex items-center justify-between">
                     <div className="text-xs font-bold uppercase tracking-wider text-accent">
                       {editingMember ? t.editMember : t.addMember}
@@ -3017,7 +3017,7 @@ export default function AdminPage() {
                     <button
                       type="submit"
                       disabled={isSavingMember}
-                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
+                      className="px-5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
                     >
                       {isSavingMember && <CircleNotch size={14} className="animate-spin" />}
                       <span>
@@ -3189,7 +3189,7 @@ export default function AdminPage() {
                       setShowAddPubModal(true);
                     }
                   }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
                   <span>{showAddPubModal ? t.closeBtn : t.uploadPub}</span>
@@ -3197,7 +3197,7 @@ export default function AdminPage() {
               </div>
 
               {showAddPubModal && (
-                <form onSubmit={handleAddPub} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                <form onSubmit={handleAddPub} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-e1">
                   <div className="flex items-center justify-between">
                     <div className="text-xs font-bold uppercase tracking-wider text-accent">
                       {editingPub ? t.editPub : t.uploadPub}
@@ -3286,7 +3286,7 @@ export default function AdminPage() {
                     <button
                       type="submit"
                       disabled={isSavingPub}
-                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
+                      className="px-5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
                     >
                       {isSavingPub && <CircleNotch size={14} className="animate-spin" />}
                       <span>
@@ -3401,7 +3401,7 @@ export default function AdminPage() {
                       setShowAddEventModal(true);
                     }
                   }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
                   <span>{showAddEventModal ? t.closeBtn : t.scheduleEvent}</span>
@@ -3409,7 +3409,7 @@ export default function AdminPage() {
               </div>
 
               {showAddEventModal && (
-                <form onSubmit={handleAddEvent} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                <form onSubmit={handleAddEvent} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-e1">
                   <div className="flex items-center justify-between">
                     <div className="text-xs font-bold uppercase tracking-wider text-accent">
                       {editingEvent ? t.editEvent : t.scheduleEvent}
@@ -3500,7 +3500,7 @@ export default function AdminPage() {
                     <button
                       type="submit"
                       disabled={isSavingEvent}
-                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
+                      className="px-5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
                     >
                       {isSavingEvent && <CircleNotch size={14} className="animate-spin" />}
                       <span>
@@ -3608,7 +3608,7 @@ export default function AdminPage() {
                       setShowAddGalleryModal(true);
                     }
                   }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
                 >
                   <Plus size={14} />
                   <span>{showAddGalleryModal ? t.closeBtn : t.addGallery}</span>
@@ -3616,7 +3616,7 @@ export default function AdminPage() {
               </div>
 
               {showAddGalleryModal && (
-                <form onSubmit={handleAddGallery} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                <form onSubmit={handleAddGallery} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-e1">
                   <div className="flex items-center justify-between">
                     <div className="text-xs font-bold uppercase tracking-wider text-accent">
                       {editingGallery ? t.editGallery : t.addGallery}
@@ -3686,7 +3686,7 @@ export default function AdminPage() {
                     <button
                       type="submit"
                       disabled={isSavingGallery}
-                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
+                      className="px-5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
                     >
                       {isSavingGallery && <CircleNotch size={14} className="animate-spin" />}
                       <span>
@@ -4302,7 +4302,7 @@ export default function AdminPage() {
                   <button
                     type="submit"
                     disabled={isSavingContact}
-                    className="px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold shadow-sm transition-colors flex items-center gap-2"
+                    className="px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold shadow-e1 transition-colors flex items-center gap-2"
                   >
                     {isSavingContact && <CircleNotch size={14} className="animate-spin" />}
                     <span>{isSavingContact ? (lang === "ne" ? "सुरक्षित गर्दै..." : "Saving...") : t.saveChanges}</span>
@@ -4341,7 +4341,7 @@ export default function AdminPage() {
                         setShowAddUserModal(!showAddUserModal);
                       }
                     }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors shadow-e1"
                   >
                     <Plus size={14} />
                     <span>{showAddUserModal ? t.closeBtn : t.addAdminUser}</span>
@@ -4351,7 +4351,7 @@ export default function AdminPage() {
 
               {/* Add/Edit User Modal / Form */}
               {showAddUserModal && (
-                <form onSubmit={handleAddUser} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-sm">
+                <form onSubmit={handleAddUser} className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-e1">
                   <div className="flex items-center justify-between">
                     <div className="text-xs font-bold uppercase tracking-wider text-accent">
                       {editingUser ? t.editUserModalTitle : t.addUserModalTitle}
@@ -4428,7 +4428,7 @@ export default function AdminPage() {
                     <button
                       type="submit"
                       disabled={isSavingUser}
-                      className="px-5 py-2 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
+                      className="px-5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2"
                     >
                       {isSavingUser && <CircleNotch size={14} className="animate-spin" />}
                       <span>
@@ -4658,7 +4658,7 @@ export default function AdminPage() {
                         setIsSavingBranding(false);
                       }
                     }}
-                    className="px-4 py-1.5 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold transition-colors flex items-center gap-1.5"
+                    className="px-4 py-1.5 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold transition-colors flex items-center gap-1.5"
                   >
                     {isSavingBranding && <CircleNotch size={13} className="animate-spin" />}
                     <span>{isSavingBranding ? (lang === "ne" ? "सुरक्षित गर्दै..." : "Saving...") : t.saveChanges}</span>
@@ -4763,7 +4763,7 @@ export default function AdminPage() {
                         setIsSavingBranding(false);
                       }
                     }}
-                    className="px-4 py-1.5 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold transition-colors flex items-center gap-1.5"
+                    className="px-4 py-1.5 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold transition-colors flex items-center gap-1.5"
                   >
                     {isSavingBranding && <CircleNotch size={13} className="animate-spin" />}
                     <span>{isSavingBranding ? (lang === "ne" ? "सुरक्षित गर्दै..." : "Saving...") : t.saveChanges}</span>
@@ -4827,7 +4827,7 @@ export default function AdminPage() {
                     setIsSavingBranding(false);
                   }
                 }}
-                className="w-full py-2.5 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold shadow-sm transition-colors flex items-center justify-center gap-2"
+                className="w-full py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold shadow-e1 transition-colors flex items-center justify-center gap-2"
               >
                 {isSavingBranding && <CircleNotch size={14} className="animate-spin" />}
                 <span>

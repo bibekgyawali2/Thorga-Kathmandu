@@ -273,7 +273,7 @@ export function DocumentSectionEditor({
           type="button"
           onClick={save}
           disabled={saving}
-          className="px-5 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold transition-colors flex items-center gap-2 disabled:opacity-70"
+          className="px-5 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold transition-colors flex items-center gap-2 disabled:opacity-70"
         >
           {saving ? <span className="spinner" aria-hidden="true" /> : <FloppyDisk size={15} />}
           {t("सुरक्षित गर्नुहोस्", "Save")}

@@ -125,7 +125,7 @@ export default function PublicationsPage() {
                     />
                   )}
 
-                  <div className="relative z-10 w-44 h-52 rounded-control shadow-lg p-4 flex flex-col justify-between bg-surface border border-line">
+                  <div className="relative z-10 w-44 h-52 rounded-control shadow-e2 p-4 flex flex-col justify-between bg-surface border border-line">
                     <div className="flex items-center justify-between">
                       <FileText size={26} className="text-accent" weight="duotone" />
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-chip bg-accent-soft text-accent uppercase">
@@ -173,7 +173,7 @@ export default function PublicationsPage() {
                       href={pub.pdfUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 py-2 px-3 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                      className="flex-1 py-2 px-3 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-e1"
                     >
                       <Download size={15} />
                       <span>{lang === "ne" ? "डाउनलोड" : "Download"}</span>
@@ -189,7 +189,7 @@ export default function PublicationsPage() {
       {/* PDF PREVIEW MODAL */}
       {activePdfPreview && (
         <div className="fixed inset-0 z-50 bg-fg/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-surface border border-line rounded-card max-w-2xl w-full p-6 space-y-6 shadow-2xl">
+          <div className="bg-surface border border-line rounded-card max-w-2xl w-full p-6 space-y-6 shadow-e3">
             <div className="flex items-center justify-between border-b border-line pb-4">
               <div className="flex items-center gap-2 truncate">
                 <FileText size={22} className="text-accent flex-shrink-0" weight="duotone" />
@@ -223,7 +223,7 @@ export default function PublicationsPage() {
                 href={activePdfPreview.pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-sm"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1"
               >
                 <Download size={16} />
                 <span>{lang === "ne" ? "पूर्ण PDF दस्तावेज डाउनलोड गर्नुहोस्" : "Download Complete PDF"}</span>

@@ -52,7 +52,7 @@ export default function NavigationProgressBar() {
 
   return (
     <div className="fixed top-0 inset-x-0 z-[9999] h-1 bg-transparent pointer-events-none">
-      <div className="h-full bg-accent animate-[indeterminate_1.2s_infinite_linear] origin-left shadow-[0_0_8px_var(--accent)]" />
+      <div className="h-full bg-accent animate-[indeterminate_1.2s_infinite_linear] origin-left shadow-e2" />
     </div>
   );
 }

@@ -40,7 +40,7 @@ export default function Error({
           <button
             type="button"
             onClick={reset}
-            className="px-5 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors flex items-center gap-2"
+            className="px-5 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors flex items-center gap-2"
           >
             <ArrowClockwise size={15} />
             Try again

@@ -81,7 +81,7 @@ export default function EventsPage() {
               onClick={() => setStatusFilter("upcoming")}
               className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${
                 statusFilter === "upcoming"
-                  ? "bg-accent text-on-accent shadow-sm"
+                  ? "bg-accent text-on-accent shadow-e1"
                   : "bg-surface border border-line text-fg hover:bg-tint"
               }`}
             >
@@ -92,7 +92,7 @@ export default function EventsPage() {
               onClick={() => setStatusFilter("completed")}
               className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${
                 statusFilter === "completed"
-                  ? "bg-accent text-on-accent shadow-sm"
+                  ? "bg-accent text-on-accent shadow-e1"
                   : "bg-surface border border-line text-fg hover:bg-tint"
               }`}
             >
@@ -123,12 +123,12 @@ export default function EventsPage() {
                       alt={lang === "ne" ? event.titleNe : event.titleEn}
                       fill
                       sizes="(max-width: 640px) 100vw, 224px"
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="object-cover group-hover:scale-105 transition-transform duration-200"
                     />
                   ) : (
                     <Calendar size={40} className="text-accent" weight="duotone" />
                   )}
-                  <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface/95 text-[11px] font-bold text-accent shadow-sm">
+                  <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface/95 text-[11px] font-bold text-accent shadow-e1">
                     {lang === "ne" ? event.categoryNe : event.categoryEn}
                   </div>
                 </div>

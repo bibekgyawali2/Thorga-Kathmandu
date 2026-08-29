@@ -93,7 +93,7 @@ export default function GalleryPage() {
                 onClick={() => setCategory(cat.key)}
                 className={`px-3.5 py-2 rounded-control text-xs font-semibold transition-colors ${
                   category === cat.key
-                    ? "bg-accent text-on-accent shadow-sm"
+                    ? "bg-accent text-on-accent shadow-e1"
                     : "bg-surface border border-line text-fg hover:bg-tint"
                 }`}
               >
@@ -117,7 +117,7 @@ export default function GalleryPage() {
               <article
                 key={item.id}
                 onClick={() => setActivePhoto(item)}
-                className="relative h-72 rounded-card overflow-hidden border border-line bg-surface cursor-pointer group shadow-sm hover:border-accent transition-all flex items-center justify-center"
+                className="relative h-72 rounded-card overflow-hidden border border-line bg-surface cursor-pointer group shadow-e1 hover:border-accent transition-all flex items-center justify-center"
               >
                 {isValidImageSrc(item.imageUrl) ? (
                   <Image
@@ -125,7 +125,7 @@ export default function GalleryPage() {
                     alt={lang === "ne" ? item.titleNe : item.titleEn}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover group-hover:scale-105 transition-transform duration-200"
                   />
                 ) : (
                   <div className="flex flex-col items-center gap-2 text-muted">
@@ -158,7 +158,7 @@ export default function GalleryPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-4xl w-full bg-surface rounded-card overflow-hidden border border-line shadow-2xl"
+            className="relative max-w-4xl w-full bg-surface rounded-card overflow-hidden border border-line shadow-e3"
           >
             <button
               type="button"

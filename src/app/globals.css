@@ -34,8 +34,14 @@
   --warning: #8a5a10;
   --nav: #175136;
   --on-nav: #f2f8f3;
-  --shadow: 0 1px 1px rgba(23, 81, 54, 0.04), 0 2px 4px rgba(23, 81, 54, 0.04),
-    0 12px 28px -12px rgba(23, 81, 54, 0.14);
+  /* Elevation. Tailwind's stock shadows are pure black, which reads as grey
+     smudge over a green ground; these are tinted to the brand hue and layered
+     (a tight contact shadow plus a wider ambient one) the way real light
+     falls. Three steps only: resting, raised, overlay. */
+  --elev-1: 0 1px 1px rgba(23, 81, 54, 0.05), 0 1px 2px -1px rgba(23, 81, 54, 0.08);
+  --elev-2: 0 1px 2px rgba(23, 81, 54, 0.05), 0 6px 12px -6px rgba(23, 81, 54, 0.13);
+  --elev-3: 0 2px 4px rgba(23, 81, 54, 0.06), 0 18px 32px -14px rgba(23, 81, 54, 0.20);
+  --shadow: var(--elev-2);
 }
 
 [data-theme="dark"] {
@@ -53,11 +59,19 @@
   --warning: #e0aa5a;
   --nav: #10291f;
   --on-nav: #dfeae2;
-  --shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 2px 4px rgba(0, 0, 0, 0.24),
-    0 12px 28px -12px rgba(0, 0, 0, 0.5);
+  /* Dark mode needs deeper shadows and a faint top highlight, otherwise
+     raised surfaces vanish into the background. */
+  --elev-1: 0 1px 1px rgba(0, 0, 0, 0.35), 0 1px 2px -1px rgba(0, 0, 0, 0.45);
+  --elev-2: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 12px -6px rgba(0, 0, 0, 0.55);
+  --elev-3: 0 2px 4px rgba(0, 0, 0, 0.45), 0 18px 32px -14px rgba(0, 0, 0, 0.65);
+  --shadow: var(--elev-2);
 }
 
 @theme inline {
+  --shadow-e1: var(--elev-1);
+  --shadow-e2: var(--elev-2);
+  --shadow-e3: var(--elev-3);
+
   --color-ground: var(--ground);
   --color-surface: var(--surface);
   --color-tint: var(--tint);
@@ -72,6 +86,8 @@
   --color-warning: var(--warning);
   --color-nav: var(--nav);
   --color-on-nav: var(--on-nav);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   --radius-card: 16px;
   --radius-control: 12px;
@@ -241,4 +257,67 @@ body {
    another boxed container to a page that already has many. */
 .rule-soft {
   border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+   Materiality
+--------------------------------------------------------------------------- */
+
+/* One easing curve everywhere. Mixed ad-hoc durations are a big part of why
+   an interface feels assembled rather than designed. */
+*,
+::before,
+::after {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* A resting surface: hairline plus the lightest contact shadow, so it sits on
+   the page instead of being a tinted rectangle drawn on it. */
+.surface-1 {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--elev-1);
+}
+
+/* Images sitting flush inside a rounded container pick up a hairline of their
+   own, which stops light photographs bleeding into a light surface. */
+.media-inset {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 8%, transparent);
+}
+
+/* Focus: a brand-coloured ring with a halo, offset from the control, rather
+   than the browser default. Visible on both themes and over photographs. */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+  border-radius: var(--radius-chip);
+}
+
+/* Filled buttons. A flat fill reads as a coloured rectangle; a hairline of
+   light along the top edge is what makes it read as a physical control. The
+   press inverts that: the highlight goes, an inner shadow arrives, and the
+   button moves a single pixel down. */
+.btn-fill {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), var(--elev-1);
+}
+
+.btn-fill:active:not(:disabled) {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+/* Tactile press for every control, not just the filled ones. Gated on
+   reduced-motion because it is a transform. */
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):active,
+  .btn-fill:active:not(:disabled),
+  a.btn-fill:active {
+    transform: translateY(1px);
+  }
+}
+
+/* Selection uses the brand rather than the browser blue. */
+::selection {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--fg);
 }

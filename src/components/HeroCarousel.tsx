@@ -85,7 +85,7 @@ export function HeroCarousel({
           <div
             key={slide.id}
             aria-hidden={i !== index}
-            className="absolute inset-0 transition-opacity duration-700 ease-out"
+            className="absolute inset-0 transition-opacity duration-500 ease-out"
             style={{ opacity: i === index ? 1 : 0 }}
           >
             <Image
@@ -116,7 +116,7 @@ export function HeroCarousel({
               type="button"
               onClick={previous}
               aria-label={lang === "ne" ? "अघिल्लो तस्बिर" : "Previous photograph"}
-              className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/85 hover:bg-white text-fg flex items-center justify-center shadow-lg transition-colors"
+              className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/85 hover:bg-white text-fg flex items-center justify-center shadow-e2 transition-colors"
             >
               <CaretLeft size={20} weight="bold" />
             </button>
@@ -124,7 +124,7 @@ export function HeroCarousel({
               type="button"
               onClick={next}
               aria-label={lang === "ne" ? "अर्को तस्बिर" : "Next photograph"}
-              className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/85 hover:bg-white text-fg flex items-center justify-center shadow-lg transition-colors"
+              className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/85 hover:bg-white text-fg flex items-center justify-center shadow-e2 transition-colors"
             >
               <CaretRight size={20} weight="bold" />
             </button>

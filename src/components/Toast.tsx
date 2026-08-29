@@ -133,7 +133,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           return (
             <div
               key={item.id}
-              className="toast-item pointer-events-auto rounded-card border border-line bg-surface shadow-lg p-4 flex items-start gap-3"
+              className="toast-item pointer-events-auto rounded-card border border-line bg-surface shadow-e2 p-4 flex items-start gap-3"
             >
               <Icon
                 size={20}

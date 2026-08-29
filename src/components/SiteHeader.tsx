@@ -194,7 +194,7 @@ function NavDropdown({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 w-72 rounded-card border border-line bg-surface shadow-lg py-2">
+        <div className="absolute left-0 top-full mt-1 z-50 w-72 rounded-card border border-line bg-surface shadow-e2 py-2">
           {(link.children ?? []).map((child) => {
             const active = pathname === child.href;
             return (
@@ -272,7 +272,7 @@ export function SiteHeader({
           <div className="flex items-center justify-between gap-3 sm:gap-4">
             {/* National emblem slot */}
             <Link href="/" className="flex-shrink-0" aria-label={lang === "ne" ? "गृहपृष्ठ" : "Home"}>
-              <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-surface border-2 border-accent/25 flex items-center justify-center overflow-hidden shadow-sm">
+              <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-surface border-2 border-accent/25 flex items-center justify-center overflow-hidden shadow-e1">
                 {branding.logoUrl ? (
                   <Image
                     src={branding.logoUrl}
@@ -304,7 +304,7 @@ export function SiteHeader({
             </div>
 
             {/* Registration seal */}
-            <div className="flex-shrink-0 hidden sm:flex w-20 h-20 rounded-full border-2 border-accent/30 bg-surface flex-col items-center justify-center text-center shadow-sm">
+            <div className="flex-shrink-0 hidden sm:flex w-20 h-20 rounded-full border-2 border-accent/30 bg-surface flex-col items-center justify-center text-center shadow-e1">
               <ShieldCheck size={18} weight="duotone" className="text-accent" />
               <span className="text-[7px] sm:text-[9px] font-bold text-fg leading-tight mt-0.5">
                 {lang === "ne" ? "दर्ता नं." : "REGD."}
@@ -329,7 +329,7 @@ export function SiteHeader({
       </div>
 
       {/* Band 2: primary navigation */}
-      <header className="sticky top-0 z-40 bg-nav text-on-nav shadow-md">
+      <header className="sticky top-0 z-40 bg-nav text-on-nav shadow-e2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 min-h-[52px]">
           <nav className="hidden xl:flex items-center gap-1 py-1.5">
             {NAV_LINKS.map((link) => {
