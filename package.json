@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "migrate": "node scripts/migrate.mjs",
-    "migrate:status": "node scripts/migrate.mjs --status"
+    "migrate:status": "node scripts/migrate.mjs --status",
+    "admin:password": "node scripts/set-admin-password.mjs",
+    "admin:list": "node scripts/set-admin-password.mjs --list"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
