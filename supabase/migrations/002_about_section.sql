@@ -46,7 +46,9 @@ ALTER TABLE public.page_documents ENABLE ROW LEVEL SECURITY;
 
 -- Public pages, so anonymous read is correct here. Writes go through the
 -- authenticated API using the service role, which bypasses RLS.
+DROP POLICY IF EXISTS "Allow public read on content_pages" ON public.content_pages;
 CREATE POLICY "Allow public read on content_pages" ON public.content_pages FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public read on page_documents" ON public.page_documents;
 CREATE POLICY "Allow public read on page_documents" ON public.page_documents FOR SELECT USING (true);
 
 CREATE INDEX IF NOT EXISTS idx_page_documents_slug ON public.page_documents (slug, display_order);

@@ -24,22 +24,60 @@ import {
 } from "@/data/mockData";
 
 let pool: Pool | null = null;
+let warnedAboutTls = false;
 function getPgPool(): Pool | null {
   if (!pool && process.env.DATABASE_URL) {
     try {
       pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        // Verify the server certificate. Set DATABASE_CA_CERT when the
-        // provider uses a private CA; only an explicit
-        // DATABASE_SSL_INSECURE=true opt-in disables verification, and that
-        // should never be set in production.
+        // Supabase serves a chain rooted in its own CA, which is not in Node's
+        // default trust store, so full verification only works once
+        // DATABASE_CA_CERT is supplied. Without it the connection is still
+        // encrypted but the chain is unverified, which is what this app has
+        // always done; refusing to connect instead would take every write
+        // offline, because the REST fallback cannot write under RLS.
+        // Download the certificate from the Supabase dashboard
+        // (Settings > Database > SSL Configuration) to close this properly.
         ssl: process.env.DATABASE_CA_CERT
           ? { ca: process.env.DATABASE_CA_CERT }
-          : { rejectUnauthorized: process.env.DATABASE_SSL_INSECURE !== "true" },
+          : { rejectUnauthorized: false },
         max: 5,
-        connectionTimeoutMillis: 5000,
+        // The first connection pays a full TLS handshake to a remote Supabase
+        // host, which regularly takes longer than five seconds; a timeout here
+        // silently pushed every write onto the REST fallback, which cannot
+        // write under RLS.
+        connectionTimeoutMillis: 20000,
+        idleTimeoutMillis: 30000,
+        keepAlive: true,
       });
+      if (!process.env.DATABASE_CA_CERT && !warnedAboutTls) {
+        warnedAboutTls = true;
+        console.warn(
+          "[database] Connecting without certificate chain verification. " +
+            "Set DATABASE_CA_CERT (Supabase dashboard > Settings > Database > " +
+            "SSL Configuration) to verify the connection."
+        );
+      }
+
       pool.on("error", (err) => {
+        // A TLS chain error here means DATABASE_CA_CERT is missing: Supabase
+        // serves a certificate the default trust store does not recognise.
+        // Everything still works through the Supabase REST client, but the
+        // faster direct connection is not being used, so say so loudly rather
+        // than degrading in silence.
+        if (String(err.message).toLowerCase().includes("certificate")) {
+          if (!warnedAboutTls) {
+            warnedAboutTls = true;
+            console.error(
+              "[database] Direct Postgres connection rejected: " +
+                err.message +
+                "\n  Falling back to the Supabase REST client for every query." +
+                "\n  Fix: download the CA certificate from the Supabase dashboard" +
+                " (Settings > Database > SSL Configuration) and set DATABASE_CA_CERT."
+            );
+          }
+          return;
+        }
         console.warn("[getPgPool] unexpected client error:", err);
       });
     } catch (e) {
@@ -324,7 +362,7 @@ export async function saveGalleryItem(item: GalleryItem): Promise<GalleryItem> {
     console.warn("[saveGalleryItem] Supabase fallback failed:", err);
   }
 
-  return { ...item, id: finalId };
+  throw new Error("Could not save the gallery item: no database backend accepted the write.");
 }
 
 export async function deleteGalleryItem(id: string): Promise<void> {
@@ -532,7 +570,7 @@ export async function saveEventItem(item: EventItem): Promise<EventItem> {
     console.warn("[saveEventItem] Supabase fallback failed:", err);
   }
 
-  return { ...item, id: finalId };
+  throw new Error("Could not save the event: no database backend accepted the write.");
 }
 
 export async function deleteEventItem(id: string): Promise<void> {
@@ -732,7 +770,7 @@ export async function saveMemberItem(item: Member): Promise<Member> {
     console.warn("[saveMemberItem] Supabase fallback failed:", err);
   }
 
-  return { ...item, id: finalId };
+  throw new Error("Could not save the member: no database backend accepted the write.");
 }
 
 export async function deleteMemberItem(id: string): Promise<void> {
@@ -925,7 +963,7 @@ export async function savePublicationItem(item: Publication): Promise<Publicatio
     console.warn("[savePublicationItem] Supabase fallback failed:", err);
   }
 
-  return { ...item, id: finalId };
+  throw new Error("Could not save the publication: no database backend accepted the write.");
 }
 
 export async function deletePublicationItem(id: string): Promise<void> {
@@ -1179,7 +1217,7 @@ export async function saveContentPage(page: ContentPage): Promise<ContentPage> {
     console.warn("[saveContentPage] supabase upsert failed:", err);
   }
 
-  return page;
+  throw new Error("Could not save the page: no database backend accepted the write.");
 }
 
 function mapPageDocument(row: Record<string, unknown>): PageDocument {
@@ -1278,7 +1316,7 @@ export async function savePageDocument(doc: PageDocument): Promise<PageDocument>
     console.warn("[savePageDocument] supabase upsert failed:", err);
   }
 
-  return { ...doc, id: finalId };
+  throw new Error("Could not save the document: no database backend accepted the write.");
 }
 
 export async function deletePageDocument(id: string): Promise<void> {

@@ -62,7 +62,6 @@ import {
   Download,
   Eye,
   CheckCircle,
-  Globe,
   Buildings,
   GraduationCap,
   Heart,
@@ -326,69 +325,9 @@ export default function MainPortal() {
       {/* SECTION 1: HERO CAROUSEL (full bleed, institutional portal style) */}
       <HeroCarousel slides={heroSlides} lang={lang} />
 
-      {/* SECTION 1b: WELCOME BAND (carries the page h1 and primary actions) */}
-      <section className="bg-ground border-b border-line">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            <div className="lg:col-span-8 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-                <Globe size={14} weight="duotone" />
-                <span>{lang === "ne" ? heroContent.badgeNe : heroContent.badgeEn}</span>
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl lg:text-[2.5rem] font-extrabold tracking-tight text-fg leading-[1.2]">
-                {lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
-              </h1>
-
-              <p className="text-base sm:text-lg leading-relaxed text-muted max-w-[65ch]">
-                {lang === "ne" ? heroContent.descriptionNe : heroContent.descriptionEn}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <Link
-                  href="/committee"
-                  className="px-5 py-3 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-sm font-bold transition-colors flex items-center gap-2"
-                >
-                  <Users size={17} />
-                  <span>{lang === "ne" ? "कार्यसमिति" : "Executive Committee"}</span>
-                </Link>
-                <Link
-                  href="/publications"
-                  className="px-5 py-3 rounded-control border border-line bg-surface hover:bg-tint text-fg text-sm font-bold transition-colors flex items-center gap-2"
-                >
-                  <BookOpen size={17} />
-                  <span>{lang === "ne" ? "प्रकाशन" : "Publications"}</span>
-                </Link>
-                <a
-                  href="#contact"
-                  className="px-3 py-3 text-sm font-semibold text-accent hover:text-accent-hover transition-colors flex items-center gap-1.5"
-                >
-                  <span>{lang === "ne" ? "सम्पर्क गर्नुहोस्" : "Get in touch"}</span>
-                  <ArrowRight size={15} />
-                </a>
-              </div>
-            </div>
-
-            {/* Office locator card, mirroring the reference layout's right rail */}
-            <aside className="lg:col-span-4">
-              <div className="rounded-card border border-line bg-surface p-5 space-y-3">
-                <div className="flex items-center gap-2 text-accent">
-                  <ShieldCheck size={18} weight="duotone" />
-                  <span className="text-sm font-bold">
-                    {lang === "ne" ? "सम्पर्क सचिवालय" : "Liaison Secretariat"}
-                  </span>
-                </div>
-                <p className="text-xs leading-relaxed text-muted">
-                  {lang === "ne" ? heroContent.imageSubtitleNe : heroContent.imageSubtitleEn}
-                </p>
-                <div className="pt-3 border-t border-line text-xs text-muted leading-relaxed">
-                  {lang === "ne" ? heroContent.imageCaptionNe : heroContent.imageCaptionEn}
-                </div>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </section>
+      <h1 className="sr-only">
+        {lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
+      </h1>
 
       {/* SECTION 2: OBJECTIVES & CORE PILLARS */}
       <section id="about" className="py-20 border-b border-line bg-ground">

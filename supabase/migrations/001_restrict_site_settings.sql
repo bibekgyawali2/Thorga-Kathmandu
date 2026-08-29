@@ -16,6 +16,7 @@ DROP POLICY IF EXISTS "Allow public read on site_settings" ON public.site_settin
 
 -- Only the keys that public pages actually render are readable anonymously.
 -- admin_users, and anything added later, stays private by default.
+DROP POLICY IF EXISTS "Allow public read on presentation settings" ON public.site_settings;
 CREATE POLICY "Allow public read on presentation settings"
   ON public.site_settings
   FOR SELECT
