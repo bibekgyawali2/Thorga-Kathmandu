@@ -270,25 +270,25 @@ export function SiteHeader({
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-3">
           <div className="flex items-center justify-between gap-3 sm:gap-4">
-            {/* National emblem slot */}
+            {/* Left Logo slot */}
             <Link href="/" className="flex-shrink-0" aria-label={lang === "ne" ? "गृहपृष्ठ" : "Home"}>
-              <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-surface border-2 border-accent/25 flex items-center justify-center overflow-hidden shadow-e1">
+              <div className="w-14 h-14 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-surface border-2 border-accent/25 flex items-center justify-center overflow-hidden shadow-e1 p-1">
                 {branding.logoUrl ? (
                   <Image
                     src={branding.logoUrl}
                     alt={lang === "ne" ? "संस्थाको छाप" : "Organisation emblem"}
-                    width={80}
-                    height={80}
-                    className="w-full h-full object-cover"
+                    width={112}
+                    height={112}
+                    className="w-full h-full object-contain"
                   />
                 ) : (
-                  <Buildings size={34} weight="duotone" className="text-accent" />
+                  <Buildings size={42} weight="duotone" className="text-accent" />
                 )}
               </div>
             </Link>
 
             {/* Name and motto */}
-            <div className="flex-1 min-w-0 text-center px-1">
+            <div className="flex-1 min-w-0 text-center px-2">
               <Link href="/" className="block group">
                 <div className="text-lg sm:text-2xl lg:text-[2rem] font-extrabold tracking-tight text-fg leading-tight group-hover:text-accent transition-colors">
                   {lang === "ne"
@@ -303,15 +303,19 @@ export function SiteHeader({
               </p>
             </div>
 
-            {/* Registration seal */}
-            <div className="flex-shrink-0 hidden sm:flex w-20 h-20 rounded-full border-2 border-accent/30 bg-surface flex-col items-center justify-center text-center shadow-e1">
-              <ShieldCheck size={18} weight="duotone" className="text-accent" />
-              <span className="text-[7px] sm:text-[9px] font-bold text-fg leading-tight mt-0.5">
-                {lang === "ne" ? "दर्ता नं." : "REGD."}
-              </span>
-              <span className="text-[8px] sm:text-[10px] font-bold text-accent leading-none font-mono">
-                {lang === "ne" ? "४१२/०५८" : "412/058"}
-              </span>
+            {/* Right Logo slot */}
+            <div className="flex-shrink-0 flex w-14 h-14 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-surface border-2 border-accent/25 items-center justify-center overflow-hidden shadow-e1 p-1">
+              {branding.logoUrl ? (
+                <Image
+                  src={branding.logoUrl}
+                  alt={lang === "ne" ? "संस्थाको छाप" : "Organisation emblem"}
+                  width={112}
+                  height={112}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <Buildings size={42} weight="duotone" className="text-accent" />
+              )}
             </div>
           </div>
 
