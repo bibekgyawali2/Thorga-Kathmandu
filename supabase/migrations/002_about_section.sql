@@ -4,8 +4,10 @@
 -- Three shapes cover all nine:
 --   content_pages   free text pages (Organisation Profile, About Thorga)
 --   roster_entries  name plus photograph only (Former Office Bearers/Advisors)
---   page_documents  an attached PDF or image (Statute, Life Members,
---                   Registration Certificates)
+--   page_documents  an attached PDF or image. Used by the About Us document
+--                   pages (Statute, Life Members, Registration Certificates)
+--                   and by the single-file Publications pages (Calendar,
+--                   Phone Directory, Bulletin, Souvenir, Other)
 --
 -- Current Executive Committee and Current Advisors read from the existing
 -- members table and need no new storage.
@@ -33,8 +35,12 @@ CREATE TABLE IF NOT EXISTS public.roster_entries (
 
 CREATE TABLE IF NOT EXISTS public.page_documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    -- Which page the document appears on.
-    slug TEXT NOT NULL CHECK (slug IN ('statute', 'life-members', 'certificates')),
+    -- Which page the document appears on. Covers both the About Us document
+    -- pages and the single-file pages under Publications.
+    slug TEXT NOT NULL CHECK (slug IN (
+        'statute', 'life-members', 'certificates',
+        'calendar', 'phone-directory', 'bulletin', 'souvenir', 'other'
+    )),
     title_en TEXT NOT NULL,
     title_ne TEXT NOT NULL,
     file_url TEXT NOT NULL,

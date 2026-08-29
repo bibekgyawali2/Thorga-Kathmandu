@@ -14,14 +14,31 @@ const NO_CACHE_HEADERS = {
   Expires: "0",
 };
 
-const ALLOWED_SLUGS = ["statute", "life-members", "certificates"];
+const ALLOWED_SLUGS = [
+  "statute",
+  "life-members",
+  "certificates",
+  "calendar",
+  "phone-directory",
+  "bulletin",
+  "souvenir",
+  "other",
+];
 const ALLOWED_TYPES = ["pdf", "image"];
 
 /**
- * Life Members and Statute are single-document pages, so a new upload replaces
- * whatever was there. Certificates may hold several.
+ * Pages that hold exactly one file, so a new upload replaces whatever was
+ * there. Registration Certificates is the only page that may hold several.
  */
-const SINGLE_DOCUMENT_SLUGS = new Set(["statute", "life-members"]);
+const SINGLE_DOCUMENT_SLUGS = new Set([
+  "statute",
+  "life-members",
+  "calendar",
+  "phone-directory",
+  "bulletin",
+  "souvenir",
+  "other",
+]);
 
 export async function GET() {
   try {

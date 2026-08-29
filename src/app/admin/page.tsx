@@ -46,6 +46,10 @@ import { isJWTExpired } from "@/lib/jwt";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
 import { useDialog } from "@/components/Dialog";
 import { AboutManager } from "@/components/admin/AboutManager";
+import {
+  DocumentSectionEditor,
+  PUBLICATION_DOC_SLUGS,
+} from "@/components/admin/DocumentSectionEditor";
 import { useToast } from "@/components/Toast";
 import {
   isValidName,
@@ -319,7 +323,7 @@ export default function AdminPage() {
   const t = ADMIN_I18N[lang];
 
   const [activeTab, setActiveTab] = useState<
-    "overview" | "hero" | "members" | "publications" | "events" | "gallery" | "inquiries" | "settings" | "access" | "branding" | "about"
+    "overview" | "hero" | "members" | "publications" | "events" | "gallery" | "inquiries" | "settings" | "access" | "branding" | "about" | "publication-pages"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -2059,6 +2063,8 @@ export default function AdminPage() {
         return t.gallery;
       case "about":
         return lang === "ne" ? "हाम्रो बारेमा" : "About Us";
+      case "publication-pages":
+        return lang === "ne" ? "प्रकाशन पृष्ठहरु" : "Publication Pages";
       case "inquiries":
         return t.inquiries;
       case "settings":
@@ -2354,6 +2360,22 @@ export default function AdminPage() {
             }`}>
               {galleryList.length}
             </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("publication-pages");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center gap-2 transition-colors ${
+              activeTab === "publication-pages"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <FileText size={15} />
+            <span>{lang === "ne" ? "प्रकाशन पृष्ठहरु" : "Publication Pages"}</span>
           </button>
 
           <button
@@ -3701,6 +3723,27 @@ export default function AdminPage() {
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* PUBLICATION PAGES: the single-file pages under the Publications menu */}
+          {activeTab === "publication-pages" && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-base font-bold text-fg">
+                  {lang === "ne" ? "प्रकाशन पृष्ठहरु" : "Publication Pages"}
+                </h2>
+                <p className="text-xs text-muted">
+                  {lang === "ne"
+                    ? "प्रत्येक पृष्ठमा एउटा PDF वा तस्बिर र क्याप्सन राख्न सकिन्छ।"
+                    : "Each page holds one PDF or image with a caption."}
+                </p>
+              </div>
+              <DocumentSectionEditor
+                lang={lang}
+                adminFetch={adminFetch}
+                slugs={PUBLICATION_DOC_SLUGS}
+              />
             </div>
           )}
 

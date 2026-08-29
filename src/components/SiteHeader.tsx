@@ -43,11 +43,25 @@ export const ABOUT_LINKS = [
   { href: "/about/certificates", ne: "दर्ता प्रमाणपत्रहरु", en: "Registration Certificates" },
 ];
 
+export const PUBLICATION_LINKS = [
+  { href: "/publications", ne: "सबै प्रकाशन", en: "All Publications" },
+  { href: "/publications/calendar", ne: "क्यालेण्डर", en: "Calendar" },
+  { href: "/publications/phone-directory", ne: "फोन डायरी", en: "Phone Directory" },
+  { href: "/publications/bulletin", ne: "बुलेटिन", en: "Bulletin" },
+  { href: "/publications/souvenir", ne: "स्मारिका", en: "Souvenir" },
+  { href: "/publications/other", ne: "अन्य", en: "Other" },
+];
+
 export const NAV_LINKS: NavLink[] = [
   { href: "/", ne: "गृहपृष्ठ", en: "Home" },
   { href: "/about/organisation", ne: "हाम्रो बारेमा", en: "About Us", children: ABOUT_LINKS },
   { href: "/events", ne: "कार्यक्रम", en: "Events" },
-  { href: "/publications", ne: "प्रकाशन", en: "Publications" },
+  {
+    href: "/publications",
+    ne: "प्रकाशन",
+    en: "Publications",
+    children: PUBLICATION_LINKS,
+  },
   { href: "/gallery", ne: "तस्बिरहरू", en: "Gallery" },
   { href: "/#contact", ne: "सम्पर्क", en: "Contact" },
 ];

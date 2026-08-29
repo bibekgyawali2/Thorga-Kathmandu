@@ -622,7 +622,15 @@ export interface RosterEntry {
 /** A PDF or image attached to one of the document pages. */
 export interface PageDocument {
   id: string;
-  slug: "statute" | "life-members" | "certificates";
+  slug:
+    | "statute"
+    | "life-members"
+    | "certificates"
+    | "calendar"
+    | "phone-directory"
+    | "bulletin"
+    | "souvenir"
+    | "other";
   titleEn: string;
   titleNe: string;
   fileUrl: string;

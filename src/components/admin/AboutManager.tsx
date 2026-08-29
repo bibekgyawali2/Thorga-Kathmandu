@@ -3,11 +3,15 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
+import {
+  DocumentSectionEditor,
+  ABOUT_DOC_SLUGS,
+} from "@/components/admin/DocumentSectionEditor";
 import { useToast } from "@/components/Toast";
 import { useDialog } from "@/components/Dialog";
 import { isValidImageSrc } from "@/lib/validation";
 import { Plus, Trash, FloppyDisk, Article, Users, FileText } from "@phosphor-icons/react";
-import type { ContentPage, Language, PageDocument, RosterEntry } from "@/data/mockData";
+import type { ContentPage, Language, RosterEntry } from "@/data/mockData";
 
 /**
  * Admin editor for the nine pages under About Us.
@@ -28,18 +32,11 @@ const ROSTER_KINDS: { kind: RosterEntry["kind"]; ne: string; en: string }[] = [
   { kind: "former_advisor", ne: "हालसम्मका सल्लाहाकारहरु", en: "Former Advisors" },
 ];
 
-const DOCUMENT_SLUGS: { slug: PageDocument["slug"]; ne: string; en: string; single: boolean }[] = [
-  { slug: "statute", ne: "संस्थाको विधान", en: "Organisation Statute", single: true },
-  { slug: "life-members", ne: "आजीवन सदस्यहरु", en: "Life Members", single: true },
-  { slug: "certificates", ne: "दर्ता प्रमाणपत्रहरु", en: "Registration Certificates", single: false },
-];
-
 const inputCls =
   "w-full px-3.5 py-2.5 rounded-control border border-line bg-ground text-fg text-xs placeholder:text-muted focus:border-accent";
 const labelCls = "text-xs font-semibold text-fg block mb-1.5";
 
 const emptyRoster = { id: "", nameEn: "", nameNe: "", photoUrl: "", order: 0 };
-const emptyDocument = { id: "", titleEn: "", titleNe: "", fileUrl: "", pageCount: "" };
 
 export function AboutManager({
   lang,
@@ -56,7 +53,6 @@ export function AboutManager({
 
   const [pages, setPages] = useState<ContentPage[]>([]);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
-  const [documents, setDocuments] = useState<PageDocument[]>([]);
 
   const [activePageSlug, setActivePageSlug] = useState("organisation");
   const [pageEdits, setPageEdits] = useState<
@@ -69,9 +65,6 @@ export function AboutManager({
   const [rosterForm, setRosterForm] = useState(emptyRoster);
   const [savingRoster, setSavingRoster] = useState(false);
 
-  const [activeDocSlug, setActiveDocSlug] = useState<PageDocument["slug"]>("statute");
-  const [docForm, setDocForm] = useState(emptyDocument);
-  const [savingDoc, setSavingDoc] = useState(false);
 
   const t = (ne: string, en: string) => (lang === "ne" ? ne : en);
 
@@ -98,15 +91,13 @@ export function AboutManager({
 
     (async () => {
       try {
-        const [p, r, d] = await Promise.all([
+        const [p, r] = await Promise.all([
           fetch("/api/content-pages", { cache: "no-store" }).then((res) => (res.ok ? res.json() : [])),
           fetch("/api/roster", { cache: "no-store" }).then((res) => (res.ok ? res.json() : [])),
-          fetch("/api/documents", { cache: "no-store" }).then((res) => (res.ok ? res.json() : [])),
         ]);
         if (cancelled) return;
         if (Array.isArray(p)) setPages(p);
         if (Array.isArray(r)) setRoster(r);
-        if (Array.isArray(d)) setDocuments(d);
       } catch {
         if (!cancelled) setLoadError(true);
       } finally {
@@ -193,69 +184,7 @@ export function AboutManager({
     }
   };
 
-  const saveDocument = async () => {
-    if (!docForm.fileUrl) {
-      toast.error(t("फाइल आवश्यक", "File required"), t("कागजात अपलोड गर्नुहोस्।", "Upload a document first."));
-      return;
-    }
-    if (!docForm.titleEn.trim() || !docForm.titleNe.trim()) {
-      toast.error(t("शीर्षक आवश्यक", "Title required"), t("दुवै भाषामा शीर्षक लेख्नुहोस्।", "Enter the title in both languages."));
-      return;
-    }
-    const isPdf = docForm.fileUrl.toLowerCase().includes(".pdf");
-    setSavingDoc(true);
-    try {
-      const res = await adminFetch("/api/documents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: docForm.id,
-          slug: activeDocSlug,
-          titleEn: docForm.titleEn,
-          titleNe: docForm.titleNe,
-          fileUrl: docForm.fileUrl,
-          fileType: isPdf ? "pdf" : "image",
-          pageCount: docForm.pageCount ? Number(docForm.pageCount) : null,
-          order: 0,
-        }),
-      });
-      const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.success) throw new Error(json?.error || "Save failed");
-      const saved = json.data as PageDocument;
-      // Single-document pages replace their file, so reload to reflect removals.
-      reload();
-      setDocForm(emptyDocument);
-      toast.success(t("कागजात सुरक्षित भयो", "Document saved"), saved.titleEn);
-    } catch (error) {
-      toast.error(t("सुरक्षित गर्न सकिएन", "Could not save"), error instanceof Error ? error.message : undefined);
-    } finally {
-      setSavingDoc(false);
-    }
-  };
-
-  const removeDocument = async (doc: PageDocument) => {
-    const ok = await dialogConfirm({
-      title: t("कागजात हटाउने?", "Remove document?"),
-      description: lang === "ne" ? `${doc.titleNe} हटाउने?` : `Remove ${doc.titleEn}?`,
-      type: "danger",
-    });
-    if (!ok) return;
-
-    const previous = documents;
-    setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
-    try {
-      const res = await adminFetch(`/api/documents?id=${encodeURIComponent(doc.id)}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Delete failed");
-      toast.success(t("हटाइयो", "Removed"));
-    } catch {
-      setDocuments(previous);
-      toast.error(t("हटाउन सकिएन", "Could not remove"));
-    }
-  };
-
   const visibleRoster = roster.filter((e) => e.kind === activeKind);
-  const visibleDocs = documents.filter((d) => d.slug === activeDocSlug);
-  const activeDocMeta = DOCUMENT_SLUGS.find((d) => d.slug === activeDocSlug);
 
   const sectionTab = (key: Section, icon: React.ReactNode, ne: string, en: string) => (
     <button
@@ -552,152 +481,7 @@ export function AboutManager({
       )}
 
       {section === "documents" && (
-        <div className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {DOCUMENT_SLUGS.map((d) => (
-              <button
-                key={d.slug}
-                type="button"
-                onClick={() => {
-                  setActiveDocSlug(d.slug);
-                  setDocForm(emptyDocument);
-                }}
-                className={`px-3 py-1.5 rounded-control text-xs font-semibold transition-colors ${
-                  activeDocSlug === d.slug
-                    ? "bg-accent-soft text-accent"
-                    : "bg-surface border border-line text-fg hover:bg-tint"
-                }`}
-              >
-                {t(d.ne, d.en)}
-              </button>
-            ))}
-          </div>
-
-          <div className="rounded-card border border-line bg-surface p-5 space-y-4">
-            <p className="text-[11px] text-muted">
-              {activeDocMeta?.single
-                ? t(
-                    "यस पृष्ठमा एउटा मात्र फाइल राख्न सकिन्छ। नयाँ अपलोडले पुरानोलाई प्रतिस्थापन गर्नेछ।",
-                    "This page holds a single file. Uploading a new one replaces the existing file."
-                  )
-                : t(
-                    "यस पृष्ठमा एकभन्दा बढी फाइल राख्न सकिन्छ।",
-                    "This page can hold more than one file."
-                  )}
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="doc-ne" className={labelCls}>
-                  {t("शीर्षक (नेपाली)", "Title (Nepali)")}
-                </label>
-                <input
-                  id="doc-ne"
-                  className={inputCls}
-                  value={docForm.titleNe}
-                  onChange={(e) => setDocForm({ ...docForm, titleNe: e.target.value })}
-                />
-              </div>
-              <div>
-                <label htmlFor="doc-en" className={labelCls}>
-                  {t("शीर्षक (अङ्ग्रेजी)", "Title (English)")}
-                </label>
-                <input
-                  id="doc-en"
-                  className={inputCls}
-                  value={docForm.titleEn}
-                  onChange={(e) => setDocForm({ ...docForm, titleEn: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <CloudinaryUploader
-              value={docForm.fileUrl}
-              onChange={(url) => setDocForm({ ...docForm, fileUrl: url })}
-              folder="thorga_documents"
-              accept="image/*,application/pdf"
-              label={t("PDF वा तस्बिर अपलोड", "Upload PDF or image")}
-              description={t("२ MB सम्मको PDF वा तस्बिर", "PDF or image up to 2MB")}
-            />
-
-            <div className="max-w-[14rem]">
-              <label htmlFor="doc-pages" className={labelCls}>
-                {t("पृष्ठ सङ्ख्या (वैकल्पिक)", "Page count (optional)")}
-              </label>
-              <input
-                id="doc-pages"
-                type="number"
-                min={1}
-                className={inputCls}
-                placeholder={t("खाली छाड्न सकिन्छ", "May be left blank")}
-                value={docForm.pageCount}
-                onChange={(e) => setDocForm({ ...docForm, pageCount: e.target.value })}
-              />
-              <p className="text-[11px] text-muted mt-1">
-                {t(
-                  "PDF का लागि मात्र। खाली भए पाठकले पृष्ठ पल्टाउँदै जान सक्नेछन्।",
-                  "PDFs only. If blank, readers can still page through the document."
-                )}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={saveDocument}
-              disabled={savingDoc}
-              className="px-5 py-2.5 rounded-control bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold transition-colors flex items-center gap-2 disabled:opacity-70"
-            >
-              {savingDoc ? <span className="spinner" aria-hidden="true" /> : <FloppyDisk size={15} />}
-              {t("कागजात सुरक्षित गर्नुहोस्", "Save Document")}
-            </button>
-          </div>
-
-          {visibleDocs.length === 0 ? (
-            <p className="text-xs text-muted p-6 text-center border border-dashed border-line rounded-card">
-              {t("यस पृष्ठमा कुनै कागजात छैन।", "No document on this page yet.")}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {visibleDocs.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="rounded-card border border-line bg-surface p-3 flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <FileText size={18} weight="duotone" className="text-accent flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-fg truncate">
-                        {lang === "ne" ? doc.titleNe : doc.titleEn}
-                      </p>
-                      <p className="text-[11px] text-muted font-mono uppercase">
-                        {doc.fileType}
-                        {doc.pageCount ? ` · ${doc.pageCount} pages` : ""}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <a
-                      href={doc.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2.5 py-1 rounded-chip border border-line text-[11px] font-semibold text-fg hover:bg-tint transition-colors"
-                    >
-                      {t("हेर्नुहोस्", "View")}
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => removeDocument(doc)}
-                      aria-label={t("हटाउनुहोस्", "Remove")}
-                      className="p-1.5 rounded-chip border border-line text-danger hover:bg-tint transition-colors"
-                    >
-                      <Trash size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <DocumentSectionEditor lang={lang} adminFetch={adminFetch} slugs={ABOUT_DOC_SLUGS} />
       )}
     </div>
   );

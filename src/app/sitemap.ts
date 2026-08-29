@@ -17,6 +17,11 @@ const ROUTES = [
   "/about/statute",
   "/about/life-members",
   "/about/certificates",
+  "/publications/calendar",
+  "/publications/phone-directory",
+  "/publications/bulletin",
+  "/publications/souvenir",
+  "/publications/other",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
