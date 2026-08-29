@@ -4,7 +4,14 @@ import React, { useCallback, useEffect, useState } from "react";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
 import { useToast } from "@/components/Toast";
 import { useDialog } from "@/components/Dialog";
-import { FloppyDisk, Trash, FileText, PencilSimple } from "@phosphor-icons/react";
+import {
+  FloppyDisk,
+  Trash,
+  FileText,
+  PencilSimple,
+  CaretUp,
+  CaretDown,
+} from "@phosphor-icons/react";
 import type { Language, PageDocument } from "@/data/mockData";
 import { documentUrl } from "@/lib/documentUrl";
 
@@ -73,7 +80,9 @@ export function DocumentSectionEditor({
   }, [reloadToken]);
 
   const activeMeta = slugs.find((s) => s.slug === activeSlug);
-  const visible = documents.filter((d) => d.slug === activeSlug);
+  const visible = documents
+    .filter((d) => d.slug === activeSlug)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   const save = async () => {
     if (!form.fileUrl) {
@@ -107,7 +116,9 @@ export function DocumentSectionEditor({
           fileUrl: form.fileUrl,
           fileType: isPdf ? "pdf" : "image",
           pageCount: form.pageCount ? Number(form.pageCount) : null,
-          order: 0,
+          order: form.id
+            ? (documents.find((d) => d.id === form.id)?.order ?? 0)
+            : visible.reduce((max, d) => Math.max(max, d.order ?? 0), 0) + 1,
         }),
       });
       const json = await res.json().catch(() => null);
@@ -122,6 +133,50 @@ export function DocumentSectionEditor({
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  /**
+   * Moves a document one place up or down.
+   *
+   * Existing rows all carry order 0, so a two-row swap would leave everything
+   * else tied at 0 and sorting arbitrary. Instead the whole visible list is
+   * renumbered 1..n from the new arrangement, and only the rows whose number
+   * actually changed are written back.
+   */
+  const move = async (doc: PageDocument, direction: "up" | "down") => {
+    const index = visible.findIndex((d) => d.id === doc.id);
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= visible.length) return;
+
+    const arranged = [...visible];
+    const [lifted] = arranged.splice(index, 1);
+    arranged.splice(target, 0, lifted);
+
+    const renumbered = arranged.map((d, i) => ({ ...d, order: i + 1 }));
+    const changed = renumbered.filter(
+      (d) => d.order !== (visible.find((v) => v.id === d.id)?.order ?? 0)
+    );
+
+    const previous = documents;
+    setDocuments((list) =>
+      list.map((d) => renumbered.find((r) => r.id === d.id) ?? d)
+    );
+
+    try {
+      const results = await Promise.all(
+        changed.map((payload) =>
+          adminFetch("/api/documents", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        )
+      );
+      if (results.some((r) => !r.ok)) throw new Error("Reorder failed");
+    } catch {
+      setDocuments(previous);
+      toast.error(t("क्रम मिलाउन सकिएन", "Could not reorder"));
     }
   };
 
@@ -323,6 +378,30 @@ export function DocumentSectionEditor({
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                {!activeMeta?.single && visible.length > 1 && (
+                  <div className="flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => move(doc, "up")}
+                      disabled={visible[0]?.id === doc.id}
+                      aria-label={t("माथि सार्नुहोस्", "Move up")}
+                      title={t("माथि सार्नुहोस्", "Move up")}
+                      className="p-1.5 rounded-chip text-muted hover:text-accent hover:bg-accent/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <CaretUp size={13} weight="bold" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => move(doc, "down")}
+                      disabled={visible[visible.length - 1]?.id === doc.id}
+                      aria-label={t("तल सार्नुहोस्", "Move down")}
+                      title={t("तल सार्नुहोस्", "Move down")}
+                      className="p-1.5 rounded-chip text-muted hover:text-accent hover:bg-accent/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <CaretDown size={13} weight="bold" />
+                    </button>
+                  </div>
+                )}
                 <a
                   href={documentUrl(doc.fileUrl, "inline", doc.titleEn)}
                   target="_blank"

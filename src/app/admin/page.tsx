@@ -69,6 +69,8 @@ import {
   isValidImageSrc,
 } from "@/lib/validation";
 import {
+  CaretUp,
+  CaretDown,
   Users,
   BookOpen,
   Calendar,
@@ -1004,6 +1006,53 @@ export default function AdminPage() {
       });
     } catch (err) {
       console.error("Failed to delete Cloudinary asset:", err);
+    }
+  };
+
+  /**
+   * Moves a member one place up or down within the list as displayed.
+   *
+   * Members imported before ordering existed all carry the same number, so a
+   * pairwise swap would leave the rest tied and the order arbitrary. The whole
+   * visible list is renumbered 1..n from the new arrangement instead, and only
+   * the rows whose number changed are written back.
+   */
+  const handleMoveMember = async (member: Member, direction: "up" | "down") => {
+    const index = filteredAdminMembers.findIndex((m) => m.id === member.id);
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= filteredAdminMembers.length) return;
+
+    const arranged = [...filteredAdminMembers];
+    const [lifted] = arranged.splice(index, 1);
+    arranged.splice(target, 0, lifted);
+
+    const renumbered = arranged.map((m, i) => ({ ...m, order: i + 1 }));
+    const changed = renumbered.filter(
+      (m) => m.order !== (filteredAdminMembers.find((v) => v.id === m.id)?.order ?? 0)
+    );
+
+    const previous = membersList;
+    const nextList = membersList.map((m) => renumbered.find((r) => r.id === m.id) ?? m);
+    setMembersList(nextList);
+
+    try {
+      const results = await Promise.all(
+        changed.map((payload) =>
+          adminFetch("/api/members", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        )
+      );
+      if (results.some((r) => !r.ok)) throw new Error("Reorder failed");
+      saveStoredMembers(nextList);
+    } catch {
+      setMembersList(previous);
+      toast.error(
+        lang === "ne" ? "क्रम मिलाउन सकिएन" : "Could not reorder",
+        lang === "ne" ? "कृपया पुनः प्रयास गर्नुहोस्।" : "Please try again."
+      );
     }
   };
 
@@ -2056,7 +2105,7 @@ export default function AdminPage() {
       m.roleEn.toLowerCase().includes(term) ||
       m.roleNe.includes(memberSearchQuery);
     return matchesCategory && matchesSearch;
-  });
+  }).sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.nameEn.localeCompare(b.nameEn));
 
   const getPageTitle = () => {
     switch (activeTab) {
@@ -2886,7 +2935,8 @@ export default function AdminPage() {
                         roleEn: "",
                         roleNe: "",
                         committeeType: "current",
-                        order: 10,
+                        order:
+                          membersList.reduce((max, m) => Math.max(max, m.order ?? 0), 0) + 1,
                         phone: "",
                         email: "",
                         bioEn: "",
@@ -2973,6 +3023,27 @@ export default function AdminPage() {
                         className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-1.5 max-w-[16rem]">
+                    <label htmlFor="member-order" className="text-xs font-semibold text-fg">
+                      {lang === "ne" ? "क्रम" : "Display order"}
+                    </label>
+                    <input
+                      id="member-order"
+                      type="number"
+                      min={1}
+                      value={memberForm.order}
+                      onChange={(e) =>
+                        setMemberForm({ ...memberForm, order: Number(e.target.value) || 0 })
+                      }
+                      className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                    />
+                    <p className="text-[11px] text-muted">
+                      {lang === "ne"
+                        ? "सानो अङ्क माथि देखिन्छ। अध्यक्षलाई १ दिनुहोस्।"
+                        : "A lower number appears first. Give the president 1."}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -3119,11 +3190,38 @@ export default function AdminPage() {
                               <span className="text-accent font-medium">{lang === "ne" ? member.roleNe : member.roleEn}</span>
                               {member.phone && <span className="font-mono text-muted">{member.phone}</span>}
                               <span className="capitalize text-muted text-[10px]">({member.committeeType})</span>
+                              <span className="font-mono text-[10px] text-muted">
+                                #{member.order ?? 0}
+                              </span>
                             </div>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-1.5">
+                          <div className="flex items-center mr-1">
+                            <button
+                              type="button"
+                              onClick={() => handleMoveMember(member, "up")}
+                              disabled={filteredAdminMembers[0]?.id === member.id}
+                              aria-label={lang === "ne" ? "माथि सार्नुहोस्" : "Move up"}
+                              title={lang === "ne" ? "माथि सार्नुहोस्" : "Move up"}
+                              className="p-1.5 text-muted hover:text-accent hover:bg-accent/10 rounded-control transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <CaretUp size={14} weight="bold" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveMember(member, "down")}
+                              disabled={
+                                filteredAdminMembers[filteredAdminMembers.length - 1]?.id === member.id
+                              }
+                              aria-label={lang === "ne" ? "तल सार्नुहोस्" : "Move down"}
+                              title={lang === "ne" ? "तल सार्नुहोस्" : "Move down"}
+                              className="p-1.5 text-muted hover:text-accent hover:bg-accent/10 rounded-control transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <CaretDown size={14} weight="bold" />
+                            </button>
+                          </div>
                           <button
                             type="button"
                             onClick={() => handleStartEditMember(member)}

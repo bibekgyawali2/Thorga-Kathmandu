@@ -55,7 +55,7 @@ export const PUBLICATION_LINKS = [
 export const NAV_LINKS: NavLink[] = [
   { href: "/", ne: "गृहपृष्ठ", en: "Home" },
   { href: "/about/organisation", ne: "हाम्रो बारेमा", en: "About Us", children: ABOUT_LINKS },
-  { href: "/events", ne: "कार्यक्रम", en: "Events" },
+  { href: "/events", ne: "कार्यक्रम तथा गतिविधि", en: "Events & Activities" },
   {
     href: "/publications",
     ne: "प्रकाशन",

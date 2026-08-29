@@ -93,8 +93,17 @@
   --radius-control: 12px;
   --radius-chip: 8px;
 
-  --font-sans: var(--font-nepali), var(--font-geist-sans), sans-serif;
+  --font-sans: var(--font-geist-sans), var(--font-nepali), "Kalimati", sans-serif;
   --font-mono: var(--font-geist-mono);
+}
+
+@font-face {
+  font-family: "Kalimati";
+  src: url("/fonts/Kalimati.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+A8E0-A8FF, U+20A8;
 }
 
 body {
