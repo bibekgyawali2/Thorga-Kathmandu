@@ -594,3 +594,43 @@ export function addStoredInquiry(inquiry: Omit<Inquiry, "id" | "date" | "read">)
   return created;
 }
 
+
+// ==========================================
+// 6. ABOUT US SECTION
+// ==========================================
+
+/** A free-text page such as Organisation Profile or About Thorga. */
+export interface ContentPage {
+  slug: string;
+  titleEn: string;
+  titleNe: string;
+  bodyEn: string;
+  bodyNe: string;
+}
+
+/** Name and photograph only. Used for the former office bearer and former
+ *  advisor rosters, which deliberately carry no role, bio or contact detail. */
+export interface RosterEntry {
+  id: string;
+  kind: "former_official" | "former_advisor";
+  nameEn: string;
+  nameNe: string;
+  photoUrl: string;
+  order: number;
+}
+
+/** A PDF or image attached to one of the document pages. */
+export interface PageDocument {
+  id: string;
+  slug: "statute" | "life-members" | "certificates";
+  titleEn: string;
+  titleNe: string;
+  fileUrl: string;
+  fileType: "pdf" | "image";
+  pageCount: number | null;
+  order: number;
+}
+
+export const initialContentPages: ContentPage[] = [];
+export const initialRosterEntries: RosterEntry[] = [];
+export const initialPageDocuments: PageDocument[] = [];

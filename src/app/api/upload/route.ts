@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
         format: result.format,
         bytes: result.bytes,
         resourceType: result.resource_type,
+        pages: (result as { pages?: number }).pages ?? null,
       },
       { headers: NO_CACHE_HEADERS }
     );

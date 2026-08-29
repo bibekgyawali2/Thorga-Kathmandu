@@ -2,7 +2,22 @@ import type { MetadataRoute } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://thorgaktm.org.np";
 
-const ROUTES = ["", "/committee", "/past-leaders", "/events", "/publications", "/gallery"];
+const ROUTES = [
+  "",
+  "/committee",
+  "/past-leaders",
+  "/events",
+  "/publications",
+  "/gallery",
+  "/about/organisation",
+  "/about/thorga",
+  "/about/advisors",
+  "/about/former-office-bearers",
+  "/about/former-advisors",
+  "/about/statute",
+  "/about/life-members",
+  "/about/certificates",
+];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();

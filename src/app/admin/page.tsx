@@ -45,6 +45,7 @@ import {
 import { isJWTExpired } from "@/lib/jwt";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
 import { useDialog } from "@/components/Dialog";
+import { AboutManager } from "@/components/admin/AboutManager";
 import { useToast } from "@/components/Toast";
 import {
   isValidName,
@@ -318,7 +319,7 @@ export default function AdminPage() {
   const t = ADMIN_I18N[lang];
 
   const [activeTab, setActiveTab] = useState<
-    "overview" | "hero" | "members" | "publications" | "events" | "gallery" | "inquiries" | "settings" | "access" | "branding"
+    "overview" | "hero" | "members" | "publications" | "events" | "gallery" | "inquiries" | "settings" | "access" | "branding" | "about"
   >("overview");
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -2056,6 +2057,8 @@ export default function AdminPage() {
         return t.events;
       case "gallery":
         return t.gallery;
+      case "about":
+        return lang === "ne" ? "हाम्रो बारेमा" : "About Us";
       case "inquiries":
         return t.inquiries;
       case "settings":
@@ -2351,6 +2354,22 @@ export default function AdminPage() {
             }`}>
               {galleryList.length}
             </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("about");
+              setSidebarOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center gap-2 transition-colors ${
+              activeTab === "about"
+                ? "bg-accent text-on-accent"
+                : "text-muted hover:text-fg hover:bg-tint"
+            }`}
+          >
+            <Buildings size={15} />
+            <span>{lang === "ne" ? "हाम्रो बारेमा" : "About Us"}</span>
           </button>
 
           <button
@@ -3683,6 +3702,11 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ABOUT US: the nine sub-pages under the About Us menu */}
+          {activeTab === "about" && (
+            <AboutManager lang={lang} adminFetch={adminFetch} />
           )}
 
           {/* 7. INQUIRIES */}

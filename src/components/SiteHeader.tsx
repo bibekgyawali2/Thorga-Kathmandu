@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useSyncExternalStore } from "react";
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -20,13 +20,32 @@ import {
   List,
   X,
   ShieldCheck,
+  CaretDown,
 } from "@phosphor-icons/react";
 
-export const NAV_LINKS = [
+export interface NavLink {
+  href: string;
+  ne: string;
+  en: string;
+  /** Present when the item opens a dropdown instead of navigating directly. */
+  children?: { href: string; ne: string; en: string }[];
+}
+
+export const ABOUT_LINKS = [
+  { href: "/about/organisation", ne: "संस्था परिचय", en: "Organisation Profile" },
+  { href: "/about/thorga", ne: "थोर्गाको परिचय", en: "About Thorga" },
+  { href: "/committee", ne: "वर्तमान समितिका पदाधिकारीहरु", en: "Current Executive Committee" },
+  { href: "/about/advisors", ne: "वर्तमान सल्लाहाकारहरु", en: "Current Advisors" },
+  { href: "/about/former-office-bearers", ne: "हालसम्मका पदाधिकारीहरु", en: "Former Office Bearers" },
+  { href: "/about/former-advisors", ne: "हालसम्मका सल्लाहाकारहरु", en: "Former Advisors" },
+  { href: "/about/statute", ne: "संस्थाको विधान", en: "Organisation Statute" },
+  { href: "/about/life-members", ne: "आजीवन सदस्यहरु", en: "Life Members" },
+  { href: "/about/certificates", ne: "दर्ता प्रमाणपत्रहरु", en: "Registration Certificates" },
+];
+
+export const NAV_LINKS: NavLink[] = [
   { href: "/", ne: "गृहपृष्ठ", en: "Home" },
-  { href: "/#about", ne: "हाम्रो बारेमा", en: "About Us" },
-  { href: "/committee", ne: "कार्यसमिति", en: "Committee" },
-  { href: "/past-leaders", ne: "पूर्व नेतृत्व", en: "Past Leaders" },
+  { href: "/about/organisation", ne: "हाम्रो बारेमा", en: "About Us", children: ABOUT_LINKS },
   { href: "/events", ne: "कार्यक्रम", en: "Events" },
   { href: "/publications", ne: "प्रकाशन", en: "Publications" },
   { href: "/gallery", ne: "तस्बिरहरू", en: "Gallery" },
@@ -89,6 +108,99 @@ function SkylineWatermark() {
     >
       <path d="M0 120V96h34l10-14 10 14h26V78l18-12 18 12v18h30l14-20 14 20h28V72l22-14 22 14v24h26l12-18 12 18h32V84l16-12 16 12v12h30l14-22 14 22h26V70l20-13 20 13v26h28l12-16 12 16h30V80l18-13 18 13v16h28l14-20 14 20h26V74l22-14 22 14v22h26l12-18 12 18h32V82l16-12 16 12v14h30l14-20 14 20h26V76l20-13 20 13v20h28l12-16 12 16h30V86l18-12 18 12v10h28l14-18 14 18h26V120z" />
     </svg>
+  );
+}
+
+
+/**
+ * Desktop dropdown for a nav item that has children. Opens on click, closes on
+ * Escape, on outside click, and after a child link is followed.
+ */
+function NavDropdown({
+  link,
+  lang,
+  pathname,
+}: {
+  link: NavLink;
+  lang: Language;
+  pathname: string;
+}) {
+  // The pathname the menu was opened on. Comparing it against the current
+  // pathname closes the menu after navigation without setting state in an
+  // effect, which would cascade an extra render.
+  const [openedOn, setOpenedOn] = useState<string | null>(null);
+  const open = openedOn === pathname;
+  const setOpen = useCallback(
+    (next: boolean) => setOpenedOn(next ? pathname : null),
+    [pathname]
+  );
+  const container = useRef<HTMLDivElement>(null);
+
+  const sectionActive = (link.children ?? []).some((child) => pathname === child.href);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (event: MouseEvent) => {
+      if (container.current && !container.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, setOpen]);
+
+  return (
+    <div ref={container} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="true"
+        className={`px-3 py-2 rounded-control text-[15px] font-semibold transition-colors flex items-center gap-1.5 ${
+          sectionActive || open
+            ? "bg-on-nav/15 text-on-nav"
+            : "text-on-nav/85 hover:bg-on-nav/10 hover:text-on-nav"
+        }`}
+      >
+        {lang === "ne" ? link.ne : link.en}
+        <CaretDown
+          size={12}
+          weight="bold"
+          className={`transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 w-72 rounded-card border border-line bg-surface shadow-lg py-2">
+          {(link.children ?? []).map((child) => {
+            const active = pathname === child.href;
+            return (
+              <Link
+                key={child.href}
+                href={child.href}
+                onClick={() => setOpen(false)}
+                className={`block px-4 py-2 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-accent-soft text-accent font-semibold"
+                    : "text-fg hover:bg-tint hover:text-accent"
+                }`}
+              >
+                {lang === "ne" ? child.ne : child.en}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -207,9 +319,14 @@ export function SiteHeader({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 min-h-[52px]">
           <nav className="hidden xl:flex items-center gap-1 py-1.5">
             {NAV_LINKS.map((link) => {
-              // In-page anchors such as /#about live on the home page, so a naive
-              // path comparison lit them up alongside the real Home item. Only
-              // whole-page routes take the active state.
+              if (link.children) {
+                return (
+                  <NavDropdown key={link.href} link={link} lang={lang} pathname={pathname} />
+                );
+              }
+              // In-page anchors such as /#contact live on the home page, so a
+              // naive path comparison lit them up alongside the real Home item.
+              // Only whole-page routes take the active state.
               const isActive = !link.href.includes("#") && pathname === link.href;
               return (
                 <Link
@@ -305,7 +422,24 @@ export function SiteHeader({
             id="primary-mobile-nav"
             className="xl:hidden border-t border-on-nav/15 bg-nav px-4 py-3 space-y-1"
           >
-            {NAV_LINKS.map((link) => (
+            {NAV_LINKS.map((link) =>
+              link.children ? (
+                <div key={link.href} className="py-1">
+                  <p className="px-3 py-1.5 text-[13px] font-bold text-on-nav/60">
+                    {lang === "ne" ? link.ne : link.en}
+                  </p>
+                  {link.children.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block py-2 pl-6 pr-3 rounded-control text-[14px] font-medium text-on-nav/90 hover:bg-on-nav/10 hover:text-on-nav transition-colors"
+                    >
+                      {lang === "ne" ? child.ne : child.en}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
               <Link
                 key={link.href}
                 href={link.href}
@@ -314,7 +448,8 @@ export function SiteHeader({
               >
                 {lang === "ne" ? link.ne : link.en}
               </Link>
-            ))}
+              )
+            )}
 
             <div className="pt-2 mt-2 border-t border-on-nav/15 flex items-center justify-between gap-3">
               <div className="inline-flex rounded-control bg-on-nav/10 p-0.5 sm:hidden">
