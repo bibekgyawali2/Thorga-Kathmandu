@@ -268,11 +268,11 @@ export function SiteHeader({
       <div className="relative bg-tint border-b border-line overflow-hidden">
         <SkylineWatermark />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-3">
-          <div className="flex items-center justify-between gap-3 sm:gap-4">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5">
+          <div className="flex items-center justify-between gap-3 sm:gap-6">
             {/* Left Logo slot */}
             <Link href="/" className="flex-shrink-0" aria-label={lang === "ne" ? "गृहपृष्ठ" : "Home"}>
-              <div className="w-14 h-14 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-surface border-2 border-accent/25 flex items-center justify-center overflow-hidden shadow-e1 p-1">
+              <div className="w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-surface border-2 border-accent/25 flex items-center justify-center overflow-hidden shadow-e1 p-1">
                 {branding.logoUrl ? (
                   <Image
                     src={branding.logoUrl}
@@ -282,29 +282,40 @@ export function SiteHeader({
                     className="w-full h-full object-contain"
                   />
                 ) : (
-                  <Buildings size={42} weight="duotone" className="text-accent" />
+                  <Buildings size={40} weight="duotone" className="text-accent" />
                 )}
               </div>
             </Link>
 
-            {/* Name and motto */}
-            <div className="flex-1 min-w-0 text-center px-2">
+            {/* Name, motto and date */}
+            <div className="flex-1 min-w-0 text-center px-1 sm:px-2 flex flex-col items-center justify-center space-y-1">
               <Link href="/" className="block group">
-                <div className="text-lg sm:text-2xl lg:text-[2rem] font-extrabold tracking-tight text-fg leading-tight group-hover:text-accent transition-colors">
+                <div className="text-lg sm:text-2xl lg:text-[1.75rem] font-extrabold tracking-tight text-fg leading-tight group-hover:text-accent transition-colors">
                   {lang === "ne"
                     ? "थोर्गा काठमाडौं सम्पर्क तथा विकास मञ्च"
                     : "Thorga Kathmandu Liaison and Development Forum"}
                 </div>
               </Link>
-              <p className="mt-1 text-xs sm:text-sm text-muted font-medium">
+              <p className="text-xs sm:text-sm text-muted font-medium leading-snug">
                 {lang === "ne"
                   ? "“गाउँ र सहरबीचको सेतु, समुदायको साझा प्रयास”"
                   : "“A bridge between the village and the city”"}
               </p>
+
+              {/* Date line with small gap directly under sub text */}
+              <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 text-[11px] sm:text-xs font-medium text-muted/90 pt-0.5">
+                {lang === "ne" && bsDate && <span>{bsDate}</span>}
+                {lang === "ne" && bsDate && adDate && (
+                  <span aria-hidden="true" className="text-line">
+                    |
+                  </span>
+                )}
+                {adDate && <span>{adDate}</span>}
+              </div>
             </div>
 
             {/* Right Logo slot */}
-            <div className="flex-shrink-0 flex w-14 h-14 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-surface border-2 border-accent/25 items-center justify-center overflow-hidden shadow-e1 p-1">
+            <div className="flex-shrink-0 flex w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-surface border-2 border-accent/25 items-center justify-center overflow-hidden shadow-e1 p-1">
               {branding.logoUrl ? (
                 <Image
                   src={branding.logoUrl}
@@ -314,28 +325,17 @@ export function SiteHeader({
                   className="w-full h-full object-contain"
                 />
               ) : (
-                <Buildings size={42} weight="duotone" className="text-accent" />
+                <Buildings size={40} weight="duotone" className="text-accent" />
               )}
             </div>
-          </div>
-
-          {/* Date line */}
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] sm:text-[13px] font-medium text-muted">
-            {lang === "ne" && bsDate && <span>{bsDate}</span>}
-            {lang === "ne" && bsDate && adDate && (
-              <span aria-hidden="true" className="text-line">
-                |
-              </span>
-            )}
-            {adDate && <span>{adDate}</span>}
           </div>
         </div>
       </div>
 
       {/* Band 2: primary navigation */}
       <header className="sticky top-0 z-40 bg-nav text-on-nav shadow-e2">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 min-h-[52px]">
-          <nav className="hidden xl:flex items-center gap-1 py-1.5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 min-h-[46px]">
+          <nav className="hidden xl:flex items-center gap-1 py-1">
             {NAV_LINKS.map((link) => {
               if (link.children) {
                 return (
