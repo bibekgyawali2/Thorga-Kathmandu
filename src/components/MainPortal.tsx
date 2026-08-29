@@ -63,16 +63,52 @@ import {
   Eye,
   CheckCircle,
   Buildings,
-  GraduationCap,
-  Heart,
-  Tree,
   MapPin,
   EnvelopeSimple,
   ShieldCheck,
   ArrowRight,
   Sparkle,
   X,
+  UsersThree,
+  Bank,
+  HandHeart,
+  TrendUp,
 } from "@phosphor-icons/react";
+
+/**
+ * The forum's four stated areas of work. Parallel concerns that run at the
+ * same time, so they carry no numbering.
+ */
+const PILLARS = [
+  {
+    icon: UsersThree,
+    titleNe: "समुदाय र सम्बन्ध",
+    titleEn: "Community and Kinship",
+    bodyNe: "काठमाडौँमा रहेका थोर्गाबासीहरूबीच एकता र आत्मीय सम्बन्ध अभिवृद्धि गर्ने।",
+    bodyEn: "Building unity and close ties among Thorga families living in Kathmandu.",
+  },
+  {
+    icon: Bank,
+    titleNe: "संस्कृति र सम्पदा",
+    titleEn: "Culture and Heritage",
+    bodyNe: "हाम्रा मौलिक परम्परा, सांस्कृतिक पहिचान र सम्पदाको संरक्षण गर्ने।",
+    bodyEn: "Protecting our traditions, cultural identity and heritage.",
+  },
+  {
+    icon: HandHeart,
+    titleNe: "पारस्परिक सहयोग",
+    titleEn: "Mutual Support",
+    bodyNe: "सुख-दुःखमा एकआपसमा उभिँदै आवश्यक परेका सदस्यहरूलाई सहयोग पुऱ्याउने।",
+    bodyEn: "Standing by one another in good times and hard, and supporting members in need.",
+  },
+  {
+    icon: TrendUp,
+    titleNe: "विकास",
+    titleEn: "Development",
+    bodyNe: "गाउँ तथा समुदायको सामाजिक उन्नति र विकासका कार्यहरूमा योगदान दिने।",
+    bodyEn: "Contributing to the social progress and development of the village and community.",
+  },
+];
 
 function initials(name: string) {
   const parts = name
@@ -348,88 +384,37 @@ export default function MainPortal() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Pillar 01 */}
-            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-e2 group">
-              <div className="space-y-3">
+            {PILLARS.map((pillar) => (
+              <article
+                key={pillar.titleEn}
+                className="rounded-card border border-line bg-surface p-7 flex flex-col gap-3 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-e2"
+              >
                 <div className="text-accent">
-                  <Heart size={26} weight="duotone" />
+                  <pillar.icon size={26} weight="duotone" />
                 </div>
                 <h3 className="text-lg font-bold text-fg">
-                  {lang === "ne" ? "सामाजिक कल्याण कोष" : "Social Welfare Fund"}
+                  {lang === "ne" ? pillar.titleNe : pillar.titleEn}
                 </h3>
                 <p className="text-[13px] leading-[1.75] text-muted">
-                  {lang === "ne"
-                    ? "काठमाडौँ र थोर्गामा आकस्मिक स्वास्थ्य उपचार तथा प्राकृतिक विपद्को समयमा तत्काल आर्थिक तथा भौतिक सहयोग।"
-                    : "Emergency healthcare support, patient assistance, and disaster relief for families in need."}
+                  {lang === "ne" ? pillar.bodyNe : pillar.bodyEn}
                 </p>
-              </div>
-            </article>
-
-            {/* Pillar 02 */}
-            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-e2 group">
-              <div className="space-y-3">
-                <div className="text-accent">
-                  <GraduationCap size={26} weight="duotone" />
-                </div>
-                <h3 className="text-lg font-bold text-fg">
-                  {lang === "ne" ? "शिक्षा तथा छात्रवृत्ति" : "Scholarships & Youth"}
-                </h3>
-                <p className="text-[13px] leading-[1.75] text-muted">
-                  {lang === "ne"
-                    ? "थोर्गाका जेहेन्दार तथा विपन्न विद्यार्थीहरूका लागि वार्षिक छात्रवृत्ति तथा करियर काउन्सिलिङ कार्यक्रम।"
-                    : "Annual merit scholarships, school library aids, and higher education mentorship for village students."}
-                </p>
-              </div>
-            </article>
-
-            {/* Pillar 03 */}
-            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-e2 group">
-              <div className="space-y-3">
-                <div className="text-accent">
-                  <Buildings size={26} weight="duotone" />
-                </div>
-                <h3 className="text-lg font-bold text-fg">
-                  {lang === "ne" ? "गाउँ विकास पूर्वाधार" : "Rural Infrastructure"}
-                </h3>
-                <p className="text-[13px] leading-[1.75] text-muted">
-                  {lang === "ne"
-                    ? "खानेपानी, सडक स्तरोन्नति, सामुदायिक भवन निर्माण तथा स्थानीय स्वास्थ्य चौकी सहयोगमा निरन्तर पैरवी।"
-                    : "Liaison for drinking water supply, road accessibility, and community health post equipment in Thorga."}
-                </p>
-              </div>
-            </article>
-
-            {/* Pillar 04 */}
-            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-e2 group">
-              <div className="space-y-3">
-                <div className="text-accent">
-                  <Tree size={26} weight="duotone" />
-                </div>
-                <h3 className="text-lg font-bold text-fg">
-                  {lang === "ne" ? "सांस्कृतिक संरक्षण" : "Heritage & Culture"}
-                </h3>
-                <p className="text-[13px] leading-[1.75] text-muted">
-                  {lang === "ne"
-                    ? "रुरु क्षेत्रको धार्मिक तथा ऐतिहासिक गरिमा संरक्षण, स्मारिका प्रकाशन तथा मौलिक चाडपर्व मिलन।"
-                    : "Preserving Ruru area cultural traditions, historic landmarks, publishing souvenirs, and annual festivals."}
-                </p>
-              </div>
-            </article>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* SECTION 3: EXECUTIVE COMMITTEE */}
+      {/* SECTION 3: LEADERSHIP */}
       <section id="members" className="py-16 sm:py-20 rule-soft bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
               <h2 className="type-section text-fg">
-                {lang === "ne" ? "वर्तमान कार्यसमिति (२०८१ देखि २०८४)" : "Executive Committee (2024 to 2027)"}
+                {lang === "ne" ? "हाम्रो नेतृत्व" : "Our Leadership"}
               </h2>
               <p className="type-lede text-sm">
                 {lang === "ne"
-                  ? "संस्थाको नीति निर्माण तथा दैनिक कार्य सञ्चालन गर्ने निर्वाचित कार्यसमिति"
+                  ? "संस्थाको नीति निर्माण तथा दैनिक कार्य सञ्चालन गर्ने निर्वाचित नेतृत्व"
                   : "Elected leadership overseeing social programs, finances, and village coordination"}
               </p>
             </div>

@@ -2219,46 +2219,46 @@ export default function AdminPage() {
 
       {/* LEFT SIDEBAR */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-surface border-r border-line flex flex-col justify-between transition-transform duration-200 ease-in-out ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-surface border-r border-line flex flex-col justify-between transition-transform duration-200 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         } flex-shrink-0`}
       >
         {/* Brand Header */}
         <div className="p-4 border-b border-line flex items-center justify-between">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-control bg-accent text-on-accent flex items-center justify-center flex-shrink-0">
-              <Buildings size={18} />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-control bg-accent text-on-accent flex items-center justify-center flex-shrink-0">
+              <Buildings size={20} />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-fg truncate">{t.brandTitle}</div>
-              <div className="text-[10px] text-muted">{t.brandSubtitle}</div>
+              <div className="text-sm font-bold text-fg truncate">{t.brandTitle}</div>
+              <div className="text-xs text-muted truncate">{t.brandSubtitle}</div>
             </div>
           </div>
 
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-1 rounded-control text-muted hover:text-fg"
+            className="lg:hidden p-1.5 rounded-control text-muted hover:text-fg"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Sidebar Nav */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-1">
+        <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
           <button
             type="button"
             onClick={() => {
               setActiveTab("overview");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center gap-2.5 transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center gap-3 transition-colors ${
               activeTab === "overview"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <SlidersHorizontal size={16} />
+            <SlidersHorizontal size={18} />
             <span>{t.overview}</span>
           </button>
 
@@ -2268,17 +2268,17 @@ export default function AdminPage() {
               setActiveTab("hero");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center justify-between transition-colors ${
               activeTab === "hero"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <Sparkle size={16} />
+            <span className="flex items-center gap-3">
+              <Sparkle size={18} />
               <span>{t.hero}</span>
             </span>
-            <span className="text-[10px] opacity-75">Live</span>
+            <span className="text-xs font-medium opacity-80">Live</span>
           </button>
 
           <button
@@ -2287,17 +2287,17 @@ export default function AdminPage() {
               setActiveTab("members");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center justify-between transition-colors ${
               activeTab === "members"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <Users size={16} />
+            <span className="flex items-center gap-3">
+              <Users size={18} />
               <span>{t.members}</span>
             </span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
+            <span className={`text-xs font-mono px-2 py-0.5 rounded-chip ${
               activeTab === "members" ? "bg-black/20 text-white" : "bg-tint text-muted"
             }`}>
               {membersList.length}
@@ -2310,17 +2310,17 @@ export default function AdminPage() {
               setActiveTab("publications");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center justify-between transition-colors ${
               activeTab === "publications"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <BookOpen size={16} />
+            <span className="flex items-center gap-3">
+              <BookOpen size={18} />
               <span>{t.publications}</span>
             </span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
+            <span className={`text-xs font-mono px-2 py-0.5 rounded-chip ${
               activeTab === "publications" ? "bg-black/20 text-white" : "bg-tint text-muted"
             }`}>
               {pubList.length}
@@ -2333,17 +2333,17 @@ export default function AdminPage() {
               setActiveTab("events");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center justify-between transition-colors ${
               activeTab === "events"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <Calendar size={16} />
+            <span className="flex items-center gap-3">
+              <Calendar size={18} />
               <span>{t.events}</span>
             </span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
+            <span className={`text-xs font-mono px-2 py-0.5 rounded-chip ${
               activeTab === "events" ? "bg-black/20 text-white" : "bg-tint text-muted"
             }`}>
               {eventsList.length}
@@ -2356,17 +2356,17 @@ export default function AdminPage() {
               setActiveTab("gallery");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center justify-between transition-colors ${
               activeTab === "gallery"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <ImageIcon size={16} />
+            <span className="flex items-center gap-3">
+              <ImageIcon size={18} />
               <span>{t.gallery}</span>
             </span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
+            <span className={`text-xs font-mono px-2 py-0.5 rounded-chip ${
               activeTab === "gallery" ? "bg-black/20 text-white" : "bg-tint text-muted"
             }`}>
               {galleryList.length}
@@ -2379,13 +2379,13 @@ export default function AdminPage() {
               setActiveTab("publication-pages");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center gap-2 transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center gap-3 transition-colors ${
               activeTab === "publication-pages"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <FileText size={15} />
+            <FileText size={18} />
             <span>{lang === "ne" ? "प्रकाशन पृष्ठहरु" : "Publication Pages"}</span>
           </button>
 
@@ -2395,13 +2395,13 @@ export default function AdminPage() {
               setActiveTab("about");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center gap-2 transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center gap-3 transition-colors ${
               activeTab === "about"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <Buildings size={15} />
+            <Buildings size={18} />
             <span>{lang === "ne" ? "हाम्रो बारेमा" : "About Us"}</span>
           </button>
 
@@ -2411,17 +2411,17 @@ export default function AdminPage() {
               setActiveTab("inquiries");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center justify-between transition-colors ${
               activeTab === "inquiries"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <EnvelopeSimple size={16} />
+            <span className="flex items-center gap-3">
+              <EnvelopeSimple size={18} />
               <span>{t.inquiries}</span>
             </span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-chip bg-danger text-white font-semibold">
+            <span className="text-xs font-mono px-2 py-0.5 rounded-chip bg-danger text-white font-semibold">
               {inquiriesList.length}
             </span>
           </button>
@@ -2432,13 +2432,13 @@ export default function AdminPage() {
               setActiveTab("settings");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center gap-2.5 transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center gap-3 transition-colors ${
               activeTab === "settings"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <Database size={16} />
+            <Database size={18} />
             <span>{t.settings}</span>
           </button>
 
@@ -2448,34 +2448,34 @@ export default function AdminPage() {
               setActiveTab("branding");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center gap-2.5 transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center gap-3 transition-colors ${
               activeTab === "branding"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <PaintBucket size={16} />
+            <PaintBucket size={18} />
             <span>{t.branding}</span>
           </button>
 
-          {/* 9. ADMIN USER ACCESS (NEW) */}
+          {/* 9. ADMIN USER ACCESS */}
           <button
             type="button"
             onClick={() => {
               setActiveTab("access");
               setSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-control text-xs font-medium flex items-center justify-between transition-colors ${
+            className={`w-full text-left px-3.5 py-2.5 rounded-control text-sm font-medium flex items-center justify-between transition-colors ${
               activeTab === "access"
-                ? "bg-accent text-on-accent"
+                ? "bg-accent text-on-accent shadow-e1"
                 : "text-muted hover:text-fg hover:bg-tint"
             }`}
           >
-            <span className="flex items-center gap-2.5">
-              <ShieldCheck size={16} />
+            <span className="flex items-center gap-3">
+              <ShieldCheck size={18} />
               <span>{t.adminAccess}</span>
             </span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-chip ${
+            <span className={`text-xs font-mono px-2 py-0.5 rounded-chip ${
               activeTab === "access" ? "bg-black/20 text-white" : "bg-tint text-muted"
             }`}>
               {adminUsersList.length}
@@ -2484,39 +2484,39 @@ export default function AdminPage() {
         </div>
 
         {/* Pinned User Bar */}
-        <div className="p-3 border-t border-line bg-surface flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+        <div className="p-3.5 border-t border-line bg-surface flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${
               session.isSuperadmin ? "bg-warning/20 text-warning" : "bg-accent-soft text-accent"
             }`}>
               {session.isSuperadmin ? "S" : "A"}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-fg truncate">{session.username}</div>
-              <div className="text-[10px] text-muted flex items-center gap-1">
+              <div className="text-sm font-bold text-fg truncate">{session.username}</div>
+              <div className="text-xs text-muted flex items-center gap-1.5">
                 <span className="capitalize font-mono">{session.role}</span>
-                {session.isSuperadmin && <span className="text-[9px] px-1 bg-warning/20 text-warning rounded">Super</span>}
+                {session.isSuperadmin && <span className="text-[10px] px-1 bg-warning/20 text-warning rounded">Super</span>}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-1.5 rounded-control border border-line bg-surface text-fg hover:bg-tint transition-colors"
+              className="p-2 rounded-control border border-line bg-surface text-fg hover:bg-tint transition-colors"
               aria-label={t.theme}
             >
-              {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <button
               type="button"
               onClick={handleLogout}
-              className="p-1.5 rounded-control text-danger hover:bg-danger/10 transition-colors"
+              className="p-2 rounded-control text-danger hover:bg-danger/10 transition-colors"
               aria-label={t.logout}
               title={t.logout}
             >
-              <SignOut size={14} />
+              <SignOut size={16} />
             </button>
           </div>
         </div>
