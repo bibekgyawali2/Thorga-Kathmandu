@@ -330,17 +330,17 @@ export default function MainPortal() {
       </h1>
 
       {/* SECTION 2: OBJECTIVES & CORE PILLARS */}
-      <section id="about" className="py-20 border-b border-line bg-ground">
+      <section id="about" className="py-20 sm:py-28 rule-soft bg-ground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="max-w-3xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
               <ShieldCheck size={16} weight="duotone" />
               <span>{lang === "ne" ? "संस्थागत उद्देश्य तथा सेवा अभियान" : "Institutional Mission & Core Pillars"}</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg">
+            <h2 className="type-section text-fg">
               {lang === "ne" ? "उद्देश्य तथा कार्यक्षेत्र" : "Objectives and Core Pillars"}
             </h2>
-            <p className="text-base leading-relaxed text-muted max-w-[65ch]">
+            <p className="type-lede">
               {lang === "ne"
                 ? "थोर्गाबाट विभिन्न पेसा, व्यवसाय तथा अध्ययनका सिलसिलामा काठमाडौँ उपत्यकामा बसोबास गरिरहेका सम्पूर्ण समुदायलाई एउटै छातामुनि संगठित गर्दै गाउँको चौतर्फी उन्नतिमा टेवा पुर्याउनु हाम्रो मुख्य ध्येय हो।"
                 : "Organizing native families of Thorga living in Kathmandu under one institutional umbrella to foster community mutual aid, scholarship programs, and rural development."}
@@ -349,89 +349,85 @@ export default function MainPortal() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Pillar 01 */}
-            <article className="rounded-card border border-line bg-surface p-6 flex flex-col justify-between space-y-4 hover:border-accent transition-all group">
+            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow)] group">
               <div className="space-y-3">
-                <div className="w-12 h-12 rounded-control bg-accent-soft text-accent flex items-center justify-center">
+                <div className="text-accent">
                   <Heart size={26} weight="duotone" />
                 </div>
                 <h3 className="text-lg font-bold text-fg">
                   {lang === "ne" ? "सामाजिक कल्याण कोष" : "Social Welfare Fund"}
                 </h3>
-                <p className="text-xs leading-relaxed text-muted">
+                <p className="text-[13px] leading-[1.75] text-muted">
                   {lang === "ne"
                     ? "काठमाडौँ र थोर्गामा आकस्मिक स्वास्थ्य उपचार तथा प्राकृतिक विपद्को समयमा तत्काल आर्थिक तथा भौतिक सहयोग।"
                     : "Emergency healthcare support, patient assistance, and disaster relief for families in need."}
                 </p>
               </div>
-              <span className="font-mono text-[11px] font-bold text-accent">01 / WELFARE</span>
             </article>
 
             {/* Pillar 02 */}
-            <article className="rounded-card border border-line bg-surface p-6 flex flex-col justify-between space-y-4 hover:border-accent transition-all group">
+            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow)] group">
               <div className="space-y-3">
-                <div className="w-12 h-12 rounded-control bg-accent-soft text-accent flex items-center justify-center">
+                <div className="text-accent">
                   <GraduationCap size={26} weight="duotone" />
                 </div>
                 <h3 className="text-lg font-bold text-fg">
                   {lang === "ne" ? "शिक्षा तथा छात्रवृत्ति" : "Scholarships & Youth"}
                 </h3>
-                <p className="text-xs leading-relaxed text-muted">
+                <p className="text-[13px] leading-[1.75] text-muted">
                   {lang === "ne"
                     ? "थोर्गाका जेहेन्दार तथा विपन्न विद्यार्थीहरूका लागि वार्षिक छात्रवृत्ति तथा करियर काउन्सिलिङ कार्यक्रम।"
                     : "Annual merit scholarships, school library aids, and higher education mentorship for village students."}
                 </p>
               </div>
-              <span className="font-mono text-[11px] font-bold text-accent">02 / EDUCATION</span>
             </article>
 
             {/* Pillar 03 */}
-            <article className="rounded-card border border-line bg-surface p-6 flex flex-col justify-between space-y-4 hover:border-accent transition-all group">
+            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow)] group">
               <div className="space-y-3">
-                <div className="w-12 h-12 rounded-control bg-accent-soft text-accent flex items-center justify-center">
+                <div className="text-accent">
                   <Buildings size={26} weight="duotone" />
                 </div>
                 <h3 className="text-lg font-bold text-fg">
                   {lang === "ne" ? "गाउँ विकास पूर्वाधार" : "Rural Infrastructure"}
                 </h3>
-                <p className="text-xs leading-relaxed text-muted">
+                <p className="text-[13px] leading-[1.75] text-muted">
                   {lang === "ne"
                     ? "खानेपानी, सडक स्तरोन्नति, सामुदायिक भवन निर्माण तथा स्थानीय स्वास्थ्य चौकी सहयोगमा निरन्तर पैरवी।"
                     : "Liaison for drinking water supply, road accessibility, and community health post equipment in Thorga."}
                 </p>
               </div>
-              <span className="font-mono text-[11px] font-bold text-accent">03 / VILLAGE</span>
             </article>
 
             {/* Pillar 04 */}
-            <article className="rounded-card border border-line bg-surface p-6 flex flex-col justify-between space-y-4 hover:border-accent transition-all group">
+            <article className="rounded-card border border-line bg-surface p-7 flex flex-col justify-between gap-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow)] group">
               <div className="space-y-3">
-                <div className="w-12 h-12 rounded-control bg-accent-soft text-accent flex items-center justify-center">
+                <div className="text-accent">
                   <Tree size={26} weight="duotone" />
                 </div>
                 <h3 className="text-lg font-bold text-fg">
                   {lang === "ne" ? "सांस्कृतिक संरक्षण" : "Heritage & Culture"}
                 </h3>
-                <p className="text-xs leading-relaxed text-muted">
+                <p className="text-[13px] leading-[1.75] text-muted">
                   {lang === "ne"
                     ? "रुरु क्षेत्रको धार्मिक तथा ऐतिहासिक गरिमा संरक्षण, स्मारिका प्रकाशन तथा मौलिक चाडपर्व मिलन।"
                     : "Preserving Ruru area cultural traditions, historic landmarks, publishing souvenirs, and annual festivals."}
                 </p>
               </div>
-              <span className="font-mono text-[11px] font-bold text-accent">04 / CULTURE</span>
             </article>
           </div>
         </div>
       </section>
 
       {/* SECTION 3: EXECUTIVE COMMITTEE */}
-      <section id="members" className="py-20 border-b border-line bg-surface">
+      <section id="members" className="py-16 sm:py-20 rule-soft bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
-              <h2 className="text-3xl font-extrabold tracking-tight text-fg">
+              <h2 className="type-section text-fg">
                 {lang === "ne" ? "वर्तमान कार्यसमिति (२०८१ देखि २०८४)" : "Executive Committee (2024 to 2027)"}
               </h2>
-              <p className="text-sm text-muted max-w-[60ch]">
+              <p className="type-lede text-sm">
                 {lang === "ne"
                   ? "संस्थाको नीति निर्माण तथा दैनिक कार्य सञ्चालन गर्ने निर्वाचित कार्यसमिति"
                   : "Elected leadership overseeing social programs, finances, and village coordination"}
@@ -559,18 +555,14 @@ export default function MainPortal() {
       </section>
 
       {/* SECTION 4: PUBLICATIONS SHOWCASE */}
-      <section className="py-20 border-b border-line bg-ground">
+      <section className="py-16 sm:py-24 rule-soft bg-ground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-                <BookOpen size={16} weight="duotone" />
-                <span>{lang === "ne" ? "वार्षिक स्मारिका तथा मुखपत्र" : "Souvenirs & Publications"}</span>
-              </div>
-              <h2 className="text-3xl font-extrabold tracking-tight text-fg">
+              <h2 className="type-section text-fg">
                 {lang === "ne" ? "प्रकाशन तथा दस्तावेज सङ्ग्रह" : "Publications & PDF Archive"}
               </h2>
-              <p className="text-sm text-muted max-w-[60ch]">
+              <p className="type-lede text-sm">
                 {lang === "ne"
                   ? "संस्थाका वार्षिक स्मारिकाहरू, विधान तथा आधिकारिक लेखा प्रतिवेदन डाउनलोड गर्नुहोस्"
                   : "Download official annual souvenirs, constitution bylaws, and certified audit reports"}
@@ -663,18 +655,14 @@ export default function MainPortal() {
       </section>
 
       {/* SECTION 5: UPCOMING EVENTS & PROGRAM ARCHIVE */}
-      <section className="py-20 border-b border-line bg-surface">
+      <section className="py-16 sm:py-20 rule-soft bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-                <Calendar size={16} weight="duotone" />
-                <span>{lang === "ne" ? "कार्यक्रम तथा सूचना" : "Events & Notices"}</span>
-              </div>
-              <h2 className="text-3xl font-extrabold tracking-tight text-fg">
+              <h2 className="type-section text-fg">
                 {lang === "ne" ? "आगामी तथा सम्पन्न कार्यक्रमहरू" : "Upcoming & Recent Community Events"}
               </h2>
-              <p className="text-sm text-muted max-w-[60ch]">
+              <p className="type-lede text-sm">
                 {lang === "ne"
                   ? "वार्षिक साधारण सभा, भेला तथा सामाजिक विकास सम्बन्धी गतिविधिहरू"
                   : "Join us in our upcoming community gatherings, health camps, and annual general meetings"}
@@ -748,18 +736,14 @@ export default function MainPortal() {
       </section>
 
       {/* SECTION 6: PHOTO GALLERY SHOWCASE */}
-      <section className="py-20 border-b border-line bg-ground">
+      <section className="py-16 sm:py-24 rule-soft bg-ground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-                <Sparkle size={16} weight="duotone" />
-                <span>{lang === "ne" ? "तस्बिर सङ्ग्रह" : "Photo Gallery"}</span>
-              </div>
-              <h2 className="text-3xl font-extrabold tracking-tight text-fg">
+              <h2 className="type-section text-fg">
                 {lang === "ne" ? "सामाजिक कार्य तथा दृश्य अभिलेख" : "Community Action Visual Archive"}
               </h2>
-              <p className="text-sm text-muted max-w-[60ch]">
+              <p className="type-lede text-sm">
                 {lang === "ne"
                   ? "थोर्गा गाउँ तथा काठमाडौँमा सञ्चालन गरिएका विभिन्न गतिविधिहरूका झलकहरू"
                   : "Moments from our rural development projects, gatherings, and youth welfare initiatives"}
@@ -819,15 +803,11 @@ export default function MainPortal() {
       </section>
 
       {/* SECTION 7: CONTACT & LIAISON SECRETARIAT (Dynamically Configurable from Admin) */}
-      <section id="contact" className="py-20 border-b border-line bg-surface">
+      <section id="contact" className="py-16 sm:py-20 rule-soft bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Top Section Header */}
           <div className="max-w-3xl space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-              <EnvelopeSimple size={16} weight="duotone" />
-              <span>{lang === "ne" ? "सम्पर्क तथा सचिवालय" : "Secretariat Liaison"}</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg">
+            <h2 className="type-section text-fg">
               {lang === "ne" ? contactSettings.contactHeadingNe : contactSettings.contactHeadingEn}
             </h2>
             <p className="text-base text-muted max-w-[65ch] leading-relaxed">

@@ -20,8 +20,8 @@
 */
 
 :root {
-  --ground: #f3f7f3;
-  --surface: #fafcfa;
+  --ground: #eef4ef;
+  --surface: #fcfdfc;
   --tint: #e4ede5;
   --accent: #1b5e3f;
   --accent-hover: #164c33;
@@ -29,12 +29,13 @@
   --on-accent: #ffffff;
   --fg: #12211a;
   --muted: #47574f;
-  --line: #dae4db;
+  --line: #d7e3d9;
   --danger: #9f2f28;
   --warning: #8a5a10;
   --nav: #175136;
   --on-nav: #f2f8f3;
-  --shadow: 0 1px 2px rgba(18, 33, 26, 0.04), 0 8px 24px rgba(18, 33, 26, 0.06);
+  --shadow: 0 1px 1px rgba(23, 81, 54, 0.04), 0 2px 4px rgba(23, 81, 54, 0.04),
+    0 12px 28px -12px rgba(23, 81, 54, 0.14);
 }
 
 [data-theme="dark"] {
@@ -52,7 +53,8 @@
   --warning: #e0aa5a;
   --nav: #10291f;
   --on-nav: #dfeae2;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow: 0 1px 1px rgba(0, 0, 0, 0.24), 0 2px 4px rgba(0, 0, 0, 0.24),
+    0 12px 28px -12px rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
@@ -188,4 +190,55 @@ body {
       transform: rotate(360deg);
     }
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Type scale
+   ---------------------------------------------------------------------------
+   The page is bilingual and set entirely in Mukta, so personality has to come
+   from scale, weight and spacing rather than from a second typeface.
+
+   Devanagari is the important detail here: the tight negative tracking that
+   flatters Latin display type actively damages Devanagari, where the shirorekha
+   (the head line joining the letters) needs its natural rhythm. Latin headings
+   get the tightening, Nepali headings do not, and Nepali gets more leading
+   because its matras extend above and below the baseline.
+--------------------------------------------------------------------------- */
+
+.type-display {
+  font-size: clamp(1.9rem, 1.25rem + 2.4vw, 3.15rem);
+  font-weight: 700;
+  letter-spacing: -0.021em;
+  line-height: 1.12;
+}
+
+.type-section {
+  font-size: clamp(1.45rem, 1.15rem + 1.1vw, 2.05rem);
+  font-weight: 700;
+  letter-spacing: -0.016em;
+  line-height: 1.18;
+}
+
+.type-lede {
+  font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.075rem);
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+:lang(ne) .type-display,
+:lang(ne) .type-section {
+  letter-spacing: 0;
+  line-height: 1.32;
+}
+
+:lang(ne) .type-lede {
+  line-height: 1.85;
+}
+
+/* A quieter rule than a full border: used to separate bands without adding
+   another boxed container to a page that already has many. */
+.rule-soft {
+  border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
 }
