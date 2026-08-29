@@ -46,9 +46,19 @@ import { isJWTExpired } from "@/lib/jwt";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
 import { useDialog } from "@/components/Dialog";
 import { AboutManager } from "@/components/admin/AboutManager";
+
+type CommitteeSection = "current" | "advisor" | "former-officials" | "former-advisors";
+
+const COMMITTEE_SECTIONS: { key: CommitteeSection; ne: string; en: string }[] = [
+  { key: "current", ne: "वर्तमान समिति", en: "Current Committee" },
+  { key: "advisor", ne: "वर्तमान सल्लाहाकार", en: "Current Advisors" },
+  { key: "former-officials", ne: "हालसम्मका पदाधिकारी", en: "Former Office Bearers" },
+  { key: "former-advisors", ne: "हालसम्मका सल्लाहाकार", en: "Former Advisors" },
+];
 import {
   DocumentSectionEditor,
   PUBLICATION_DOC_SLUGS,
+  FORMER_COMMITTEE_DOC_SLUGS,
 } from "@/components/admin/DocumentSectionEditor";
 import { useToast } from "@/components/Toast";
 import {
@@ -486,6 +496,7 @@ export default function AdminPage() {
   }, []);
 
   // Member States
+  const [committeeSection, setCommitteeSection] = useState<CommitteeSection>("current");
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [memberForm, setMemberForm] = useState({
     nameEn: "",
@@ -2821,10 +2832,45 @@ export default function AdminPage() {
           {/* 3. COMMITTEE ROSTER */}
           {activeTab === "members" && (
             <div className="space-y-6">
+              {/* Committee is split into four subsections: the two current
+                  bodies are edited person by person, while each former term is
+                  published as a single sheet with the term as its caption. */}
+              <div className="flex flex-wrap gap-2">
+                {COMMITTEE_SECTIONS.map((s) => (
+                  <button
+                    key={s.key}
+                    type="button"
+                    onClick={() => {
+                      setCommitteeSection(s.key);
+                      if (s.key === "current" || s.key === "advisor") {
+                        setMemberFilterCategory(s.key);
+                        setShowAddMemberModal(false);
+                        setEditingMember(null);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-control text-xs font-semibold transition-colors ${
+                      committeeSection === s.key
+                        ? "bg-accent text-on-accent"
+                        : "bg-surface border border-line text-fg hover:bg-tint"
+                    }`}
+                  >
+                    {lang === "ne" ? s.ne : s.en}
+                  </button>
+                ))}
+              </div>
+
+              {committeeSection === "former-officials" || committeeSection === "former-advisors" ? (
+                <DocumentSectionEditor
+                  lang={lang}
+                  adminFetch={adminFetch}
+                  slugs={FORMER_COMMITTEE_DOC_SLUGS.filter((s) => s.slug === committeeSection)}
+                />
+              ) : (
+                <>
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-bold text-fg">{t.members}</h2>
-                  <p className="text-xs text-muted">{lang === "ne" ? "कार्यसमिति सदस्यहरू, सल्लाहकार तथा पूर्व नेतृत्व व्यवस्थापन" : "Manage executive members, advisors, and past officers."}</p>
+                  <p className="text-xs text-muted">{lang === "ne" ? "वर्तमान समिति र सल्लाहाकार व्यक्तिगत रूपमा, पूर्व कार्यकाल कार्यकालअनुसार" : "Current committee and advisors person by person; former terms one sheet per term."}</p>
                 </div>
                 <button
                   type="button"
@@ -2937,14 +2983,13 @@ export default function AdminPage() {
                         onChange={(e) =>
                           setMemberForm({
                             ...memberForm,
-                            committeeType: e.target.value as "current" | "advisor" | "past",
+                            committeeType: e.target.value as "current" | "advisor",
                           })
                         }
                         className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       >
                         <option value="current">Current Executive (२०८१-२०८४)</option>
                         <option value="advisor">Advisors (सल्लाहकार)</option>
-                        <option value="past">Past Leaders (पूर्व नेतृत्व)</option>
                       </select>
                     </div>
                     <div className="space-y-1.5">
@@ -3036,17 +3081,6 @@ export default function AdminPage() {
                     >
                       {t.advisor} ({membersList.filter((m) => m.committeeType === "advisor").length})
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setMemberFilterCategory("past")}
-                      className={`px-3 py-1.5 rounded-control text-xs font-medium transition-colors ${
-                        memberFilterCategory === "past"
-                          ? "bg-accent text-on-accent"
-                          : "bg-ground border border-line text-fg hover:bg-tint"
-                      }`}
-                    >
-                      {t.past} ({membersList.filter((m) => m.committeeType === "past").length})
-                    </button>
                   </div>
 
                   <div className="relative w-full sm:w-56">
@@ -3117,6 +3151,8 @@ export default function AdminPage() {
                   )}
                 </div>
               </div>
+                </>
+              )}
             </div>
           )}
 

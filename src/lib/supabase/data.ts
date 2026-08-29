@@ -15,7 +15,6 @@ import type {
   BrandingSettings,
   ContactSettings,
   ContentPage,
-  RosterEntry,
   PageDocument,
 } from "@/data/mockData";
 import {
@@ -1181,111 +1180,6 @@ export async function saveContentPage(page: ContentPage): Promise<ContentPage> {
   }
 
   return page;
-}
-
-function mapRosterEntry(row: Record<string, unknown>): RosterEntry {
-  return {
-    id: String(row.id),
-    kind: (row.kind as RosterEntry["kind"]) ?? "former_official",
-    nameEn: (row.name_en as string) ?? "",
-    nameNe: (row.name_ne as string) ?? "",
-    photoUrl: (row.photo_url as string) ?? "",
-    order: Number(row.display_order ?? 0),
-  };
-}
-
-export async function fetchRosterEntries(): Promise<RosterEntry[]> {
-  const pg = getPgPool();
-  if (pg) {
-    try {
-      const res = await pg.query(
-        "SELECT id, kind, name_en, name_ne, photo_url, display_order FROM public.roster_entries ORDER BY display_order ASC, created_at ASC"
-      );
-      if (res.rows) return res.rows.map(mapRosterEntry);
-    } catch (err) {
-      console.warn("[fetchRosterEntries] pg query failed:", err);
-    }
-  }
-
-  try {
-    const supabase = makeAdminClient();
-    const { data, error } = await supabase
-      .from("roster_entries")
-      .select("*")
-      .order("display_order", { ascending: true });
-    if (!error && data) return data.map(mapRosterEntry);
-  } catch (err) {
-    console.warn("[fetchRosterEntries] supabase query failed:", err);
-  }
-
-  return [];
-}
-
-export async function saveRosterEntry(entry: RosterEntry): Promise<RosterEntry> {
-  const finalId = isValidUUID(entry.id) ? entry.id : generateUUID();
-
-  const pg = getPgPool();
-  if (pg) {
-    try {
-      const res = await pg.query(
-        `INSERT INTO public.roster_entries (id, kind, name_en, name_ne, photo_url, display_order)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         ON CONFLICT (id) DO UPDATE SET
-           kind = EXCLUDED.kind,
-           name_en = EXCLUDED.name_en,
-           name_ne = EXCLUDED.name_ne,
-           photo_url = EXCLUDED.photo_url,
-           display_order = EXCLUDED.display_order
-         RETURNING id, kind, name_en, name_ne, photo_url, display_order;`,
-        [finalId, entry.kind, entry.nameEn, entry.nameNe, entry.photoUrl || null, entry.order ?? 0]
-      );
-      if (res.rows && res.rows.length > 0) return mapRosterEntry(res.rows[0]);
-    } catch (err) {
-      console.warn("[saveRosterEntry] pg query failed:", err);
-    }
-  }
-
-  try {
-    const supabase = makeAdminClient();
-    const { data, error } = await supabase
-      .from("roster_entries")
-      .upsert({
-        id: finalId,
-        kind: entry.kind,
-        name_en: entry.nameEn,
-        name_ne: entry.nameNe,
-        photo_url: entry.photoUrl || null,
-        display_order: entry.order ?? 0,
-      })
-      .select()
-      .single();
-    if (!error && data) return mapRosterEntry(data);
-  } catch (err) {
-    console.warn("[saveRosterEntry] supabase upsert failed:", err);
-  }
-
-  return { ...entry, id: finalId };
-}
-
-export async function deleteRosterEntry(id: string): Promise<void> {
-  if (!id) return;
-
-  const pg = getPgPool();
-  if (pg) {
-    try {
-      await pg.query("DELETE FROM public.roster_entries WHERE id::text = $1", [id]);
-      return;
-    } catch (err) {
-      console.warn("[deleteRosterEntry] pg query failed:", err);
-    }
-  }
-
-  try {
-    const supabase = makeAdminClient();
-    await supabase.from("roster_entries").delete().eq("id", id);
-  } catch (err) {
-    console.warn("[deleteRosterEntry] supabase delete failed:", err);
-  }
 }
 
 function mapPageDocument(row: Record<string, unknown>): PageDocument {

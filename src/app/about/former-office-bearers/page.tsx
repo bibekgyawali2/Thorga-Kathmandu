@@ -1,14 +1,14 @@
 "use client";
-import { RosterPageView } from "@/components/about/RosterPageView";
+import { DocumentPageView } from "@/components/about/DocumentPageView";
 
 export default function FormerOfficeBearersPage() {
   return (
-    <RosterPageView
-      kind="former_official"
+    <DocumentPageView
+      slug="former-officials"
       titleNe="हालसम्मका पदाधिकारीहरु"
       titleEn="Former Office Bearers"
-      introNe="संस्थाको स्थापनादेखि हालसम्म विभिन्न कार्यकालमा नेतृत्व गर्नुभएका पदाधिकारीहरु।"
-      introEn="Office bearers who have led the forum across its successive terms since its founding."
+      introNe="प्रत्येक कार्यकालका पदाधिकारीहरुको नामावली। तल कार्यकाल अनुसार हेर्न सकिन्छ।"
+      introEn="Office bearers listed by term. Each term is published as a single sheet below."
     />
   );
 }

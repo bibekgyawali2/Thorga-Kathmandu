@@ -5,7 +5,6 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://thorgaktm.org.np";
 const ROUTES = [
   "",
   "/committee",
-  "/past-leaders",
   "/events",
   "/publications",
   "/gallery",

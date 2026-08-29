@@ -18,6 +18,8 @@ const ALLOWED_SLUGS = [
   "statute",
   "life-members",
   "certificates",
+  "former-officials",
+  "former-advisors",
   "calendar",
   "phone-directory",
   "bulletin",

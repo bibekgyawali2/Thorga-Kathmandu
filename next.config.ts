@@ -59,6 +59,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        // Former office bearers are now published as one sheet per term.
+        source: "/past-leaders",
+        destination: "/about/former-office-bearers",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

@@ -1,14 +1,14 @@
 "use client";
-import { RosterPageView } from "@/components/about/RosterPageView";
+import { DocumentPageView } from "@/components/about/DocumentPageView";
 
 export default function FormerAdvisorsPage() {
   return (
-    <RosterPageView
-      kind="former_advisor"
+    <DocumentPageView
+      slug="former-advisors"
       titleNe="हालसम्मका सल्लाहाकारहरु"
       titleEn="Former Advisors"
-      introNe="संस्थालाई विभिन्न कालखण्डमा मार्गदर्शन गर्नुभएका सल्लाहाकारहरु।"
-      introEn="Advisors who have guided the forum over the years."
+      introNe="प्रत्येक कार्यकालका सल्लाहाकारहरुको नामावली। तल कार्यकाल अनुसार हेर्न सकिन्छ।"
+      introEn="Advisors listed by term. Each term is published as a single sheet below."
     />
   );
 }

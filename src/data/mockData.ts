@@ -608,17 +608,6 @@ export interface ContentPage {
   bodyNe: string;
 }
 
-/** Name and photograph only. Used for the former office bearer and former
- *  advisor rosters, which deliberately carry no role, bio or contact detail. */
-export interface RosterEntry {
-  id: string;
-  kind: "former_official" | "former_advisor";
-  nameEn: string;
-  nameNe: string;
-  photoUrl: string;
-  order: number;
-}
-
 /** A PDF or image attached to one of the document pages. */
 export interface PageDocument {
   id: string;
@@ -626,6 +615,8 @@ export interface PageDocument {
     | "statute"
     | "life-members"
     | "certificates"
+    | "former-officials"
+    | "former-advisors"
     | "calendar"
     | "phone-directory"
     | "bulletin"
@@ -640,5 +631,4 @@ export interface PageDocument {
 }
 
 export const initialContentPages: ContentPage[] = [];
-export const initialRosterEntries: RosterEntry[] = [];
 export const initialPageDocuments: PageDocument[] = [];

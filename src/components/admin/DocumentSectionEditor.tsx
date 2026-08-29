@@ -344,3 +344,13 @@ export const ABOUT_DOC_SLUGS: DocumentSlugConfig[] = [
   { slug: "life-members", ne: "आजीवन सदस्यहरु", en: "Life Members", single: true },
   { slug: "certificates", ne: "दर्ता प्रमाणपत्रहरु", en: "Registration Certificates", single: false },
 ];
+
+/**
+ * The two former-committee pages. Each entry is one term: a single sheet
+ * listing that term's members, with the term as the caption, so a 2023 sheet
+ * and a 2024 sheet sit side by side.
+ */
+export const FORMER_COMMITTEE_DOC_SLUGS: DocumentSlugConfig[] = [
+  { slug: "former-officials", ne: "हालसम्मका पदाधिकारीहरु", en: "Former Office Bearers", single: false },
+  { slug: "former-advisors", ne: "हालसम्मका सल्लाहाकारहरु", en: "Former Advisors", single: false },
+];
