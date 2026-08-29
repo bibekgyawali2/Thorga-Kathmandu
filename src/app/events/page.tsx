@@ -19,7 +19,6 @@ import {
   Clock,
   MapPin,
   ArrowLeft,
-  CalendarCheck,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
 import { useRemoteData } from "@/hooks/useRemoteData";
@@ -60,18 +59,9 @@ export default function EventsPage() {
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-line pb-8">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-              <CalendarCheck size={16} weight="duotone" />
-              <span>{lang === "ne" ? "सामुदायिक भेला तथा कार्यक्रम" : "Community Gatherings & Programs"}</span>
-            </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg">
               {lang === "ne" ? "कार्यक्रम तथा सामाजिक गतिविधिहरू" : "Events & Social Programs"}
             </h1>
-            <p className="text-sm sm:text-base leading-relaxed text-muted">
-              {lang === "ne"
-                ? "वार्षिक साधारण सभा, निःशुल्क स्वास्थ्य शिविर, रक्तदान, चाडपर्व शुभकामना आदान-प्रदान तथा गाउँ विकास कार्यक्रमहरूको तालिका।"
-                : "Schedule of upcoming general assemblies, free specialist health camps, blood donation drives, and cultural festivals."}
-            </p>
           </div>
 
           {/* Status Tabs */}

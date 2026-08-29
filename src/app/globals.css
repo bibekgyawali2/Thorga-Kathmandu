@@ -111,12 +111,41 @@ body {
   color: var(--fg);
 }
 
-/* Devanagari sits taller than Latin at the same size, so headings need
-   more leading than a Latin-only scale would use. */
+/* Enhanced legibility & weight for Kalimati Nepali text */
+:lang(ne),
+[lang="ne"] {
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+:lang(ne) body,
+:lang(ne) p,
+:lang(ne) li,
+:lang(ne) span,
+:lang(ne) a,
+:lang(ne) button,
+:lang(ne) input,
+:lang(ne) textarea,
+:lang(ne) select {
+  font-weight: 500;
+}
+
 :lang(ne) h1,
 :lang(ne) h2,
-:lang(ne) h3 {
-  line-height: 1.3;
+:lang(ne) h3,
+:lang(ne) h4,
+:lang(ne) h5,
+:lang(ne) h6,
+:lang(ne) strong,
+:lang(ne) b,
+:lang(ne) .font-bold,
+:lang(ne) .font-extrabold,
+:lang(ne) .font-semibold {
+  font-weight: 700;
+  -webkit-text-stroke: 0.2px currentColor;
+  line-height: 1.35;
 }
 
 *:focus-visible {

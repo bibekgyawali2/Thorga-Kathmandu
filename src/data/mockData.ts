@@ -339,6 +339,7 @@ export function saveStoredLanguage(lang: Language): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(LANG_STORAGE_KEY, lang);
+    document.documentElement.lang = lang;
     langSubscribers.forEach((s) => s());
   } catch {}
 }

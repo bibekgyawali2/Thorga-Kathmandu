@@ -415,11 +415,6 @@ export default function MainPortal() {
               <h2 className="type-section text-fg">
                 {lang === "ne" ? "हाम्रो नेतृत्व" : "Our Leadership"}
               </h2>
-              <p className="type-lede text-sm">
-                {lang === "ne"
-                  ? "संस्थाको नीति निर्माण तथा दैनिक कार्य सञ्चालन गर्ने निर्वाचित नेतृत्व"
-                  : "Elected leadership overseeing social programs, finances, and village coordination"}
-              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
