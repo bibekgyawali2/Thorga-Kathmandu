@@ -10,6 +10,7 @@ import {
   FileText,
 } from "@phosphor-icons/react";
 import type { Language, PageDocument } from "@/data/mockData";
+import { documentUrl, isCloudinaryAsset } from "@/lib/documentUrl";
 
 /**
  * Renders a document inline so a visitor can read it without downloading.
@@ -22,6 +23,8 @@ import type { Language, PageDocument } from "@/data/mockData";
  */
 
 const CLOUDINARY_PDF = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)\.pdf$/i;
+
+
 
 function cloudinaryPageImage(url: string, page: number): string | null {
   const match = url.match(CLOUDINARY_PDF);
@@ -63,7 +66,7 @@ export function DocumentViewer({
         <figcaption className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm font-semibold text-fg">{title}</span>
           <a
-            href={doc.fileUrl}
+            href={isCloudinaryAsset(doc.fileUrl) ? documentUrl(doc.fileUrl, "inline", title) : doc.fileUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-hover transition-colors"
@@ -88,7 +91,7 @@ export function DocumentViewer({
         </h3>
         <div className="flex items-center gap-3">
           <a
-            href={doc.fileUrl}
+            href={isCloudinaryAsset(doc.fileUrl) ? documentUrl(doc.fileUrl, "inline", title) : doc.fileUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-hover transition-colors"
@@ -97,7 +100,11 @@ export function DocumentViewer({
             {lang === "ne" ? "नयाँ ट्याबमा" : "Open in new tab"}
           </a>
           <a
-            href={doc.fileUrl}
+            href={
+              isCloudinaryAsset(doc.fileUrl)
+                ? documentUrl(doc.fileUrl, "download", title)
+                : doc.fileUrl
+            }
             download
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-fg transition-colors"
           >
@@ -165,7 +172,7 @@ export function DocumentViewer({
       ) : (
         <>
           <iframe
-            src={doc.fileUrl}
+            src={isCloudinaryAsset(doc.fileUrl) ? documentUrl(doc.fileUrl, "inline", title) : doc.fileUrl}
             title={title}
             className="w-full h-[70vh] min-h-[420px] rounded-card border border-line bg-surface"
           />

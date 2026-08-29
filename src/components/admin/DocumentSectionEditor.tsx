@@ -4,8 +4,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
 import { useToast } from "@/components/Toast";
 import { useDialog } from "@/components/Dialog";
-import { FloppyDisk, Trash, FileText } from "@phosphor-icons/react";
+import { FloppyDisk, Trash, FileText, PencilSimple } from "@phosphor-icons/react";
 import type { Language, PageDocument } from "@/data/mockData";
+import { documentUrl } from "@/lib/documentUrl";
 
 export interface DocumentSlugConfig {
   slug: PageDocument["slug"];
@@ -200,6 +201,11 @@ export function DocumentSectionEditor({
       </div>
 
       <div className="rounded-card border border-line bg-surface p-5 space-y-4">
+        <p className="text-xs font-bold text-fg">
+          {form.id
+            ? t("प्रविष्टि सम्पादन", "Edit entry")
+            : t("नयाँ प्रविष्टि थप्नुहोस्", "Add a new entry")}
+        </p>
         <p className="text-[11px] text-muted">
           {activeMeta?.single
             ? t(
@@ -269,15 +275,26 @@ export function DocumentSectionEditor({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving}
-          className="px-5 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold transition-colors flex items-center gap-2 disabled:opacity-70"
-        >
-          {saving ? <span className="spinner" aria-hidden="true" /> : <FloppyDisk size={15} />}
-          {t("सुरक्षित गर्नुहोस्", "Save")}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving}
+            className="px-5 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-bold transition-colors flex items-center gap-2 disabled:opacity-70"
+          >
+            {saving ? <span className="spinner" aria-hidden="true" /> : <FloppyDisk size={15} />}
+            {form.id ? t("अद्यावधिक गर्नुहोस्", "Update") : t("सुरक्षित गर्नुहोस्", "Save")}
+          </button>
+          {form.id && (
+            <button
+              type="button"
+              onClick={() => setForm(emptyForm)}
+              className="px-4 py-2.5 rounded-control border border-line text-fg text-xs font-semibold hover:bg-tint transition-colors"
+            >
+              {t("रद्द गर्नुहोस्", "Cancel")}
+            </button>
+          )}
+        </div>
       </div>
 
       {visible.length === 0 ? (
@@ -289,7 +306,9 @@ export function DocumentSectionEditor({
           {visible.map((doc) => (
             <div
               key={doc.id}
-              className="rounded-card border border-line bg-surface p-3 flex items-center justify-between gap-3"
+              className={`rounded-card border p-3 flex items-center justify-between gap-3 transition-colors ${
+                form.id === doc.id ? "border-accent bg-accent-soft" : "border-line bg-surface"
+              }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <FileText size={18} weight="duotone" className="text-accent flex-shrink-0" />
@@ -305,13 +324,31 @@ export function DocumentSectionEditor({
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <a
-                  href={doc.fileUrl}
+                  href={documentUrl(doc.fileUrl, "inline", doc.titleEn)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-2.5 py-1 rounded-chip border border-line text-[11px] font-semibold text-fg hover:bg-tint transition-colors"
                 >
                   {t("हेर्नुहोस्", "View")}
                 </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm({
+                      id: doc.id,
+                      captionEn: doc.titleEn,
+                      captionNe: doc.titleNe,
+                      fileUrl: doc.fileUrl,
+                      pageCount: doc.pageCount ? String(doc.pageCount) : "",
+                    });
+                    // Bring the form into view; the list can be long.
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="px-2.5 py-1 rounded-chip border border-line text-[11px] font-semibold text-fg hover:bg-tint transition-colors flex items-center gap-1"
+                >
+                  <PencilSimple size={12} />
+                  {t("सम्पादन", "Edit")}
+                </button>
                 <button
                   type="button"
                   onClick={() => remove(doc)}

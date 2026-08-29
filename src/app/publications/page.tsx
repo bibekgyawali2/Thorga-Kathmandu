@@ -24,6 +24,7 @@ import {
   MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
+import { documentUrl } from "@/lib/documentUrl";
 import { useRemoteData } from "@/hooks/useRemoteData";
 import { DataStatus } from "@/components/DataStatus";
 
@@ -170,7 +171,7 @@ export default function PublicationsPage() {
                       <span>{lang === "ne" ? "पूर्वावलोकन" : "Preview"}</span>
                     </button>
                     <a
-                      href={pub.pdfUrl}
+                      href={documentUrl(pub.pdfUrl, "download", lang === "ne" ? pub.titleNe : pub.titleEn)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 py-2 px-3 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-e1"
@@ -220,7 +221,7 @@ export default function PublicationsPage() {
                 {lang === "ne" ? activePdfPreview.descriptionNe : activePdfPreview.descriptionEn}
               </p>
               <a
-                href={activePdfPreview.pdfUrl}
+                href={documentUrl(activePdfPreview.pdfUrl, "download", lang === "ne" ? activePdfPreview.titleNe : activePdfPreview.titleEn)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1"

@@ -42,6 +42,7 @@ import {
   saveStoredGallery,
 } from "@/data/mockData";
 import { useRemoteData } from "@/hooks/useRemoteData";
+import { documentUrl } from "@/lib/documentUrl";
 import { DataStatus } from "@/components/DataStatus";
 import { HeroCarousel, type HeroSlide } from "@/components/HeroCarousel";
 import {
@@ -614,7 +615,7 @@ export default function MainPortal() {
 
                     <div className="pt-3 border-t border-line flex items-center justify-between">
                       <a
-                        href={pub.pdfUrl}
+                        href={documentUrl(pub.pdfUrl, "download", lang === "ne" ? pub.titleNe : pub.titleEn)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
@@ -1063,7 +1064,7 @@ export default function MainPortal() {
                 {lang === "ne" ? activePdfPreview.descriptionNe : activePdfPreview.descriptionEn}
               </p>
               <a
-                href={activePdfPreview.pdfUrl}
+                href={documentUrl(activePdfPreview.pdfUrl, "download", lang === "ne" ? activePdfPreview.titleNe : activePdfPreview.titleEn)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1"
