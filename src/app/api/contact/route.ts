@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { fetchContactSettings, saveContactSettings } from "@/lib/supabase/data";
 import { ContactSettings } from "@/data/mockData";
 import { verifyAuth } from "@/lib/authGuard";
+import { isAllowedMapEmbedUrl } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -38,6 +39,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = (await request.json()) as ContactSettings;
+
+    if (body.mapEmbedUrl && !isAllowedMapEmbedUrl(body.mapEmbedUrl)) {
+      return new Response(
+        JSON.stringify({
+          error: "The map link must be a Google Maps embed URL (https://www.google.com/maps/...).",
+        }),
+        { status: 400, headers: NO_CACHE_HEADERS }
+      );
+    }
+
     await saveContactSettings(body);
     return new Response(JSON.stringify({ success: true, data: body }), {
       status: 200,

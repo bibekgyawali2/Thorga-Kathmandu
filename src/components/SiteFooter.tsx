@@ -1,11 +1,28 @@
 "use client";
 
-import React from "react";
+import React, { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Language } from "@/data/mockData";
+import {
+  Language,
+  subscribeContactSettings,
+  getStoredContactSettingsSnapshot,
+  getServerContactSettingsSnapshot,
+} from "@/data/mockData";
+import { isAllowedMapEmbedUrl } from "@/lib/validation";
 import { Buildings, MapPin, EnvelopeSimple, Phone } from "@phosphor-icons/react";
 
 export function SiteFooter({ lang }: { lang: Language }) {
+  const contact = useSyncExternalStore(
+    subscribeContactSettings,
+    getStoredContactSettingsSnapshot,
+    getServerContactSettingsSnapshot
+  );
+
+  // Re-checked at render as well as on save: the value reaches an iframe src,
+  // so a stale or tampered cached copy must not be able to frame another site.
+  const mapUrl = isAllowedMapEmbedUrl(contact.mapEmbedUrl) ? contact.mapEmbedUrl : null;
+  const mapLabel = lang === "ne" ? contact.mapLabelNe : contact.mapLabelEn;
+
   return (
     <footer className="bg-surface border-t border-line text-xs py-14 text-muted">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -41,7 +58,7 @@ export function SiteFooter({ lang }: { lang: Language }) {
                 </Link>
               </li>
               <li>
-                <Link href="/past-leaders" className="hover:text-accent transition-colors">
+                <Link href="/about/former-office-bearers" className="hover:text-accent transition-colors">
                   {lang === "ne" ? "पूर्व नेतृत्व तथा कार्यकाल" : "Past Leadership Archive"}
                 </Link>
               </li>
@@ -88,6 +105,32 @@ export function SiteFooter({ lang }: { lang: Language }) {
             </div>
           </div>
         </div>
+
+        {/* Village location */}
+        {mapUrl && (
+          <section className="space-y-3 pt-2">
+            <div className="flex items-center gap-2 text-fg font-bold text-sm">
+              <MapPin size={16} className="text-accent" weight="duotone" />
+              <h2>{lang === "ne" ? "थोर्गाको अवस्थिति" : "Where Thorga Is"}</h2>
+            </div>
+            {mapLabel && <p className="text-xs text-muted">{mapLabel}</p>}
+            <div className="rounded-card overflow-hidden border border-line bg-tint">
+              <iframe
+                src={mapUrl}
+                title={
+                  lang === "ne"
+                    ? "थोर्गाको स्थान देखाउने नक्सा"
+                    : "Map showing the location of Thorga"
+                }
+                // Deferred so the footer map never competes with page content
+                // for bandwidth on a slow connection.
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="w-full h-64 sm:h-80 border-0 block"
+              />
+            </div>
+          </section>
+        )}
 
         {/* Bottom Rights Strip */}
         <div className="pt-8 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">

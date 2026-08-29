@@ -228,6 +228,10 @@ export interface ContactSettings {
   phone1: string;
   phone2: string;
   email: string;
+  /** Google Maps embed URL for the village location shown in the footer. */
+  mapEmbedUrl: string;
+  mapLabelNe: string;
+  mapLabelEn: string;
 }
 
 export const initialContactSettings: ContactSettings = {
@@ -244,6 +248,10 @@ export const initialContactSettings: ContactSettings = {
   phone1: "+977 01-4481234",
   phone2: "9851012345",
   email: "info@thorgaktm.org.np",
+  mapEmbedUrl:
+    "https://www.google.com/maps?q=Thorga,%20Ruru%20Kshetra,%20Gulmi,%20Nepal&z=12&output=embed",
+  mapLabelNe: "थोर्गा, रुरुक्षेत्र गाउँपालिका, गुल्मी, लुम्बिनी प्रदेश",
+  mapLabelEn: "Thorga, Ruru Kshetra Rural Municipality, Gulmi, Lumbini Province",
 };
 
 const CONTACT_STORAGE_KEY = "thorga_contact_settings";

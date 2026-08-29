@@ -64,3 +64,27 @@ export function isValidImageSrc(src: string | undefined | null): boolean {
   }
 }
 
+
+/**
+ * Whether a URL is safe to use as the src of the location map iframe.
+ *
+ * The value is editable from the admin panel and lands in an iframe, so an
+ * arbitrary https URL would let anyone with admin access frame any site inside
+ * ours. Only Google Maps embed URLs are accepted.
+ */
+export function isAllowedMapEmbedUrl(url: string | undefined | null): boolean {
+  if (!url || typeof url !== "string") return false;
+  try {
+    const parsed = new URL(url.trim());
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    const allowedHost =
+      host === "google.com" ||
+      host === "www.google.com" ||
+      host === "maps.google.com" ||
+      host.endsWith(".google.com");
+    return allowedHost && parsed.pathname.startsWith("/maps");
+  } catch {
+    return false;
+  }
+}

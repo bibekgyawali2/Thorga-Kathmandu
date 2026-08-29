@@ -3978,6 +3978,9 @@ export default function AdminPage() {
                       phone1: contactSettingsState.phone1.trim(),
                       phone2: contactSettingsState.phone2.trim(),
                       email: contactSettingsState.email.trim(),
+                      mapEmbedUrl: (contactSettingsState.mapEmbedUrl || "").trim(),
+                      mapLabelNe: (contactSettingsState.mapLabelNe || "").trim(),
+                      mapLabelEn: (contactSettingsState.mapLabelEn || "").trim(),
                     };
 
                     const res = await adminFetch("/api/contact", {
@@ -4181,6 +4184,64 @@ export default function AdminPage() {
                         }
                         className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                       />
+                    </div>
+                  </div>
+
+                  {/* Village location map shown in the site footer */}
+                  <div className="space-y-4 pt-2 border-t border-line">
+                    <div>
+                      <p className="text-xs font-bold text-fg">
+                        {lang === "ne" ? "थोर्गाको नक्सा (फुटरमा देखिने)" : "Thorga location map (shown in the footer)"}
+                      </p>
+                      <p className="text-[11px] text-muted mt-1">
+                        {lang === "ne"
+                          ? "Google Maps मा स्थान खोली Share > Embed a map बाट लिङ्क प्रतिलिपि गर्नुहोस्। Google Maps को लिङ्क मात्र स्वीकार गरिन्छ।"
+                          : "Open the place in Google Maps, then Share > Embed a map, and paste the link here. Only Google Maps links are accepted."}
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-fg">
+                        {lang === "ne" ? "नक्सा लिङ्क" : "Map embed URL"}
+                      </label>
+                      <input
+                        type="url"
+                        value={contactSettingsState.mapEmbedUrl || ""}
+                        onChange={(e) =>
+                          setContactSettingsState({ ...contactSettingsState, mapEmbedUrl: e.target.value })
+                        }
+                        placeholder="https://www.google.com/maps?q=...&output=embed"
+                        className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent font-mono"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-fg">
+                          {lang === "ne" ? "नक्सा विवरण (नेपाली)" : "Map caption (Nepali)"}
+                        </label>
+                        <input
+                          type="text"
+                          value={contactSettingsState.mapLabelNe || ""}
+                          onChange={(e) =>
+                            setContactSettingsState({ ...contactSettingsState, mapLabelNe: e.target.value })
+                          }
+                          className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-fg">
+                          {lang === "ne" ? "नक्सा विवरण (English)" : "Map caption (English)"}
+                        </label>
+                        <input
+                          type="text"
+                          value={contactSettingsState.mapLabelEn || ""}
+                          onChange={(e) =>
+                            setContactSettingsState({ ...contactSettingsState, mapLabelEn: e.target.value })
+                          }
+                          className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
