@@ -20,7 +20,6 @@ import {
   EnvelopeSimple,
   MagnifyingGlass,
   ArrowLeft,
-  ShieldCheck,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
 import { useRemoteData } from "@/hooks/useRemoteData";
@@ -123,18 +122,9 @@ export default function CommitteePage() {
         {/* Page Title & Search Bar */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-line pb-8">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-              <ShieldCheck size={16} weight="duotone" />
-              <span>{lang === "ne" ? "कार्यसमिति (२०८१ देखि २०८४)" : "Executive Board (2024 to 2027)"}</span>
-            </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg">
               {lang === "ne" ? "वर्तमान कार्यसमिति तथा सल्लाहकार परिषद्" : "Executive Committee & Advisory Council"}
             </h1>
-            <p className="text-sm sm:text-base leading-relaxed text-muted">
-              {lang === "ne"
-                ? "संस्थाको नीति निर्माण, सामाजिक कल्याण कोष परिचालन तथा काठमाडौँ र थोर्गाबीच समन्वय गर्ने सम्पूर्ण निर्वाचित पदाधिकारी तथा सल्लाहकारहरूको सूची।"
-                : "Full directory of elected executive members, trustees, and advisory council members leading organizational welfare initiatives."}
-            </p>
           </div>
 
           {/* Search Input */}

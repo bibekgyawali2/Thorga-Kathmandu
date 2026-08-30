@@ -66,7 +66,6 @@ import {
   Buildings,
   MapPin,
   EnvelopeSimple,
-  ShieldCheck,
   ArrowRight,
   Sparkle,
   X,
@@ -372,18 +371,9 @@ export default function MainPortal() {
       <section id="about" className="py-20 sm:py-28 rule-soft bg-ground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-              <ShieldCheck size={16} weight="duotone" />
-              <span>{lang === "ne" ? "संस्थागत उद्देश्य तथा सेवा अभियान" : "Institutional Mission & Core Pillars"}</span>
-            </div>
             <h2 className="type-section text-fg">
               {lang === "ne" ? "उद्देश्य तथा कार्यक्षेत्र" : "Objectives and Core Pillars"}
             </h2>
-            <p className="type-lede">
-              {lang === "ne"
-                ? "थोर्गाबाट विभिन्न पेसा, व्यवसाय तथा अध्ययनका सिलसिलामा काठमाडौँ उपत्यकामा बसोबास गरिरहेका सम्पूर्ण समुदायलाई एउटै छातामुनि संगठित गर्दै गाउँको चौतर्फी उन्नतिमा टेवा पुर्याउनु हाम्रो मुख्य ध्येय हो।"
-                : "Organizing native families of Thorga living in Kathmandu under one institutional umbrella to foster community mutual aid, scholarship programs, and rural development."}
-            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -546,11 +536,6 @@ export default function MainPortal() {
               <h2 className="type-section text-fg">
                 {lang === "ne" ? "प्रकाशन तथा दस्तावेज सङ्ग्रह" : "Publications & PDF Archive"}
               </h2>
-              <p className="type-lede text-sm">
-                {lang === "ne"
-                  ? "संस्थाका वार्षिक स्मारिकाहरू, विधान तथा आधिकारिक लेखा प्रतिवेदन डाउनलोड गर्नुहोस्"
-                  : "Download official annual souvenirs, constitution bylaws, and certified audit reports"}
-              </p>
             </div>
 
             <Link
@@ -646,11 +631,6 @@ export default function MainPortal() {
               <h2 className="type-section text-fg">
                 {lang === "ne" ? "आगामी तथा सम्पन्न कार्यक्रमहरू" : "Upcoming & Recent Community Events"}
               </h2>
-              <p className="type-lede text-sm">
-                {lang === "ne"
-                  ? "वार्षिक साधारण सभा, भेला तथा सामाजिक विकास सम्बन्धी गतिविधिहरू"
-                  : "Join us in our upcoming community gatherings, health camps, and annual general meetings"}
-              </p>
             </div>
 
             <Link
@@ -727,11 +707,6 @@ export default function MainPortal() {
               <h2 className="type-section text-fg">
                 {lang === "ne" ? "सामाजिक कार्य तथा दृश्य अभिलेख" : "Community Action Visual Archive"}
               </h2>
-              <p className="type-lede text-sm">
-                {lang === "ne"
-                  ? "थोर्गा गाउँ तथा काठमाडौँमा सञ्चालन गरिएका विभिन्न गतिविधिहरूका झलकहरू"
-                  : "Moments from our rural development projects, gatherings, and youth welfare initiatives"}
-              </p>
             </div>
 
             <Link
@@ -794,9 +769,6 @@ export default function MainPortal() {
             <h2 className="type-section text-fg">
               {lang === "ne" ? contactSettings.contactHeadingNe : contactSettings.contactHeadingEn}
             </h2>
-            <p className="text-base text-muted max-w-[65ch] leading-relaxed">
-              {lang === "ne" ? contactSettings.contactDescriptionNe : contactSettings.contactDescriptionEn}
-            </p>
           </div>
 
           {/* Symmetrical Two-Column Content Grid */}

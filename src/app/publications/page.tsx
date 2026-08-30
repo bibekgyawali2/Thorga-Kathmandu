@@ -15,7 +15,6 @@ import {
   saveStoredPublications,
 } from "@/data/mockData";
 import {
-  BookOpen,
   FileText,
   Download,
   Eye,
@@ -72,18 +71,9 @@ export default function PublicationsPage() {
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-line pb-8">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-              <BookOpen size={16} weight="duotone" />
-              <span>{lang === "ne" ? "मुखपत्र, स्मारिका तथा प्रतिवेदन" : "Official Publications & Reports"}</span>
-            </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg">
               {lang === "ne" ? "प्रकाशन, मुखपत्र तथा दस्तावेजहरू" : "Publications & PDF Documents"}
             </h1>
-            <p className="text-sm sm:text-base leading-relaxed text-muted">
-              {lang === "ne"
-                ? "संस्थाका वार्षिक स्मारिकाहरू, विधान, नियमावली तथा आधिकारिक लेखापरीक्षण प्रतिवेदनहरू डाउनलोड तथा अध्ययन गर्नुहोस्।"
-                : "Browse and download official annual souvenirs, constitution bylaws, literature bulletins, and certified audit reports."}
-            </p>
           </div>
 
           {/* Search Input */}

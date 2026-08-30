@@ -18,7 +18,6 @@ import {
   Image as ImageIcon,
   ArrowLeft,
   X,
-  Camera,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
 import { useRemoteData } from "@/hooks/useRemoteData";
@@ -70,18 +69,9 @@ export default function GalleryPage() {
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-line pb-8">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-semibold">
-              <Camera size={16} weight="duotone" />
-              <span>{lang === "ne" ? "सामाजिक कार्य तथा दृश्य अभिलेख" : "Community Action Visual Archive"}</span>
-            </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg">
               {lang === "ne" ? "सामुदायिक तस्बिर सङ्ग्रह" : "Community Photo Gallery"}
             </h1>
-            <p className="text-sm sm:text-base leading-relaxed text-muted">
-              {lang === "ne"
-                ? "थोर्गा गाउँ तथा काठमाडौँ उपत्यकामा सञ्चालन गरिएका शैक्षिक, सांस्कृतिक, पूर्वाधार विकास तथा सामाजिक कार्यक्रमहरूका ऐतिहासिक क्षणहरू।"
-                : "A visual journey of rural development projects, school library handovers, temple preservation, and cultural gatherings."}
-            </p>
           </div>
 
           {/* Category Filter Pills */}

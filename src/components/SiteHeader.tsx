@@ -294,13 +294,7 @@ export function SiteHeader({
                     : "Thorga Kathmandu Liaison and Development Forum"}
                 </div>
               </Link>
-              <p className="text-xs sm:text-sm text-muted font-medium leading-snug">
-                {lang === "ne"
-                  ? "“गाउँ र सहरबीचको सेतु, समुदायको साझा प्रयास”"
-                  : "“A bridge between the village and the city”"}
-              </p>
-
-              {/* Date line with small gap directly under sub text */}
+              {/* Date line with small gap directly under title */}
               <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 text-[11px] sm:text-xs font-medium text-muted/90 pt-0.5">
                 {lang === "ne" && bsDate && <span>{bsDate}</span>}
                 {lang === "ne" && bsDate && adDate && (
