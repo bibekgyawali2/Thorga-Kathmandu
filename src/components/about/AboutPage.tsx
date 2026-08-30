@@ -31,8 +31,6 @@ export function AboutPage({
   remote?: { error: boolean; refetch: () => void };
   children: React.ReactNode;
 }) {
-  const intro = lang === "ne" ? introNe : introEn;
-
   return (
     <div className="min-h-screen bg-ground text-fg font-sans flex flex-col justify-between selection:bg-accent selection:text-on-accent">
       <SiteHeader lang={lang} setLang={setLang} />
@@ -51,9 +49,6 @@ export function AboutPage({
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-fg leading-tight">
             {lang === "ne" ? titleNe : titleEn}
           </h1>
-          {intro && (
-            <p className="text-sm sm:text-base leading-relaxed text-muted max-w-[65ch]">{intro}</p>
-          )}
         </header>
 
         {children}
