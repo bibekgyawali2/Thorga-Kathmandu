@@ -45,16 +45,28 @@ export const ABOUT_LINKS = [
 
 export const PUBLICATION_LINKS = [
   { href: "/publications", ne: "सबै प्रकाशन", en: "All Publications" },
+  { href: "/publications/sansthan-prakashan", ne: "संस्थान प्रकाशन", en: "Sansthan Prakashan" },
+  { href: "/publications/thorga-sambandhi-anya-prakashan", ne: "थोर्गा सम्बन्धी अन्य प्रकाशन", en: "Thorga Sambandhi Anya Prakashan" },
+  { href: "/publications/souvenir", ne: "स्मारिका", en: "Souvenir" },
+  { href: "/publications/bulletin", ne: "बुलेटिन", en: "Bulletin" },
   { href: "/publications/calendar", ne: "क्यालेण्डर", en: "Calendar" },
   { href: "/publications/phone-directory", ne: "फोन डायरी", en: "Phone Directory" },
-  { href: "/publications/bulletin", ne: "बुलेटिन", en: "Bulletin" },
-  { href: "/publications/souvenir", ne: "स्मारिका", en: "Souvenir" },
   { href: "/publications/other", ne: "अन्य", en: "Other" },
 ];
 
 export const NAV_LINKS: NavLink[] = [
   { href: "/", ne: "गृहपृष्ठ", en: "Home" },
   { href: "/about/organisation", ne: "हाम्रो बारेमा", en: "About Us", children: ABOUT_LINKS },
+  {
+    href: "/publications/sansthan-prakashan",
+    ne: "संस्थान प्रकाशन",
+    en: "Sansthan Prakashan",
+  },
+  {
+    href: "/publications/thorga-sambandhi-anya-prakashan",
+    ne: "थोर्गा सम्बन्धी अन्य प्रकाशन",
+    en: "Thorga Sambandhi Anya Prakashan",
+  },
   { href: "/events", ne: "कार्यक्रम तथा गतिविधि", en: "Events & Activities" },
   {
     href: "/publications",
@@ -193,7 +205,7 @@ function NavDropdown({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 w-72 rounded-card border border-line bg-surface shadow-e2 py-2">
+        <div className="absolute left-0 top-full mt-1 z-50 w-80 rounded-card border border-line bg-surface shadow-e2 py-2">
           {(link.children ?? []).map((child) => {
             const active = pathname === child.href;
             return (

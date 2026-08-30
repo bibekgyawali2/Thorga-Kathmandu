@@ -630,6 +630,8 @@ export interface PageDocument {
     | "phone-directory"
     | "bulletin"
     | "souvenir"
+    | "sansthan-prakashan"
+    | "thorga-sambandhi-anya-prakashan"
     | "other";
   titleEn: string;
   titleNe: string;

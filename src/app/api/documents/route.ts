@@ -24,6 +24,8 @@ const ALLOWED_SLUGS = [
   "phone-directory",
   "bulletin",
   "souvenir",
+  "sansthan-prakashan",
+  "thorga-sambandhi-anya-prakashan",
   "other",
 ];
 const ALLOWED_TYPES = ["pdf", "image"];
