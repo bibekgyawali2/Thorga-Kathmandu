@@ -67,7 +67,7 @@ export const NAV_LINKS: NavLink[] = [
 ];
 
 function subscribeTheme(callback: () => void) {
-  if (typeof document === "undefined") return () => {};
+  if (typeof document === "undefined") return () => { };
   const observer = new MutationObserver(callback);
   observer.observe(document.documentElement, {
     attributes: true,
@@ -179,11 +179,10 @@ function NavDropdown({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-haspopup="true"
-        className={`px-3 py-2 rounded-control text-[15px] font-semibold transition-colors flex items-center gap-1.5 ${
-          sectionActive || open
+        className={`px-3 py-2 rounded-control text-[15px] font-semibold transition-colors flex items-center gap-1.5 ${sectionActive || open
             ? "bg-on-nav/15 text-on-nav"
             : "text-on-nav/85 hover:bg-on-nav/10 hover:text-on-nav"
-        }`}
+          }`}
       >
         {lang === "ne" ? link.ne : link.en}
         <CaretDown
@@ -202,11 +201,10 @@ function NavDropdown({
                 key={child.href}
                 href={child.href}
                 onClick={() => setOpen(false)}
-                className={`block px-4 py-2 text-sm font-medium transition-colors ${
-                  active
+                className={`block px-4 py-2 text-sm font-medium transition-colors ${active
                     ? "bg-accent-soft text-accent font-semibold"
                     : "text-fg hover:bg-tint hover:text-accent"
-                }`}
+                  }`}
               >
                 {lang === "ne" ? child.ne : child.en}
               </Link>
@@ -237,9 +235,9 @@ export function SiteHeader({
 
   const today = dateKey
     ? (() => {
-        const [y, m, d] = dateKey.split("-").map(Number);
-        return new Date(y, m, d);
-      })()
+      const [y, m, d] = dateKey.split("-").map(Number);
+      return new Date(y, m, d);
+    })()
     : null;
 
   const toggleTheme = () => {
@@ -350,11 +348,10 @@ export function SiteHeader({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3 py-2 rounded-control text-[15px] font-semibold transition-colors ${
-                    isActive
+                  className={`px-3 py-2 rounded-control text-[15px] font-semibold transition-colors ${isActive
                       ? "bg-on-nav/15 text-on-nav"
                       : "text-on-nav/85 hover:bg-on-nav/10 hover:text-on-nav"
-                  }`}
+                    }`}
                 >
                   {lang === "ne" ? link.ne : link.en}
                 </Link>
@@ -374,14 +371,14 @@ export function SiteHeader({
           </Link>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <div className="hidden sm:inline-flex rounded-control bg-on-nav/10 p-0.5">
+            {/* Language toggle commented out temporarily */}
+            {/* <div className="hidden sm:inline-flex rounded-control bg-on-nav/10 p-0.5">
               <button
                 type="button"
                 onClick={() => handleLangChange("ne")}
                 aria-pressed={lang === "ne"}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-chip transition-colors ${
-                  lang === "ne" ? "bg-on-nav text-nav" : "text-on-nav/80 hover:text-on-nav"
-                }`}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-chip transition-colors ${lang === "ne" ? "bg-on-nav text-nav" : "text-on-nav/80 hover:text-on-nav"
+                  }`}
               >
                 नेपाली
               </button>
@@ -389,13 +386,12 @@ export function SiteHeader({
                 type="button"
                 onClick={() => handleLangChange("en")}
                 aria-pressed={lang === "en"}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-chip transition-colors ${
-                  lang === "en" ? "bg-on-nav text-nav" : "text-on-nav/80 hover:text-on-nav"
-                }`}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-chip transition-colors ${lang === "en" ? "bg-on-nav text-nav" : "text-on-nav/80 hover:text-on-nav"
+                  }`}
               >
                 EN
               </button>
-            </div>
+            </div> */}
 
             <button
               type="button"
@@ -406,8 +402,8 @@ export function SiteHeader({
                     ? "उज्यालो थिम"
                     : "Switch to light theme"
                   : lang === "ne"
-                  ? "अँध्यारो थिम"
-                  : "Switch to dark theme"
+                    ? "अँध्यारो थिम"
+                    : "Switch to dark theme"
               }
               className="p-2 rounded-control text-on-nav/85 hover:bg-on-nav/10 hover:text-on-nav transition-colors"
             >
@@ -458,38 +454,37 @@ export function SiteHeader({
                   ))}
                 </div>
               ) : (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block py-2.5 px-3 rounded-control text-[15px] font-semibold text-on-nav/90 hover:bg-on-nav/10 hover:text-on-nav transition-colors"
-              >
-                {lang === "ne" ? link.ne : link.en}
-              </Link>
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block py-2.5 px-3 rounded-control text-[15px] font-semibold text-on-nav/90 hover:bg-on-nav/10 hover:text-on-nav transition-colors"
+                >
+                  {lang === "ne" ? link.ne : link.en}
+                </Link>
               )
             )}
 
-            <div className="pt-2 mt-2 border-t border-on-nav/15 flex items-center justify-between gap-3">
-              <div className="inline-flex rounded-control bg-on-nav/10 p-0.5 sm:hidden">
+            <div className="pt-2 mt-2 border-t border-on-nav/15 flex items-center justify-end gap-3">
+              {/* Language toggle commented out temporarily */}
+              {/* <div className="inline-flex rounded-control bg-on-nav/10 p-0.5 sm:hidden">
                 <button
                   type="button"
                   onClick={() => handleLangChange("ne")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-chip ${
-                    lang === "ne" ? "bg-on-nav text-nav" : "text-on-nav/80"
-                  }`}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-chip ${lang === "ne" ? "bg-on-nav text-nav" : "text-on-nav/80"
+                    }`}
                 >
                   नेपाली
                 </button>
                 <button
                   type="button"
                   onClick={() => handleLangChange("en")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-chip ${
-                    lang === "en" ? "bg-on-nav text-nav" : "text-on-nav/80"
-                  }`}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-chip ${lang === "en" ? "bg-on-nav text-nav" : "text-on-nav/80"
+                    }`}
                 >
                   EN
                 </button>
-              </div>
+              </div> */}
               <Link
                 href="/admin"
                 onClick={() => setMobileMenuOpen(false)}
