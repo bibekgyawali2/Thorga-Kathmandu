@@ -794,8 +794,8 @@ export default function MainPortal() {
                     </h3>
                     <p className="text-xs text-muted max-w-md mx-auto">
                       {lang === "ne"
-                        ? "हाम्रो सम्पर्क सचिवालयले तपाईंलाई चाँडै सम्पर्क गर्नेछ। धन्यवाद।"
-                        : "Our liaison secretariat will review your message and contact you shortly. Thank you."}
+                        ? "हाम्रो सम्पर्क टोलीले तपाईंलाई चाँडै सम्पर्क गर्नेछ। धन्यवाद।"
+                        : "Our team will review your message and contact you shortly. Thank you."}
                     </p>
                   </div>
                   <button

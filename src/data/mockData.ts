@@ -98,7 +98,7 @@ export const initialHeroContent: HeroContent = {
   imageBadgeEn: "Official Forum",
   imageCaptionNe: "गुल्मी जिल्ला, रुरुक्षेत्र गाउँपालिका वडा नं. २ र ३ (साविक थोर्गा गा.वि.स.)",
   imageCaptionEn: "Gulmi District, Ruru Kshetra Ward 2 and 3 (Former Thorga VDC)",
-  imageSubtitleNe: "काठमाडौँ सम्पर्क सचिवालय: शंखमूल मार्ग, नयाँ बानेश्वर",
+  imageSubtitleNe: "काठमाडौँ सम्पर्क: शंखमूल मार्ग, नयाँ बानेश्वर",
   imageSubtitleEn: "Kathmandu Liaison Office: Shankhamul Marg, New Baneshwor",
 };
 
@@ -239,10 +239,10 @@ export const initialContactSettings: ContactSettings = {
   contactHeadingEn: "Contact & Membership Inquiries",
   contactDescriptionNe: "मञ्चको सदस्यता, सामाजिक परियोजना, स्मारिका प्रकाशन तथा सहयोगका लागि सम्पर्क गर्नुहोस्",
   contactDescriptionEn: "Reach out for memberships, community welfare programs, publications, or partnerships",
-  kathmanduTitleNe: "काठमाडौँ सम्पर्क सचिवालय",
-  kathmanduTitleEn: "Kathmandu Secretariat",
+  kathmanduTitleNe: "काठमाडौँ सम्पर्क",
+  kathmanduTitleEn: "Kathmandu Office",
   kathmanduSubtitleNe: "केन्द्रीय सम्पर्क कार्यालय",
-  kathmanduSubtitleEn: "Main Liaison Secretariat",
+  kathmanduSubtitleEn: "Main Contact Office",
   kathmanduAddressNe: "शंखमूल मार्ग, नयाँ बानेश्वर, काठमाडौँ, नेपाल",
   kathmanduAddressEn: "Shankhamul Marg, New Baneshwor, Kathmandu, Nepal",
   phone1: "9847996491",

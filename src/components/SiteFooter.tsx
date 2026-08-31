@@ -74,10 +74,10 @@ export function SiteFooter({ lang }: { lang: Language }) {
             </ul>
           </div>
 
-          {/* Secretariat Contact Details */}
+          {/* Contact Details */}
           <div className="md:col-span-4 space-y-3">
             <div className="font-bold text-fg text-sm">
-              {lang === "ne" ? "सम्पर्क तथा सचिवालय" : "Secretariat Office"}
+              {lang === "ne" ? "सम्पर्क" : "Contact"}
             </div>
             <div className="space-y-2 leading-relaxed">
               {(contact.phone1 || contact.phone2) && (
