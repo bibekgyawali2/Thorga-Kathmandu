@@ -32,7 +32,7 @@ export default function GlobalError({
           </h1>
           <p style={{ fontSize: "0.875rem", lineHeight: 1.6, color: "#47574f" }}>
             The application failed to load. Please refresh the page. If the problem continues,
-            contact the secretariat at info@thorgaktm.org.np.
+            contact the secretariat at thorgakathmandu@gmail.com.
           </p>
           {error.digest && (
             <p style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "#47574f" }}>

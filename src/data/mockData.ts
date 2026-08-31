@@ -159,7 +159,7 @@ export function saveStoredBranding(settings: BrandingSettings): void {
     localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(settings));
     _brandingCacheRaw = undefined as unknown as string | null;
     brandingSubscribers.forEach((s) => s());
-  } catch {}
+  } catch { }
 }
 
 const HERO_STORAGE_KEY = "thorga_hero_content";
@@ -211,7 +211,7 @@ export function saveStoredHeroContent(content: HeroContent): void {
     localStorage.setItem(HERO_STORAGE_KEY, JSON.stringify(content));
     _heroCacheRaw = undefined as unknown as string | null; // invalidate cache
     heroSubscribers.forEach((s) => s());
-  } catch {}
+  } catch { }
 }
 
 export interface ContactSettings {
@@ -245,9 +245,9 @@ export const initialContactSettings: ContactSettings = {
   kathmanduSubtitleEn: "Main Liaison Secretariat",
   kathmanduAddressNe: "शंखमूल मार्ग, नयाँ बानेश्वर, काठमाडौँ, नेपाल",
   kathmanduAddressEn: "Shankhamul Marg, New Baneshwor, Kathmandu, Nepal",
-  phone1: "+977 01-4481234",
-  phone2: "9851012345",
-  email: "info@thorgaktm.org.np",
+  phone1: "9847996491",
+  phone2: "9851170032",
+  email: "thorgakathmandu@gmail.com",
   mapEmbedUrl:
     "https://www.google.com/maps?q=Thorga,%20Ruru%20Kshetra,%20Gulmi,%20Nepal&z=12&output=embed",
   mapLabelNe: "थोर्गा, रुरुक्षेत्र गाउँपालिका, गुल्मी, लुम्बिनी प्रदेश",
@@ -303,7 +303,7 @@ export function saveStoredContactSettings(settings: ContactSettings): void {
     localStorage.setItem(CONTACT_STORAGE_KEY, JSON.stringify(settings));
     _contactCacheRaw = undefined as unknown as string | null;
     contactSubscribers.forEach((s) => s());
-  } catch {}
+  } catch { }
 }
 
 const LANG_STORAGE_KEY = "thorga_portal_lang";
@@ -341,7 +341,7 @@ export function saveStoredLanguage(lang: Language): void {
     localStorage.setItem(LANG_STORAGE_KEY, lang);
     document.documentElement.lang = lang;
     langSubscribers.forEach((s) => s());
-  } catch {}
+  } catch { }
 }
 
 // ==========================================
@@ -388,7 +388,7 @@ export function saveStoredMembers(members: Member[]): void {
     localStorage.setItem(MEMBERS_STORAGE_KEY, JSON.stringify(members));
     _membersCacheRaw = undefined as unknown as string | null;
     membersSubscribers.forEach((s) => s());
-  } catch {}
+  } catch { }
 }
 
 // ==========================================
@@ -435,7 +435,7 @@ export function saveStoredEvents(events: EventItem[]): void {
     localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
     _eventsCacheRaw = undefined as unknown as string | null;
     eventsSubscribers.forEach((s) => s());
-  } catch {}
+  } catch { }
 }
 
 // ==========================================
@@ -482,7 +482,7 @@ export function saveStoredPublications(publications: Publication[]): void {
     localStorage.setItem(PUBLICATIONS_STORAGE_KEY, JSON.stringify(publications));
     _pubCacheRaw = undefined as unknown as string | null;
     pubSubscribers.forEach((s) => s());
-  } catch {}
+  } catch { }
 }
 
 // ==========================================
@@ -529,7 +529,7 @@ export function saveStoredGallery(gallery: GalleryItem[]): void {
     localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(gallery));
     _galleryCacheRaw = undefined as unknown as string | null;
     gallerySubscribers.forEach((s) => s());
-  } catch {}
+  } catch { }
 }
 
 // ==========================================
@@ -588,7 +588,7 @@ export function saveStoredInquiries(inquiries: Inquiry[]): void {
     localStorage.setItem(INQUIRIES_STORAGE_KEY, JSON.stringify(inquiries));
     _inquiriesCacheRaw = undefined as unknown as string | null;
     inquiriesSubscribers.forEach((s) => s());
-  } catch {}
+  } catch { }
 }
 
 export function addStoredInquiry(inquiry: Omit<Inquiry, "id" | "date" | "read">): Inquiry {
@@ -621,18 +621,18 @@ export interface ContentPage {
 export interface PageDocument {
   id: string;
   slug:
-    | "statute"
-    | "life-members"
-    | "certificates"
-    | "former-officials"
-    | "former-advisors"
-    | "calendar"
-    | "phone-directory"
-    | "bulletin"
-    | "souvenir"
-    | "sansthan-prakashan"
-    | "thorga-sambandhi-anya-prakashan"
-    | "other";
+  | "statute"
+  | "life-members"
+  | "certificates"
+  | "former-officials"
+  | "former-advisors"
+  | "calendar"
+  | "phone-directory"
+  | "bulletin"
+  | "souvenir"
+  | "sansthan-prakashan"
+  | "thorga-sambandhi-anya-prakashan"
+  | "other";
   titleEn: string;
   titleNe: string;
   fileUrl: string;

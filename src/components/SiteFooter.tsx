@@ -100,7 +100,12 @@ export function SiteFooter({ lang }: { lang: Language }) {
               </div>
               <div className="flex items-center gap-2">
                 <EnvelopeSimple size={16} className="text-accent flex-shrink-0" />
-                <span>info@thorgaktm.org.np</span>
+                <a
+                  href={`mailto:${contact.email || "thorgakathmandu@gmail.com"}`}
+                  className="hover:text-accent transition-colors"
+                >
+                  {contact.email || "thorgakathmandu@gmail.com"}
+                </a>
               </div>
             </div>
           </div>
