@@ -451,7 +451,7 @@ export const PUBLICATION_DOC_SLUGS: DocumentSlugConfig[] = [
   { slug: "phone-directory", ne: "फोन डायरी", en: "Phone Directory", single: true },
   { slug: "bulletin", ne: "बुलेटिन", en: "Bulletin", single: true },
   { slug: "souvenir", ne: "स्मारिका", en: "Souvenir", single: true },
-  { slug: "sansthan-prakashan", ne: "संस्थान प्रकाशन", en: "Sansthan Prakashan", single: false },
+  { slug: "sansthan-prakashan", ne: "संस्थाका प्रकाशनहरू", en: "Sansthaka Prakashanharu", single: false },
   { slug: "thorga-sambandhi-anya-prakashan", ne: "थोर्गा सम्बन्धी अन्य प्रकाशन", en: "Thorga Sambandhi Anya Prakashan", single: false },
   { slug: "other", ne: "अन्य", en: "Other", single: true },
 ];

@@ -74,7 +74,7 @@ export function SiteFooter({ lang }: { lang: Language }) {
               </li>
               <li>
                 <Link href="/gallery" className="hover:text-accent transition-colors">
-                  {lang === "ne" ? "तस्बिर सङ्ग्रह" : "Photo Gallery"}
+                  {lang === "ne" ? "तस्बिर सङ्ग्रहहरू" : "Photo Gallery"}
                 </Link>
               </li>
             </ul>

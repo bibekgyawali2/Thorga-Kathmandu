@@ -746,13 +746,14 @@ export default function MainPortal() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-75 group-hover:opacity-90 transition-opacity" />
                   <div className="absolute bottom-0 inset-x-0 p-5 space-y-1 text-white">
-                    <div className="text-[10px] font-bold text-accent">{item.categoryEn}</div>
                     <h3 className="text-sm font-bold leading-snug line-clamp-2">
                       {lang === "ne" ? item.titleNe : item.titleEn}
                     </h3>
-                    <div className="text-[11px] text-white/80 font-mono">
-                      {lang === "ne" ? item.dateNe : item.dateEn}
-                    </div>
+                    {Boolean(item.dateNe || item.dateEn) && (
+                      <div className="text-[11px] text-white/80 font-mono">
+                        {lang === "ne" ? item.dateNe : item.dateEn}
+                      </div>
+                    )}
                   </div>
                 </Link>
               ))}
