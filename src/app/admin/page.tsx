@@ -364,6 +364,8 @@ export default function AdminPage() {
     setSession(null);
   };
 
+  const [eventModalInitialOpen, setEventModalInitialOpen] = useState(false);
+
   const handleQuickAction = (tab: AdminTab, openModal?: boolean) => {
     setActiveTab(tab);
     if (tab === "members" && openModal) {
@@ -371,6 +373,9 @@ export default function AdminPage() {
     }
     if (tab === "publications" && openModal) {
       setPubModalInitialOpen(true);
+    }
+    if (tab === "events" && openModal) {
+      setEventModalInitialOpen(true);
     }
   };
 
@@ -476,6 +481,7 @@ export default function AdminPage() {
               {...baseTabProps}
               eventsList={eventsList}
               setEventsList={setEventsList}
+              showAddModalInitial={eventModalInitialOpen}
             />
           )}
 

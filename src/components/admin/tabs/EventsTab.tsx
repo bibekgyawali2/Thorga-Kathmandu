@@ -11,6 +11,10 @@ import {
   Trash,
   PencilSimple,
   CircleNotch,
+  FileText,
+  Clock,
+  MapPin,
+  X,
 } from "@phosphor-icons/react";
 
 interface EventsTabProps extends BaseTabProps {
@@ -31,7 +35,7 @@ export function EventsTab({
   const t = ADMIN_I18N[lang];
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [showAddEventModal, setShowAddEventModal] = useState(
-    showAddModalInitial
+    showAddModalInitial || eventsList.length === 0
   );
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
@@ -66,7 +70,7 @@ export function EventsTab({
     }
   };
 
-  const handleStartEditEvent = (ev: EventItem) => {
+  const handleStartEditEvent = (ev: EventItem, focusDescription = false) => {
     setEditingEvent(ev);
     setEventForm({
       titleEn: ev.titleEn || "",
@@ -79,12 +83,22 @@ export function EventsTab({
       timeNe: ev.timeNe || "",
       locationEn: ev.locationEn || "",
       locationNe: ev.locationNe || "",
-      descriptionEn: ev.descriptionEn || "",
-      descriptionNe: ev.descriptionNe || "",
+      descriptionEn: ev.descriptionEn || ev.descriptionNe || "",
+      descriptionNe: ev.descriptionNe || ev.descriptionEn || "",
       imageUrl: ev.imageUrl || "",
       status: ev.status || "upcoming",
     });
     setShowAddEventModal(true);
+
+    if (focusDescription) {
+      setTimeout(() => {
+        const textarea = document.getElementById("event-description-field");
+        if (textarea) {
+          textarea.focus();
+          textarea.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+    }
   };
 
   const handleAddEvent = async (e: React.FormEvent) => {
@@ -125,6 +139,9 @@ export function EventsTab({
 
     setIsSavingEvent(true);
     try {
+      const unifiedDescription =
+        eventForm.descriptionNe || eventForm.descriptionEn || "";
+
       if (editingEvent) {
         const updatedEv: EventItem = {
           ...editingEvent,
@@ -135,6 +152,8 @@ export function EventsTab({
           dateEn: eventForm.dateEn.trim(),
           locationNe: eventForm.locationNe.trim(),
           locationEn: eventForm.locationEn.trim(),
+          descriptionNe: unifiedDescription.trim(),
+          descriptionEn: unifiedDescription.trim(),
         };
 
         let finalEv = updatedEv;
@@ -201,6 +220,8 @@ export function EventsTab({
         dateEn: eventForm.dateEn.trim(),
         locationNe: eventForm.locationNe.trim(),
         locationEn: eventForm.locationEn.trim(),
+        descriptionNe: unifiedDescription.trim(),
+        descriptionEn: unifiedDescription.trim(),
       };
 
       let finalSavedEv = newEv;
@@ -320,21 +341,25 @@ export function EventsTab({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-card border border-line bg-surface">
         <div>
-          <h2 className="text-base font-bold text-fg">{t.events}</h2>
-          <p className="text-xs text-muted">
+          <div className="flex items-center gap-2">
+            <Calendar size={20} className="text-accent" />
+            <h2 className="text-base font-bold text-fg">{t.events}</h2>
+          </div>
+          <p className="text-xs text-muted mt-1">
             {lang === "ne"
-              ? "आगामी भेला, बैठक तथा सामाजिक कार्यक्रम तालिका"
-              : "Upcoming meetings, gatherings, and community events."}
+              ? "आगामी भेला, बैठक तथा सामाजिक कार्यक्रम तालिका र विस्तृत विवरण व्यवस्थापन गर्नुहोस्।"
+              : "Manage upcoming meetings, gatherings, activities, and detailed descriptions."}
           </p>
         </div>
+
         <button
           type="button"
           onClick={() => {
-            if (showAddEventModal) {
+            if (showAddEventModal && !editingEvent) {
               setShowAddEventModal(false);
-              setEditingEvent(null);
             } else {
               setEditingEvent(null);
               setEventForm({
@@ -356,52 +381,40 @@ export function EventsTab({
               setShowAddEventModal(true);
             }
           }}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors cursor-pointer"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors cursor-pointer shadow-e1 flex-shrink-0"
         >
-          <Plus size={14} />
-          <span>{showAddEventModal ? t.closeBtn : t.scheduleEvent}</span>
+          {showAddEventModal && !editingEvent ? <X size={15} /> : <Plus size={15} />}
+          <span>{showAddEventModal && !editingEvent ? t.closeBtn : t.scheduleEvent}</span>
         </button>
       </div>
 
+      {/* Add / Edit Form */}
       {showAddEventModal && (
         <form
           onSubmit={handleAddEvent}
-          className="p-6 rounded-card border border-accent/40 bg-surface space-y-4 shadow-e1"
+          className="p-6 rounded-card border-2 border-accent/60 bg-surface space-y-5 shadow-e2"
         >
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-bold uppercase tracking-wider text-accent">
-              {editingEvent ? t.editEvent : t.scheduleEvent}
+          <div className="flex items-center justify-between pb-3 border-b border-line">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
+              <div className="text-sm font-bold text-accent">
+                {editingEvent ? t.editEvent : t.scheduleEvent}
+              </div>
             </div>
-            {editingEvent && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingEvent(null);
-                  setShowAddEventModal(false);
-                }}
-                className="text-xs text-muted hover:text-fg cursor-pointer"
-              >
-                {t.cancelBtn}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setEditingEvent(null);
+                setShowAddEventModal(false);
+              }}
+              className="text-xs text-muted hover:text-fg p-1.5 rounded-control hover:bg-tint transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <X size={14} />
+              <span>{t.closeBtn}</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-fg">
-                Title (English) *
-              </label>
-              <input
-                required
-                type="text"
-                value={eventForm.titleEn}
-                onChange={(e) =>
-                  setEventForm({ ...eventForm, titleEn: e.target.value })
-                }
-                placeholder="Annual General Assembly"
-                className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
-              />
-            </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-fg">
                 शीर्षक (नेपाली) *
@@ -417,35 +430,87 @@ export function EventsTab({
                 className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
               />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-fg">
+                Title (English) *
+              </label>
+              <input
+                required
+                type="text"
+                value={eventForm.titleEn}
+                onChange={(e) =>
+                  setEventForm({ ...eventForm, titleEn: e.target.value })
+                }
+                placeholder="Annual General Assembly"
+                className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-fg">Date (BS)</label>
+              <label className="text-xs font-semibold text-fg">
+                {lang === "ne" ? "मिति (वि.सं.) *" : "Date (BS) *"}
+              </label>
               <input
+                required
                 type="text"
                 value={eventForm.dateNe}
                 onChange={(e) =>
-                  setEventForm({ ...eventForm, dateNe: e.target.value })
+                  setEventForm({
+                    ...eventForm,
+                    dateNe: e.target.value,
+                    dateEn: eventForm.dateEn || e.target.value,
+                  })
                 }
                 placeholder="२०८१ असोज १२"
-                className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent font-mono"
               />
             </div>
+
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-fg">Location</label>
+              <label className="text-xs font-semibold text-fg">
+                {lang === "ne" ? "समय" : "Time"}
+              </label>
               <input
                 type="text"
-                value={eventForm.locationEn}
+                value={eventForm.timeNe}
                 onChange={(e) =>
-                  setEventForm({ ...eventForm, locationEn: e.target.value })
+                  setEventForm({
+                    ...eventForm,
+                    timeNe: e.target.value,
+                    timeEn: eventForm.timeEn || e.target.value,
+                  })
                 }
-                placeholder="Kathmandu"
+                placeholder="बिहान ११:०० बजे"
                 className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
               />
             </div>
+
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-fg">Status</label>
+              <label className="text-xs font-semibold text-fg">
+                {lang === "ne" ? "स्थान *" : "Location *"}
+              </label>
+              <input
+                required
+                type="text"
+                value={eventForm.locationNe}
+                onChange={(e) =>
+                  setEventForm({
+                    ...eventForm,
+                    locationNe: e.target.value,
+                    locationEn: eventForm.locationEn || e.target.value,
+                  })
+                }
+                placeholder="काठमाडौँ"
+                className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-fg">
+                {lang === "ne" ? "स्थिति (Status)" : "Status"}
+              </label>
               <select
                 value={eventForm.status}
                 onChange={(e) =>
@@ -454,22 +519,42 @@ export function EventsTab({
                     status: e.target.value as "upcoming" | "completed",
                   })
                 }
-                className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+                className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent capitalize"
               >
-                <option value="upcoming">Upcoming</option>
-                <option value="completed">Completed</option>
+                <option value="upcoming">
+                  {lang === "ne" ? "आगामी (Upcoming)" : "Upcoming"}
+                </option>
+                <option value="completed">
+                  {lang === "ne" ? "सम्पन्न (Completed)" : "Completed"}
+                </option>
               </select>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-fg">
-              {lang === "ne"
-                ? "गतिविधिको विस्तृत विवरण (Description)"
-                : "Description / Details"}
-            </label>
+          {/* Description Textarea Box */}
+          <div className="p-4 rounded-control border border-accent/30 bg-ground space-y-2">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="event-description-field"
+                className="text-xs font-bold text-fg flex items-center gap-1.5"
+              >
+                <FileText size={16} className="text-accent" />
+                <span>
+                  {lang === "ne"
+                    ? "गतिविधिको विस्तृत विवरण (Description Box)"
+                    : "Activity Full Description / Details Box"}
+                </span>
+              </label>
+              <span className="text-[11px] text-accent font-medium">
+                {lang === "ne"
+                  ? "(कार्ड क्लिक गर्दा देखिने विवरण)"
+                  : "(Shown on card click)"}
+              </span>
+            </div>
+
             <textarea
-              rows={4}
+              id="event-description-field"
+              rows={6}
               value={eventForm.descriptionNe || eventForm.descriptionEn}
               onChange={(e) =>
                 setEventForm({
@@ -480,16 +565,25 @@ export function EventsTab({
               }
               placeholder={
                 lang === "ne"
-                  ? "कार्यक्रमको विस्तृत विवरण, कार्यसूची, मुख्य अतिथि तथा अन्य जानकारी यहाँ लेख्नुहोस्..."
-                  : "Enter activity description, schedule, chief guests, and full details..."
+                  ? "कार्यक्रमको विस्तृत विवरण, कार्यसूची, उद्देश्य, मुख्य अतिथि, सहभागी हुने प्रक्रिया तथा अन्य सबै जानकारी यहाँ लेख्नुहोस्..."
+                  : "Enter activity description, schedule, chief guests, objectives, and all details here..."
               }
-              className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
+              className="w-full px-3.5 py-2.5 rounded-control border border-line bg-surface text-fg text-xs leading-relaxed focus:border-accent focus:ring-1 focus:ring-accent"
             />
+            <p className="text-[11px] text-muted">
+              {lang === "ne"
+                ? "यस विवरणलाई प्रयोगकर्ताले वेबसाइटमा कार्यक्रम कार्ड क्लिक गर्दा पपअप डाइलगमा हेर्न सक्नेछन्।"
+                : "Users will view this formatted full description in a dialog modal popup when clicking the activity card."}
+            </p>
           </div>
 
           <CloudinaryUploader
-            label="Event Banner Image (Max 2MB)"
-            description="Event promotional photo"
+            label={
+              lang === "ne"
+                ? "गतिविधिको ब्यानर तस्बिर (ऐच्छिक)"
+                : "Event Banner Photo (Optional)"
+            }
+            description="Event promotional banner or photo"
             folder="events"
             accept="image/*"
             value={eventForm.imageUrl}
@@ -498,11 +592,11 @@ export function EventsTab({
             }
           />
 
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-2 pt-2">
             <button
               type="submit"
               disabled={isSavingEvent}
-              className="px-5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2 cursor-pointer"
+              className="px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover disabled:opacity-60 text-on-accent text-xs font-semibold flex items-center gap-2 cursor-pointer shadow-e1"
             >
               {isSavingEvent && (
                 <CircleNotch size={14} className="animate-spin" />
@@ -510,92 +604,188 @@ export function EventsTab({
               <span>
                 {isSavingEvent
                   ? lang === "ne"
-                    ? "दर्ता गर्दै..."
+                    ? "सुरक्षित गर्दै..."
                     : "Saving..."
                   : editingEvent
                   ? lang === "ne"
                     ? "परिवर्तन सुरक्षित गर्नुहोस्"
                     : "Save Changes"
-                  : t.saveChanges}
+                  : lang === "ne"
+                  ? "गतिविधि दर्ता गर्नुहोस्"
+                  : "Save Activity"}
               </span>
             </button>
-            {editingEvent && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingEvent(null);
-                  setShowAddEventModal(false);
-                }}
-                className="px-4 py-2 rounded-control border border-line text-xs font-medium text-muted hover:text-fg cursor-pointer"
-              >
-                {t.cancelBtn}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setEditingEvent(null);
+                setShowAddEventModal(false);
+              }}
+              className="px-4 py-2.5 rounded-control border border-line text-xs font-medium text-muted hover:text-fg hover:bg-tint cursor-pointer transition-colors"
+            >
+              {t.cancelBtn}
+            </button>
           </div>
         </form>
       )}
 
-      <div className="p-4 rounded-card border border-line bg-surface space-y-3">
-        <div className="divide-y divide-line">
-          {eventsList.map((ev) => (
-            <div
-              key={ev.id}
-              className="py-3 flex items-center justify-between gap-3"
+      {/* Events List */}
+      <div className="p-4 rounded-card border border-line bg-surface space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-line">
+          <div className="text-xs font-bold uppercase tracking-wider text-muted">
+            {lang === "ne"
+              ? `दर्ता भएका गतिविधिहरू (${eventsList.length})`
+              : `Scheduled Activities (${eventsList.length})`}
+          </div>
+          {!showAddEventModal && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingEvent(null);
+                setShowAddEventModal(true);
+              }}
+              className="text-xs text-accent hover:underline font-semibold flex items-center gap-1 cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-control bg-accent-soft text-accent flex items-center justify-center flex-shrink-0">
-                  <Calendar size={18} />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-fg">
-                    {lang === "ne" ? ev.titleNe : ev.titleEn}{" "}
-                    <span className="text-muted font-normal">
-                      ({lang === "ne" ? ev.titleEn : ev.titleNe})
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-muted flex items-center gap-2 mt-0.5">
-                    <span className="font-mono text-accent">
-                      {lang === "ne" ? ev.dateNe : ev.dateEn}
-                    </span>
-                    <span>{lang === "ne" ? ev.locationNe : ev.locationEn}</span>
-                    <span className="capitalize text-[10px] font-semibold text-muted">
-                      ({ev.status})
-                    </span>
-                  </div>
-                  {(ev.descriptionNe || ev.descriptionEn) && (
-                    <p className="text-[11px] text-muted line-clamp-1 mt-1">
-                      {ev.descriptionNe || ev.descriptionEn}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => handleStartEditEvent(ev)}
-                  className="p-1.5 text-accent hover:bg-accent/10 rounded-control transition-colors cursor-pointer"
-                  title={t.editBtn}
-                >
-                  <PencilSimple size={15} />
-                </button>
-                <button
-                  type="button"
-                  disabled={deletingEventId === ev.id}
-                  onClick={() => handleDeleteEvent(ev.id)}
-                  className="p-1.5 text-danger hover:bg-danger/10 disabled:opacity-60 rounded-control transition-colors cursor-pointer"
-                  title={t.deleteBtn}
-                >
-                  {deletingEventId === ev.id ? (
-                    <CircleNotch size={15} className="animate-spin" />
-                  ) : (
-                    <Trash size={15} />
-                  )}
-                </button>
-              </div>
-            </div>
-          ))}
+              <Plus size={13} />
+              <span>{t.scheduleEvent}</span>
+            </button>
+          )}
         </div>
+
+        {eventsList.length === 0 ? (
+          <div className="py-12 text-center text-xs text-muted space-y-3">
+            <Calendar size={32} className="mx-auto text-muted opacity-60" />
+            <p>
+              {lang === "ne"
+                ? "हाल कुनै गतिविधि दर्ता गरिएको छैन।"
+                : "No activities have been scheduled yet."}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowAddEventModal(true)}
+              className="px-3.5 py-1.5 rounded-control bg-accent text-on-accent text-xs font-semibold"
+            >
+              + {t.scheduleEvent}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {eventsList.map((ev) => {
+              const hasDescription = !!(ev.descriptionNe || ev.descriptionEn);
+              const descriptionText =
+                ev.descriptionNe || ev.descriptionEn || "";
+
+              return (
+                <div
+                  key={ev.id}
+                  className="p-4 rounded-control border border-line bg-ground hover:border-accent/40 transition-colors space-y-3"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-control bg-accent-soft text-accent flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Calendar size={18} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold text-fg">
+                          {lang === "ne" ? ev.titleNe : ev.titleEn}{" "}
+                          <span className="text-xs text-muted font-normal">
+                            ({lang === "ne" ? ev.titleEn : ev.titleNe})
+                          </span>
+                        </div>
+
+                        <div className="text-xs text-muted flex flex-wrap items-center gap-3 mt-1.5">
+                          <span className="inline-flex items-center gap-1 font-mono text-accent font-medium">
+                            <Clock size={13} />
+                            <span>{lang === "ne" ? ev.dateNe : ev.dateEn}</span>
+                            {ev.timeNe && (
+                              <span>• {lang === "ne" ? ev.timeNe : ev.timeEn}</span>
+                            )}
+                          </span>
+
+                          <span className="inline-flex items-center gap-1 text-muted">
+                            <MapPin size={13} />
+                            <span>
+                              {lang === "ne" ? ev.locationNe : ev.locationEn}
+                            </span>
+                          </span>
+
+                          <span
+                            className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-chip ${
+                              ev.status === "completed"
+                                ? "bg-muted/20 text-muted"
+                                : "bg-accent/20 text-accent"
+                            }`}
+                          >
+                            {ev.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 self-end sm:self-start flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditEvent(ev)}
+                        className="px-2.5 py-1 text-xs font-semibold text-accent hover:bg-accent-soft rounded-control transition-colors flex items-center gap-1 cursor-pointer border border-accent/30"
+                        title={t.editBtn}
+                      >
+                        <PencilSimple size={14} />
+                        <span>{t.editBtn}</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deletingEventId === ev.id}
+                        onClick={() => handleDeleteEvent(ev.id)}
+                        className="p-1.5 text-danger hover:bg-danger/10 disabled:opacity-60 rounded-control transition-colors cursor-pointer border border-danger/20"
+                        title={t.deleteBtn}
+                      >
+                        {deletingEventId === ev.id ? (
+                          <CircleNotch size={14} className="animate-spin" />
+                        ) : (
+                          <Trash size={14} />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Description Callout in list */}
+                  {hasDescription ? (
+                    <div className="p-3 rounded-control border border-line bg-surface text-xs space-y-1">
+                      <div className="text-[11px] font-bold text-accent flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <FileText size={13} />
+                          <span>{lang === "ne" ? "विस्तृत विवरण:" : "Description:"}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditEvent(ev, true)}
+                          className="text-[10px] text-muted hover:text-accent underline cursor-pointer"
+                        >
+                          {lang === "ne" ? "सम्पादन" : "Edit"}
+                        </button>
+                      </div>
+                      <p className="text-fg leading-relaxed whitespace-pre-line text-[11px] line-clamp-3">
+                        {descriptionText}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between p-2 rounded-control bg-tint border border-dashed border-line text-xs text-muted">
+                      <span>{lang === "ne" ? "यस गतिविधिमा कुनै विवरण लेखिएको छैन।" : "No description added yet."}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditEvent(ev, true)}
+                        className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Plus size={12} />
+                        <span>{lang === "ne" ? "विवरण थप्नुहोस्" : "Add Description"}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

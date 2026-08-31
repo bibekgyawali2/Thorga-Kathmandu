@@ -100,6 +100,15 @@ export function OverviewTab({
 
           <button
             type="button"
+            onClick={() => onQuickAction("events", true)}
+            className="p-4 rounded-control border border-line bg-ground hover:border-accent text-left transition-colors space-y-1 cursor-pointer"
+          >
+            <div className="text-xs font-bold text-fg">{t.scheduleEvent}</div>
+            <div className="text-[11px] text-muted">{t.scheduleEventDesc}</div>
+          </button>
+
+          <button
+            type="button"
             onClick={() => onQuickAction("publications", true)}
             className="p-4 rounded-control border border-line bg-ground hover:border-accent text-left transition-colors space-y-1 cursor-pointer"
           >
