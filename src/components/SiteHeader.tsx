@@ -34,13 +34,13 @@ export interface NavLink {
 export const ABOUT_LINKS = [
   { href: "/about/organisation", ne: "संस्था परिचय", en: "Organisation Profile" },
   { href: "/about/thorga", ne: "थोर्गाको परिचय", en: "About Thorga" },
-  { href: "/committee", ne: "वर्तमान समितिका पदाधिकारीहरु", en: "Current Executive Committee" },
-  { href: "/about/advisors", ne: "वर्तमान सल्लाहाकारहरु", en: "Current Advisors" },
-  { href: "/about/former-office-bearers", ne: "हालसम्मका पदाधिकारीहरु", en: "Former Office Bearers" },
-  { href: "/about/former-advisors", ne: "हालसम्मका सल्लाहाकारहरु", en: "Former Advisors" },
+  { href: "/committee", ne: "वर्तमान समितिका पदाधिकारीहरू", en: "Current Executive Committee" },
+  { href: "/about/advisors", ne: "वर्तमान सल्लाहाकारहरू", en: "Current Advisors" },
+  { href: "/about/former-office-bearers", ne: "हालसम्मका पदाधिकारीहरू", en: "Former Office Bearers" },
+  { href: "/about/former-advisors", ne: "हालसम्मका सल्लाहाकारहरू", en: "Former Advisors" },
   { href: "/about/statute", ne: "संस्थाको विधान", en: "Organisation Statute" },
-  { href: "/about/life-members", ne: "आजीवन सदस्यहरु", en: "Life Members" },
-  { href: "/about/certificates", ne: "दर्ता प्रमाणपत्रहरु", en: "Registration Certificates" },
+  { href: "/about/life-members", ne: "आजीवन सदस्यहरू", en: "Life Members" },
+  { href: "/about/certificates", ne: "दर्ता प्रमाणपत्रहरू", en: "Registration Certificates" },
 ];
 
 export const PUBLICATION_LINKS = [
@@ -67,7 +67,7 @@ export const NAV_LINKS: NavLink[] = [
     ne: "थोर्गा सम्बन्धी अन्य प्रकाशन",
     en: "Thorga Sambandhi Anya Prakashan",
   },
-  { href: "/events", ne: "कार्यक्रम तथा गतिविधि", en: "Events & Activities" },
+  { href: "/events", ne: "कार्यक्रमहरू", en: "Events" },
   {
     href: "/publications",
     ne: "प्रकाशन",

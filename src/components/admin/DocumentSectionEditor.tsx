@@ -459,8 +459,8 @@ export const PUBLICATION_DOC_SLUGS: DocumentSlugConfig[] = [
 /** The document pages under About Us. */
 export const ABOUT_DOC_SLUGS: DocumentSlugConfig[] = [
   { slug: "statute", ne: "संस्थाको विधान", en: "Organisation Statute", single: true },
-  { slug: "life-members", ne: "आजीवन सदस्यहरु", en: "Life Members", single: true },
-  { slug: "certificates", ne: "दर्ता प्रमाणपत्रहरु", en: "Registration Certificates", single: false },
+  { slug: "life-members", ne: "आजीवन सदस्यहरू", en: "Life Members", single: true },
+  { slug: "certificates", ne: "दर्ता प्रमाणपत्रहरू", en: "Registration Certificates", single: false },
 ];
 
 /**
@@ -469,6 +469,6 @@ export const ABOUT_DOC_SLUGS: DocumentSlugConfig[] = [
  * and a 2024 sheet sit side by side.
  */
 export const FORMER_COMMITTEE_DOC_SLUGS: DocumentSlugConfig[] = [
-  { slug: "former-officials", ne: "हालसम्मका पदाधिकारीहरु", en: "Former Office Bearers", single: false },
-  { slug: "former-advisors", ne: "हालसम्मका सल्लाहाकारहरु", en: "Former Advisors", single: false },
+  { slug: "former-officials", ne: "हालसम्मका पदाधिकारीहरू", en: "Former Office Bearers", single: false },
+  { slug: "former-advisors", ne: "हालसम्मका सल्लाहाकारहरू", en: "Former Advisors", single: false },
 ];

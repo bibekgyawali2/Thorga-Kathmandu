@@ -48,9 +48,6 @@ export default function GalleryPage() {
             <ArrowLeft size={16} />
             <span>{lang === "ne" ? "मुख्य पृष्ठमा फर्कनुहोस्" : "Back to Home"}</span>
           </Link>
-          <div className="text-xs font-mono text-muted">
-            {lang === "ne" ? "तस्बिर सङ्ग्रहहरू तथा अभिलेख" : "Photo Galleries & Archives"}
-          </div>
         </div>
 
         {/* Page Header */}

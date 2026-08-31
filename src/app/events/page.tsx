@@ -51,16 +51,13 @@ export default function EventsPage() {
             <ArrowLeft size={16} />
             <span>{lang === "ne" ? "मुख्य पृष्ठमा फर्कनुहोस्" : "Back to Home"}</span>
           </Link>
-          <div className="text-xs font-mono text-muted">
-            {lang === "ne" ? "कार्यक्रम तथा गतिविधि सञ्जाल" : "Community Events & Program Calendar"}
-          </div>
         </div>
 
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-line pb-8">
           <div className="space-y-3 max-w-2xl">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg">
-              {lang === "ne" ? "कार्यक्रम तथा गतिविधिहरू" : "Events & Programs"}
+              {lang === "ne" ? "कार्यक्रमहरू" : "Events"}
             </h1>
           </div>
 

@@ -42,7 +42,7 @@ export default function CurrentAdvisorsPage() {
     <AboutPage
       lang={lang}
       setLang={setLang}
-      titleNe="वर्तमान सल्लाहाकारहरु"
+      titleNe="वर्तमान सल्लाहाकारहरू"
       titleEn="Current Advisors"
       introNe="संस्थालाई नीतिगत तथा संस्थागत विषयमा मार्गदर्शन गर्ने वर्तमान सल्लाहाकार परिषद्।"
       introEn="The advisory council currently guiding the forum on policy and institutional matters."

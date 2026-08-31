@@ -64,7 +64,7 @@ export function SiteFooter({ lang }: { lang: Language }) {
               </li>
               <li>
                 <Link href="/events" className="hover:text-accent transition-colors">
-                  {lang === "ne" ? "कार्यक्रम तथा गतिविधि" : "Events & Programs"}
+                  {lang === "ne" ? "कार्यक्रमहरू" : "Events"}
                 </Link>
               </li>
               <li>

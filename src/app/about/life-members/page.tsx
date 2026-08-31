@@ -5,9 +5,9 @@ export default function LifeMembersPage() {
   return (
     <DocumentPageView
       slug="life-members"
-      titleNe="आजीवन सदस्यहरु"
+      titleNe="आजीवन सदस्यहरू"
       titleEn="Life Members"
-      introNe="संस्थाका आजीवन सदस्यहरुको आधिकारिक नामावली।"
+      introNe="संस्थाका आजीवन सदस्यहरूको आधिकारिक नामावली।"
       introEn="The official register of the forum's life members."
     />
   );
