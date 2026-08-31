@@ -45,8 +45,6 @@ export const ABOUT_LINKS = [
 
 export const PUBLICATION_LINKS = [
   { href: "/publications", ne: "सबै प्रकाशन", en: "All Publications" },
-  { href: "/publications/sansthan-prakashan", ne: "संस्थाका प्रकाशनहरू", en: "Sansthaka Prakashanharu" },
-  { href: "/publications/thorga-sambandhi-anya-prakashan", ne: "थोर्गा सम्बन्धी अन्य प्रकाशन", en: "Thorga Sambandhi Anya Prakashan" },
   { href: "/publications/souvenir", ne: "स्मारिका", en: "Souvenir" },
   { href: "/publications/bulletin", ne: "बुलेटिन", en: "Bulletin" },
   { href: "/publications/calendar", ne: "क्यालेण्डर", en: "Calendar" },
@@ -58,9 +56,10 @@ export const NAV_LINKS: NavLink[] = [
   { href: "/", ne: "गृहपृष्ठ", en: "Home" },
   { href: "/about/organisation", ne: "हाम्रो बारेमा", en: "About Us", children: ABOUT_LINKS },
   {
-    href: "/publications/sansthan-prakashan",
+    href: "/publications",
     ne: "संस्थाका प्रकाशनहरू",
     en: "Sansthaka Prakashanharu",
+    children: PUBLICATION_LINKS,
   },
   {
     href: "/publications/thorga-sambandhi-anya-prakashan",
@@ -68,12 +67,6 @@ export const NAV_LINKS: NavLink[] = [
     en: "Thorga Sambandhi Anya Prakashan",
   },
   { href: "/events", ne: "कार्यक्रमहरू", en: "Events" },
-  {
-    href: "/publications",
-    ne: "प्रकाशन",
-    en: "Publications",
-    children: PUBLICATION_LINKS,
-  },
   { href: "/gallery", ne: "तस्बिरहरू", en: "Gallery" },
   { href: "/#contact", ne: "सम्पर्क", en: "Contact" },
 ];

@@ -2124,7 +2124,7 @@ export default function AdminPage() {
       case "about":
         return lang === "ne" ? "हाम्रो बारेमा" : "About Us";
       case "publication-pages":
-        return lang === "ne" ? "प्रकाशन पृष्ठहरु" : "Publication Pages";
+        return lang === "ne" ? "संस्थाका प्रकाशनहरू" : "Sansthaka Prakashanharu";
       case "inquiries":
         return t.inquiries;
       case "settings":
@@ -2435,7 +2435,7 @@ export default function AdminPage() {
             }`}
           >
             <FileText size={18} />
-            <span>{lang === "ne" ? "प्रकाशन पृष्ठहरु" : "Publication Pages"}</span>
+            <span>{lang === "ne" ? "संस्थाका प्रकाशनहरू" : "Sansthaka Prakashanharu"}</span>
           </button>
 
           <button
@@ -3865,7 +3865,7 @@ export default function AdminPage() {
             <div className="space-y-5">
               <div>
                 <h2 className="text-base font-bold text-fg">
-                  {lang === "ne" ? "प्रकाशन पृष्ठहरु" : "Publication Pages"}
+                  {lang === "ne" ? "संस्थाका प्रकाशनहरू" : "Sansthaka Prakashanharu"}
                 </h2>
                 <p className="text-xs text-muted">
                   {lang === "ne"
