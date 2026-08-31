@@ -66,7 +66,7 @@ export const NAV_LINKS: NavLink[] = [
     ne: "थोर्गा सम्बन्धी अन्य प्रकाशन",
     en: "Thorga Sambandhi Anya Prakashan",
   },
-  { href: "/events", ne: "कार्यक्रमहरू", en: "Events" },
+  { href: "/events", ne: "गतिविधिहरू", en: "Activities" },
   { href: "/gallery", ne: "तस्बिरहरू", en: "Gallery" },
   { href: "/#contact", ne: "सम्पर्क", en: "Contact" },
 ];

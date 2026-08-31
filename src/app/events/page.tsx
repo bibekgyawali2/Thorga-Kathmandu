@@ -57,7 +57,7 @@ export default function EventsPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-line pb-8">
           <div className="space-y-3 max-w-2xl">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-fg">
-              {lang === "ne" ? "कार्यक्रमहरू" : "Events"}
+              {lang === "ne" ? "गतिविधिहरू" : "Activities"}
             </h1>
           </div>
 
@@ -72,7 +72,7 @@ export default function EventsPage() {
                   : "bg-surface border border-line text-fg hover:bg-tint"
               }`}
             >
-              {lang === "ne" ? "आगामी कार्यक्रमहरू" : "Upcoming Events"}
+              {lang === "ne" ? "आगामी गतिविधिहरू" : "Upcoming Activities"}
             </button>
             <button
               type="button"
@@ -83,7 +83,7 @@ export default function EventsPage() {
                   : "bg-surface border border-line text-fg hover:bg-tint"
               }`}
             >
-              {lang === "ne" ? "सम्पन्न कार्यक्रमहरू" : "Completed Events"}
+              {lang === "ne" ? "सम्पन्न गतिविधिहरू" : "Completed Activities"}
             </button>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default function EventsPage() {
           <div className="p-16 text-center space-y-3 rounded-card border border-dashed border-line bg-surface">
             <Calendar size={36} className="text-accent mx-auto" weight="duotone" />
             <div className="text-base font-bold text-fg">
-              {lang === "ne" ? "यस वर्गमा कुनै कार्यक्रम छैन" : "No events scheduled in this category"}
+              {lang === "ne" ? "यस वर्गमा कुनै गतिविधि छैन" : "No activities scheduled in this category"}
             </div>
           </div>
         ) : (

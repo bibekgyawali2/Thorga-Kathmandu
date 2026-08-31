@@ -110,7 +110,7 @@ const ADMIN_I18N = {
     hero: "मुख्य ब्यानर",
     members: "कार्यसमिति",
     publications: "प्रकाशनहरू",
-    events: "कार्यक्रमहरू",
+    events: "गतिविधिहरू",
     gallery: "तस्बिरहरू",
     inquiries: "सम्पर्क सन्देश",
     settings: "सम्पर्क सेटिङ्स",

@@ -629,7 +629,7 @@ export default function MainPortal() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
               <h2 className="type-section text-fg">
-                {lang === "ne" ? "आगामी तथा सम्पन्न कार्यक्रमहरू" : "Upcoming & Recent Community Events"}
+                {lang === "ne" ? "आगामी तथा सम्पन्न गतिविधिहरू" : "Upcoming & Recent Activities"}
               </h2>
             </div>
 
@@ -637,7 +637,7 @@ export default function MainPortal() {
               href="/events"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1 transition-colors"
             >
-              <span>{lang === "ne" ? "सबै कार्यक्रमहरू हेर्नुहोस्" : "View All Events"}</span>
+              <span>{lang === "ne" ? "सबै गतिविधिहरू हेर्नुहोस्" : "View All Activities"}</span>
               <ArrowRight size={15} />
             </Link>
           </div>
@@ -646,7 +646,7 @@ export default function MainPortal() {
             <div className="rounded-card border border-dashed border-line p-12 text-center space-y-2 bg-ground">
               <Calendar size={32} className="text-accent mx-auto" weight="duotone" />
               <p className="text-sm font-semibold text-fg">
-                {lang === "ne" ? "हाल कुनै नयाँ कार्यक्रम छैन" : "No upcoming events scheduled"}
+                {lang === "ne" ? "हाल कुनै नयाँ गतिविधि छैन" : "No upcoming activities scheduled"}
               </p>
             </div>
           ) : (
