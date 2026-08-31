@@ -8,8 +8,7 @@ import {
   getStoredContactSettingsSnapshot,
   getServerContactSettingsSnapshot,
 } from "@/data/mockData";
-import { isAllowedMapEmbedUrl } from "@/lib/validation";
-import { Buildings, MapPin, EnvelopeSimple, Phone } from "@phosphor-icons/react";
+import { Buildings, EnvelopeSimple, Phone } from "@phosphor-icons/react";
 
 export function SiteFooter({ lang }: { lang: Language }) {
   const contact = useSyncExternalStore(
@@ -17,11 +16,6 @@ export function SiteFooter({ lang }: { lang: Language }) {
     getStoredContactSettingsSnapshot,
     getServerContactSettingsSnapshot
   );
-
-  // Re-checked at render as well as on save: the value reaches an iframe src,
-  // so a stale or tampered cached copy must not be able to frame another site.
-  const mapUrl = isAllowedMapEmbedUrl(contact.mapEmbedUrl) ? contact.mapEmbedUrl : null;
-  const mapLabel = lang === "ne" ? contact.mapLabelNe : contact.mapLabelEn;
 
   return (
     <footer className="bg-surface border-t border-line text-xs py-14 text-muted">
@@ -86,18 +80,24 @@ export function SiteFooter({ lang }: { lang: Language }) {
               {lang === "ne" ? "सम्पर्क तथा सचिवालय" : "Secretariat Office"}
             </div>
             <div className="space-y-2 leading-relaxed">
-              <div className="flex items-start gap-2">
-                <MapPin size={16} className="text-accent flex-shrink-0 mt-0.5" />
-                <span>
-                  {lang === "ne"
-                    ? "काठमाडौँ सचिवालय: शंखमूल मार्ग, नयाँ बानेश्वर"
-                    : "Kathmandu Secretariat: Shankhamul Marg, New Baneshwor"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone size={16} className="text-accent flex-shrink-0" />
-                <span>+977 01-4481234, 9851012345</span>
-              </div>
+              {(contact.phone1 || contact.phone2) && (
+                <div className="flex items-center gap-2">
+                  <Phone size={16} className="text-accent flex-shrink-0" />
+                  <div className="flex flex-wrap items-center gap-1.5 font-mono text-fg">
+                    {contact.phone1 && (
+                      <a href={`tel:${contact.phone1}`} className="hover:text-accent transition-colors">
+                        {contact.phone1}
+                      </a>
+                    )}
+                    {contact.phone1 && contact.phone2 && <span>,</span>}
+                    {contact.phone2 && (
+                      <a href={`tel:${contact.phone2}`} className="hover:text-accent transition-colors">
+                        {contact.phone2}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <EnvelopeSimple size={16} className="text-accent flex-shrink-0" />
                 <a
@@ -110,32 +110,6 @@ export function SiteFooter({ lang }: { lang: Language }) {
             </div>
           </div>
         </div>
-
-        {/* Village location */}
-        {mapUrl && (
-          <section className="space-y-3 pt-2">
-            <div className="flex items-center gap-2 text-fg font-bold text-sm">
-              <MapPin size={16} className="text-accent" weight="duotone" />
-              <h2>{lang === "ne" ? "थोर्गाको अवस्थिति" : "Where Thorga Is"}</h2>
-            </div>
-            {mapLabel && <p className="text-xs text-muted">{mapLabel}</p>}
-            <div className="rounded-card overflow-hidden border border-line bg-tint">
-              <iframe
-                src={mapUrl}
-                title={
-                  lang === "ne"
-                    ? "थोर्गाको स्थान देखाउने नक्सा"
-                    : "Map showing the location of Thorga"
-                }
-                // Deferred so the footer map never competes with page content
-                // for bandwidth on a slow connection.
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="w-full h-64 sm:h-80 border-0 block"
-              />
-            </div>
-          </section>
-        )}
 
         {/* Bottom Rights Strip */}
         <div className="pt-8 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">

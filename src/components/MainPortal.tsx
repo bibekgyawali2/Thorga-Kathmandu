@@ -58,6 +58,7 @@ import {
   Users,
   BookOpen,
   Calendar,
+  Clock,
   Phone,
   FileText,
   Download,
@@ -207,6 +208,7 @@ export default function MainPortal() {
   useRemoteData<GalleryItem[]>("/api/gallery", saveStoredGallery);
 
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
+  const [selectedEventModal, setSelectedEventModal] = useState<EventItem | null>(null);
   const [contactSubmitted, setContactSubmitted] = useState(false);
   const [inquiryForm, setInquiryForm] = useState({ name: "", phone: "", email: "", message: "" });
   const [formErrors, setFormErrors] = useState<{ name?: string; phone?: string; email?: string; message?: string }>({});
@@ -654,9 +656,10 @@ export default function MainPortal() {
               {upcomingEventsShowcase.map((event) => (
                 <article
                   key={event.id}
-                  className="rounded-card border border-line bg-ground overflow-hidden flex flex-col sm:flex-row hover:border-accent transition-all group"
+                  onClick={() => setSelectedEventModal(event)}
+                  className="rounded-card border border-line bg-ground overflow-hidden flex flex-col sm:flex-row hover:border-accent transition-all group cursor-pointer shadow-e1 hover:shadow-e2"
                 >
-                  <div className="sm:w-48 relative h-44 sm:h-auto flex-shrink-0 bg-tint flex items-center justify-center">
+                  <div className="sm:w-48 relative h-44 sm:h-auto flex-shrink-0 bg-tint flex items-center justify-center overflow-hidden">
                     {isValidImageSrc(event.imageUrl) ? (
                       <Image
                         src={event.imageUrl}
@@ -679,17 +682,23 @@ export default function MainPortal() {
                         <Calendar size={14} />
                         <span>{lang === "ne" ? event.dateNe : event.dateEn}</span>
                       </div>
-                      <h3 className="text-base font-bold text-fg leading-snug">
+                      <h3 className="text-base font-bold text-fg leading-snug group-hover:text-accent transition-colors">
                         {lang === "ne" ? event.titleNe : event.titleEn}
                       </h3>
                       <p className="text-xs leading-relaxed text-muted line-clamp-2">
-                        {lang === "ne" ? event.descriptionNe : event.descriptionEn}
+                        {lang === "ne" ? event.descriptionNe || event.descriptionEn : event.descriptionEn || event.descriptionNe}
                       </p>
                     </div>
 
-                    <div className="pt-2 border-t border-line text-xs text-muted flex items-center gap-1.5">
-                      <MapPin size={14} className="text-accent flex-shrink-0" />
-                      <span>{lang === "ne" ? event.locationNe : event.locationEn}</span>
+                    <div className="pt-2 border-t border-line text-xs text-muted flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <MapPin size={14} className="text-accent flex-shrink-0" />
+                        <span>{lang === "ne" ? event.locationNe : event.locationEn}</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 font-semibold text-accent group-hover:underline">
+                        <Eye size={13} />
+                        <span>{lang === "ne" ? "विवरण" : "Details"}</span>
+                      </span>
                     </div>
                   </div>
                 </article>
@@ -960,13 +969,6 @@ export default function MainPortal() {
                 </div>
 
                 <div className="text-xs text-muted space-y-3 pt-3 border-t border-line">
-                  <div className="flex items-start gap-2.5">
-                    <MapPin size={16} className="text-accent flex-shrink-0 mt-0.5" />
-                    <span className="leading-relaxed">
-                      {lang === "ne" ? contactSettings.kathmanduAddressNe : contactSettings.kathmanduAddressEn}
-                    </span>
-                  </div>
-
                   {(contactSettings.phone1 || contactSettings.phone2) && (
                     <div className="flex items-center gap-2.5">
                       <Phone size={16} className="text-accent flex-shrink-0" />
@@ -1043,6 +1045,109 @@ export default function MainPortal() {
                 <Download size={16} />
                 <span>{lang === "ne" ? "पूर्ण PDF दस्तावेज डाउनलोड गर्नुहोस्" : "Download Complete PDF"}</span>
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EVENT DETAILS DIALOG MODAL */}
+      {selectedEventModal && (
+        <div
+          onClick={() => setSelectedEventModal(null)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-2xl w-full bg-surface rounded-card border border-line shadow-e3 overflow-hidden cursor-default my-8 animate-fade-in"
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedEventModal(null)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-chip bg-black/60 text-white hover:bg-black transition-colors"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+
+            {isValidImageSrc(selectedEventModal.imageUrl) && (
+              <div className="relative h-60 sm:h-72 w-full bg-black">
+                <Image
+                  src={selectedEventModal.imageUrl}
+                  alt={lang === "ne" ? selectedEventModal.titleNe : selectedEventModal.titleEn}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            )}
+
+            <div className="p-6 sm:p-8 space-y-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-1 rounded-chip bg-accent-soft text-accent text-xs font-bold">
+                  {lang === "ne" ? selectedEventModal.categoryNe : selectedEventModal.categoryEn}
+                </span>
+                <span
+                  className={`px-2.5 py-1 rounded-chip text-xs font-bold ${
+                    selectedEventModal.status === "upcoming"
+                      ? "bg-accent text-on-accent"
+                      : "bg-tint text-muted"
+                  }`}
+                >
+                  {selectedEventModal.status === "upcoming"
+                    ? lang === "ne" ? "आयोजना हुने" : "Scheduled"
+                    : lang === "ne" ? "सम्पन्न" : "Concluded"}
+                </span>
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-extrabold text-fg leading-snug">
+                {lang === "ne" ? selectedEventModal.titleNe : selectedEventModal.titleEn}
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-control bg-ground border border-line text-xs">
+                <div className="flex items-center gap-2">
+                  <Calendar size={18} className="text-accent flex-shrink-0" weight="duotone" />
+                  <div>
+                    <div className="text-[10px] text-muted uppercase font-bold">{lang === "ne" ? "मिति" : "Date"}</div>
+                    <div className="font-semibold text-fg">{lang === "ne" ? selectedEventModal.dateNe : selectedEventModal.dateEn}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock size={18} className="text-accent flex-shrink-0" weight="duotone" />
+                  <div>
+                    <div className="text-[10px] text-muted uppercase font-bold">{lang === "ne" ? "समय" : "Time"}</div>
+                    <div className="font-semibold text-fg">{lang === "ne" ? selectedEventModal.timeNe : selectedEventModal.timeEn}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin size={18} className="text-accent flex-shrink-0" weight="duotone" />
+                  <div>
+                    <div className="text-[10px] text-muted uppercase font-bold">{lang === "ne" ? "स्थान" : "Location"}</div>
+                    <div className="font-semibold text-fg">{lang === "ne" ? selectedEventModal.locationNe : selectedEventModal.locationEn}</div>
+                  </div>
+                </div>
+              </div>
+
+              {Boolean(selectedEventModal.descriptionNe || selectedEventModal.descriptionEn) && (
+                <div className="space-y-2 pt-2 border-t border-line">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted">
+                    {lang === "ne" ? "गतिविधिको विस्तृत विवरण" : "Activity Description & Details"}
+                  </h4>
+                  <p className="text-sm leading-relaxed text-fg/90 whitespace-pre-line bg-ground/50 p-4 rounded-control border border-line/60">
+                    {lang === "ne"
+                      ? selectedEventModal.descriptionNe || selectedEventModal.descriptionEn
+                      : selectedEventModal.descriptionEn || selectedEventModal.descriptionNe}
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setSelectedEventModal(null)}
+                  className="px-5 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                >
+                  {lang === "ne" ? "बन्द गर्नुहोस्" : "Close"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
