@@ -18,6 +18,7 @@ export type AdminTab =
 
 export type CommitteeSection =
   | "current"
+  | "officials"
   | "advisor"
   | "former-officials"
   | "former-advisors";

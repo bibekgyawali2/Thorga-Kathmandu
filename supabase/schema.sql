@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.members (
     name_ne TEXT NOT NULL,
     role_en TEXT NOT NULL,
     role_ne TEXT NOT NULL,
-    committee_type TEXT NOT NULL CHECK (committee_type IN ('current', 'past', 'advisor')),
+    committee_type TEXT NOT NULL CHECK (committee_type IN ('current', 'past', 'advisor', 'officials')),
     tenure_en TEXT,
     tenure_ne TEXT,
     phone TEXT,

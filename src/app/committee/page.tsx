@@ -85,12 +85,12 @@ export default function CommitteePage() {
     getServerMembersSnapshot
   );
   const remote = useRemoteData<Member[]>("/api/members", saveStoredMembers);
-  const [filter, setFilter] = useState<"current" | "advisor" | "all">("current");
+  const [filter, setFilter] = useState<"current" | "officials" | "advisor">("current");
   const [search, setSearch] = useState("");
 
   const filteredMembers = members.filter((m) => {
     if (m.committeeType === "past") return false;
-    const matchesCategory = filter === "all" ? true : m.committeeType === filter;
+    const matchesCategory = m.committeeType === filter;
     const matchesSearch =
       m.nameEn.toLowerCase().includes(search.toLowerCase()) ||
       m.nameNe.includes(search) ||
@@ -149,7 +149,16 @@ export default function CommitteePage() {
               filter === "current" ? "bg-accent text-on-accent" : "bg-surface border border-line text-fg hover:bg-tint"
             }`}
           >
-            {lang === "ne" ? "वर्तमान कार्यसमिति" : "Current Executive Board"}
+            {lang === "ne" ? "हाम्रो नेतृत्व" : "Our Leadership"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("officials")}
+            className={`px-4 py-2 rounded-control text-xs font-semibold transition-colors ${
+              filter === "officials" ? "bg-accent text-on-accent" : "bg-surface border border-line text-fg hover:bg-tint"
+            }`}
+          >
+            {lang === "ne" ? "वर्तमान पदाधिकारीहरू" : "Current Office Bearers"}
           </button>
           <button
             type="button"
@@ -159,15 +168,6 @@ export default function CommitteePage() {
             }`}
           >
             {lang === "ne" ? "सल्लाहकार परिषद्" : "Advisory Council"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-control text-xs font-semibold transition-colors ${
-              filter === "all" ? "bg-accent text-on-accent" : "bg-surface border border-line text-fg hover:bg-tint"
-            }`}
-          >
-            {lang === "ne" ? "सबै सदस्यहरू" : "All Members"}
           </button>
         </div>
 

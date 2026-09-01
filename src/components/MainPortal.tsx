@@ -213,7 +213,7 @@ export default function MainPortal() {
   const [inquiryForm, setInquiryForm] = useState({ name: "", phone: "", email: "", message: "" });
   const [formErrors, setFormErrors] = useState<{ name?: string; phone?: string; email?: string; message?: string }>({});
   const [touched, setTouched] = useState<{ name?: boolean; phone?: boolean; email?: boolean; message?: boolean }>({});
-  const [committeeFilter, setCommitteeFilter] = useState<"current" | "advisor" | "all">("current");
+  const [committeeFilter, setCommitteeFilter] = useState<"current" | "officials" | "advisor" | "all">("current");
   const { alert: dialogAlert } = useDialog();
   const toast = useToast();
   const [isSubmittingInquiry, setIsSubmittingInquiry] = useState(false);
@@ -419,7 +419,18 @@ export default function MainPortal() {
                     : "bg-surface border border-line text-fg hover:bg-tint"
                 }`}
               >
-                {lang === "ne" ? "वर्तमान कार्यसमिति" : "Current Committee"}
+                {lang === "ne" ? "हाम्रो नेतृत्व" : "Our Leadership"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCommitteeFilter("officials")}
+                className={`px-3.5 py-1.5 rounded-control text-xs font-semibold transition-colors ${
+                  committeeFilter === "officials"
+                    ? "bg-accent text-on-accent shadow-e1"
+                    : "bg-surface border border-line text-fg hover:bg-tint"
+                }`}
+              >
+                {lang === "ne" ? "वर्तमान पदाधिकारीहरू" : "Current Office Bearers"}
               </button>
               <button
                 type="button"
@@ -430,7 +441,7 @@ export default function MainPortal() {
                     : "bg-surface border border-line text-fg hover:bg-tint"
                 }`}
               >
-                {lang === "ne" ? "सल्लाहकार परिषद्" : "Advisors"}
+                {lang === "ne" ? "सल्लाहकार परिषद्" : "Advisory Council"}
               </button>
               <button
                 type="button"

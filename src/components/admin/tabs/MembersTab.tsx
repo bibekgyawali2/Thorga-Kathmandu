@@ -55,7 +55,7 @@ export function MembersTab({
   const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
 
   const [memberFilterCategory, setMemberFilterCategory] = useState<
-    "all" | "current" | "advisor" | "past"
+    "all" | "current" | "officials" | "advisor" | "past"
   >("all");
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
 
@@ -64,7 +64,7 @@ export function MembersTab({
     nameNe: "",
     roleEn: "",
     roleNe: "",
-    committeeType: "current" as "current" | "advisor" | "past",
+    committeeType: "current" as "current" | "officials" | "advisor" | "past",
     order: 10,
     phone: "",
     email: "",
@@ -417,7 +417,7 @@ export function MembersTab({
             type="button"
             onClick={() => {
               setCommitteeSection(s.key);
-              if (s.key === "current" || s.key === "advisor") {
+              if (s.key === "current" || s.key === "officials" || s.key === "advisor") {
                 setMemberFilterCategory(s.key);
                 setShowAddMemberModal(false);
                 setEditingMember(null);
@@ -447,11 +447,19 @@ export function MembersTab({
         <>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-fg">{t.members}</h2>
-              <p className="text-xs text-muted">
+              <h2 className="text-base font-bold text-fg">
+                {committeeSection === "current"
+                  ? t.current
+                  : committeeSection === "officials"
+                  ? t.officials
+                  : committeeSection === "advisor"
+                  ? t.advisor
+                  : t.members}
+              </h2>
+              <p className="text-xs text-muted mt-0.5">
                 {lang === "ne"
-                  ? "वर्तमान समिति र सल्लाहाकार व्यक्तिगत रूपमा, पूर्व कार्यकाल कार्यकालअनुसार"
-                  : "Current committee and advisors person by person; former terms one sheet per term."}
+                  ? "तपाईंले यहाँबाट सदस्यहरूको विवरण र तस्बिर अद्यावधिक गर्न सक्नुहुन्छ।"
+                  : "Manage profiles, contact details, and display sequence."}
               </p>
             </div>
             <button
@@ -615,13 +623,20 @@ export function MembersTab({
                     onChange={(e) =>
                       setMemberForm({
                         ...memberForm,
-                        committeeType: e.target.value as "current" | "advisor",
+                        committeeType: e.target.value as "current" | "officials" | "advisor",
                       })
                     }
                     className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
                   >
-                    <option value="current">Current Executive (२०८१-२०८४)</option>
-                    <option value="advisor">Advisors (सल्लाहकार)</option>
+                    <option value="current">
+                      {lang === "ne" ? "हाम्रो नेतृत्व" : "Our Leadership"}
+                    </option>
+                    <option value="officials">
+                      {lang === "ne" ? "वर्तमान पदाधिकारीहरू" : "Current Office Bearers"}
+                    </option>
+                    <option value="advisor">
+                      {lang === "ne" ? "सल्लाहकार परिषद्" : "Advisory Council"}
+                    </option>
                   </select>
                 </div>
                 <div className="space-y-1.5">
@@ -719,6 +734,22 @@ export function MembersTab({
                 </button>
                 <button
                   type="button"
+                  onClick={() => setMemberFilterCategory("officials")}
+                  className={`px-3 py-1.5 rounded-control text-xs font-medium transition-colors cursor-pointer ${
+                    memberFilterCategory === "officials"
+                      ? "bg-accent text-on-accent"
+                      : "bg-ground border border-line text-fg hover:bg-tint"
+                  }`}
+                >
+                  {t.officials} (
+                  {
+                    membersList.filter((m) => m.committeeType === "officials")
+                      .length
+                  }
+                  )
+                </button>
+                <button
+                  type="button"
                   onClick={() => setMemberFilterCategory("advisor")}
                   className={`px-3 py-1.5 rounded-control text-xs font-medium transition-colors cursor-pointer ${
                     memberFilterCategory === "advisor"
@@ -782,8 +813,16 @@ export function MembersTab({
                               {member.phone}
                             </span>
                           )}
-                          <span className="capitalize text-muted text-[10px]">
-                            ({member.committeeType})
+                          <span className="text-muted text-[10px]">
+                            (
+                            {member.committeeType === "current"
+                              ? (lang === "ne" ? "हाम्रो नेतृत्व" : "Our Leadership")
+                              : member.committeeType === "officials"
+                              ? (lang === "ne" ? "वर्तमान पदाधिकारीहरू" : "Current Office Bearers")
+                              : member.committeeType === "advisor"
+                              ? (lang === "ne" ? "सल्लाहकार परिषद्" : "Advisory Council")
+                              : member.committeeType}
+                            )
                           </span>
                           <span className="font-mono text-[10px] text-muted">
                             #{member.order ?? 0}

@@ -6,7 +6,7 @@ export interface Member {
   nameNe: string;
   roleEn: string;
   roleNe: string;
-  committeeType: "current" | "past" | "advisor";
+  committeeType: "current" | "past" | "advisor" | "officials";
   tenureEn?: string;
   tenureNe?: string;
   phone?: string;
