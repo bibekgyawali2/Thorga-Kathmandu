@@ -158,7 +158,7 @@ export default function CommitteePage() {
               filter === "officials" ? "bg-accent text-on-accent" : "bg-surface border border-line text-fg hover:bg-tint"
             }`}
           >
-            {lang === "ne" ? "वर्तमान समिति" : "Current Committee"}
+            {lang === "ne" ? "वर्तमान कार्यसमिति" : "Current Executive Committee"}
           </button>
           <button
             type="button"
