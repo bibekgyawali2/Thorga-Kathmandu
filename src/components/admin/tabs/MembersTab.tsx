@@ -632,7 +632,7 @@ export function MembersTab({
                       {lang === "ne" ? "हाम्रो नेतृत्व" : "Our Leadership"}
                     </option>
                     <option value="officials">
-                      {lang === "ne" ? "वर्तमान पदाधिकारीहरू" : "Current Office Bearers"}
+                      {lang === "ne" ? "वर्तमान समिति" : "Current Committee"}
                     </option>
                     <option value="advisor">
                       {lang === "ne" ? "सल्लाहकार परिषद्" : "Advisory Council"}
@@ -818,7 +818,7 @@ export function MembersTab({
                             {member.committeeType === "current"
                               ? (lang === "ne" ? "हाम्रो नेतृत्व" : "Our Leadership")
                               : member.committeeType === "officials"
-                              ? (lang === "ne" ? "वर्तमान पदाधिकारीहरू" : "Current Office Bearers")
+                              ? (lang === "ne" ? "वर्तमान समिति" : "Current Committee")
                               : member.committeeType === "advisor"
                               ? (lang === "ne" ? "सल्लाहकार परिषद्" : "Advisory Council")
                               : member.committeeType}

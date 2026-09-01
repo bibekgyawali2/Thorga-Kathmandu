@@ -2,7 +2,7 @@ import { CommitteeSection } from "./adminTypes";
 
 export const COMMITTEE_SECTIONS: { key: CommitteeSection; ne: string; en: string }[] = [
   { key: "current", ne: "हाम्रो नेतृत्व", en: "Our Leadership" },
-  { key: "officials", ne: "वर्तमान पदाधिकारीहरू", en: "Current Office Bearers" },
+  { key: "officials", ne: "वर्तमान समिति", en: "Current Committee" },
   { key: "advisor", ne: "सल्लाहकार परिषद्", en: "Advisory Council" },
   { key: "former-officials", ne: "हालसम्मका पदाधिकारी", en: "Former Office Bearers" },
   { key: "former-advisors", ne: "हालसम्मका सल्लाहाकार", en: "Former Advisors" },
@@ -40,7 +40,7 @@ export const ADMIN_I18N = {
     theme: "रङ शैली",
     all: "सबै",
     current: "हाम्रो नेतृत्व",
-    officials: "वर्तमान पदाधिकारीहरू",
+    officials: "वर्तमान समिति",
     advisor: "सल्लाहकार परिषद्",
     past: "पूर्व नेतृत्व",
     search: "खोजी गर्नुहोस्...",
@@ -124,7 +124,7 @@ export const ADMIN_I18N = {
     theme: "Toggle Theme",
     all: "All",
     current: "Our Leadership",
-    officials: "Current Office Bearers",
+    officials: "Current Committee",
     advisor: "Advisory Council",
     past: "Past",
     search: "Search...",

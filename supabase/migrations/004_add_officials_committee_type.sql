@@ -1,5 +1,5 @@
 -- Migration: 004_add_officials_committee_type.sql
--- Allow 'officials' (Current Office Bearers / वर्तमान पदाधिकारीहरू) in members committee_type check constraint while preserving all existing data
+-- Allow 'officials' (Current Committee / वर्तमान समिति) in members committee_type check constraint while preserving all existing data
 
 ALTER TABLE public.members DROP CONSTRAINT IF EXISTS members_committee_type_check;
 
