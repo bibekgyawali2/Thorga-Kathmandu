@@ -48,7 +48,7 @@ export function SiteFooter({ lang }: { lang: Language }) {
             <ul className="space-y-1.5">
               <li>
                 <Link href="/committee" className="hover:text-accent transition-colors">
-                  {lang === "ne" ? "कार्यसमिति सदस्यहरू" : "Executive Committee"}
+                  {lang === "ne" ? "हाम्रो नेतृत्व" : "Our Leadership"}
                 </Link>
               </li>
               <li>

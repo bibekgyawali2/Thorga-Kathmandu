@@ -34,7 +34,7 @@ export interface NavLink {
 export const ABOUT_LINKS = [
   { href: "/about/organisation", ne: "संस्था परिचय", en: "Organisation Profile" },
   { href: "/about/thorga", ne: "थोर्गाको परिचय", en: "About Thorga" },
-  { href: "/committee", ne: "वर्तमान समितिका पदाधिकारीहरू", en: "Current Executive Committee" },
+  { href: "/committee", ne: "हाम्रो नेतृत्व", en: "Our Leadership" },
   { href: "/about/advisors", ne: "वर्तमान सल्लाहाकारहरू", en: "Current Advisors" },
   { href: "/about/former-office-bearers", ne: "हालसम्मका पदाधिकारीहरू", en: "Former Office Bearers" },
   { href: "/about/former-advisors", ne: "हालसम्मका सल्लाहाकारहरू", en: "Former Advisors" },
