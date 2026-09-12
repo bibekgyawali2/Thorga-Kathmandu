@@ -37,7 +37,7 @@ import {
   getAdminUsers,
   saveAdminUsers,
 } from "@/lib/adminAuth";
-import { isJWTExpired } from "@/lib/jwt";
+import { isJWTExpired, getJWTTimeRemainingMs } from "@/lib/jwt";
 import { useDialog } from "@/components/Dialog";
 import { useToast } from "@/components/Toast";
 import { AboutManager } from "@/components/admin/AboutManager";
@@ -319,16 +319,29 @@ export default function AdminPage() {
       }
     };
 
-    const expTime = session.expiresAt ? session.expiresAt * 1000 : Date.now() + 24 * 60 * 60 * 1000;
-    const timeRemaining = Math.max(0, expTime - Date.now());
+    const expTime = session.expiresAt
+      ? (session.expiresAt < 10_000_000_000 ? session.expiresAt * 1000 : session.expiresAt)
+      : (session.token ? Date.now() + getJWTTimeRemainingMs(session.token) : Date.now() + 24 * 60 * 60 * 1000);
+    const timeRemaining = expTime - Date.now();
 
+    if (timeRemaining <= 0) {
+      handleAutoLogout(
+        lang === "ne"
+          ? "सत्रको समय समाप्त भयो। कृपया पुन: लगइन गर्नुहोस्।"
+          : "Your session has expired. Please log in again."
+      );
+      return () => unsubscribe();
+    }
+
+    // Node and browsers clamp any setTimeout delay > 2147483647 (32-bit signed int, ~24.8 days) to 1ms
+    const safeDelay = Math.min(timeRemaining, 2147483647);
     const expiryTimer = setTimeout(() => {
       handleAutoLogout(
         lang === "ne"
           ? "सत्रको समय समाप्त भयो। कृपया पुन: लगइन गर्नुहोस्।"
           : "Your session has expired. Please log in again."
       );
-    }, timeRemaining);
+    }, safeDelay);
 
     const heartbeat = setInterval(() => {
       checkSessionFreshness();
