@@ -70,6 +70,28 @@ export const initialPublications: Publication[] = [];
 
 export const initialGallery: GalleryItem[] = [];
 
+export interface GalleryAlbumImage {
+  id: string;
+  imageUrl: string;
+  captionEn: string;
+  captionNe: string;
+}
+
+export interface GalleryAlbum {
+  id: string;
+  titleEn: string;
+  titleNe: string;
+  descriptionEn?: string;
+  descriptionNe?: string;
+  coverImageUrl?: string;
+  dateEn?: string;
+  dateNe?: string;
+  images: GalleryAlbumImage[];
+  createdAt?: string;
+}
+
+export const initialGalleryAlbums: GalleryAlbum[] = [];
+
 export interface HeroContent {
   badgeNe: string;
   badgeEn: string;
@@ -529,6 +551,56 @@ export function saveStoredGallery(gallery: GalleryItem[]): void {
     localStorage.setItem(GALLERY_STORAGE_KEY, JSON.stringify(gallery));
     _galleryCacheRaw = undefined as unknown as string | null;
     gallerySubscribers.forEach((s) => s());
+  } catch { }
+}
+
+// ==========================================
+// 4B. GALLERY ALBUMS STORE
+// ==========================================
+const GALLERY_ALBUMS_STORAGE_KEY = "thorga_gallery_albums_list";
+let galleryAlbumsSubscribers: Array<() => void> = [];
+let _galleryAlbumsCacheRaw: string | null = undefined as unknown as string | null;
+let _galleryAlbumsCache: GalleryAlbum[] = initialGalleryAlbums;
+
+export function subscribeGalleryAlbums(callback: () => void) {
+  galleryAlbumsSubscribers.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === GALLERY_ALBUMS_STORAGE_KEY) {
+      _galleryAlbumsCacheRaw = undefined as unknown as string | null;
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
+  return () => {
+    galleryAlbumsSubscribers = galleryAlbumsSubscribers.filter((s) => s !== callback);
+    if (typeof window !== "undefined") window.removeEventListener("storage", handleStorage);
+  };
+}
+
+export function getStoredGalleryAlbumsSnapshot(): GalleryAlbum[] {
+  if (typeof window === "undefined") return initialGalleryAlbums;
+  try {
+    const raw = localStorage.getItem(GALLERY_ALBUMS_STORAGE_KEY);
+    if (!raw) return initialGalleryAlbums;
+    if (raw === _galleryAlbumsCacheRaw) return _galleryAlbumsCache;
+    _galleryAlbumsCacheRaw = raw;
+    _galleryAlbumsCache = JSON.parse(raw);
+    return _galleryAlbumsCache;
+  } catch {
+    return initialGalleryAlbums;
+  }
+}
+
+export function getServerGalleryAlbumsSnapshot(): GalleryAlbum[] {
+  return initialGalleryAlbums;
+}
+
+export function saveStoredGalleryAlbums(albums: GalleryAlbum[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(GALLERY_ALBUMS_STORAGE_KEY, JSON.stringify(albums));
+    _galleryAlbumsCacheRaw = undefined as unknown as string | null;
+    galleryAlbumsSubscribers.forEach((s) => s());
   } catch { }
 }
 

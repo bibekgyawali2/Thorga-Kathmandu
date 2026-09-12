@@ -8,6 +8,8 @@ import { createClient } from "@supabase/supabase-js";
 import { Pool } from "pg";
 import type {
   GalleryItem,
+  GalleryAlbum,
+  GalleryAlbumImage,
   EventItem,
   Member,
   Publication,
@@ -389,6 +391,195 @@ export async function deleteGalleryItem(id: string): Promise<void> {
   } catch (err) {
     console.warn("[deleteGalleryItem] Supabase fallback failed:", err);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Gallery Albums
+// ---------------------------------------------------------------------------
+export async function fetchGalleryAlbums(): Promise<GalleryAlbum[]> {
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        "SELECT id, title_en, title_ne, description_en, description_ne, cover_image_url, images, date_en, date_ne, created_at FROM public.gallery_albums ORDER BY created_at DESC"
+      );
+      if (res.rows && res.rows.length > 0) {
+        return res.rows.map((row) => ({
+          id: String(row.id),
+          titleEn: row.title_en ?? "",
+          titleNe: row.title_ne ?? "",
+          descriptionEn: row.description_en ?? "",
+          descriptionNe: row.description_ne ?? "",
+          coverImageUrl: row.cover_image_url ?? "",
+          images: Array.isArray(row.images) ? row.images : [],
+          dateEn: row.date_en ?? "",
+          dateNe: row.date_ne ?? "",
+          createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
+        }));
+      }
+    } catch (err) {
+      console.warn("[fetchGalleryAlbums] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("gallery_albums")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      return data.map((row) => ({
+        id: String(row.id),
+        titleEn: row.title_en ?? "",
+        titleNe: row.title_ne ?? "",
+        descriptionEn: row.description_en ?? "",
+        descriptionNe: row.description_ne ?? "",
+        coverImageUrl: row.cover_image_url ?? "",
+        images: Array.isArray(row.images) ? row.images : [],
+        dateEn: row.date_en ?? "",
+        dateNe: row.date_ne ?? "",
+        createdAt: row.created_at,
+      }));
+    }
+  } catch (err) {
+    console.warn("[fetchGalleryAlbums] supabase query failed:", err);
+  }
+
+  // Graceful fallback to site_settings
+  try {
+    return await fetchSiteSetting<GalleryAlbum[]>("gallery_albums", []);
+  } catch {
+    return [];
+  }
+}
+
+export async function saveGalleryAlbum(album: GalleryAlbum): Promise<GalleryAlbum> {
+  const finalId = isValidUUID(album.id) ? album.id : generateUUID();
+  const imagesJson = JSON.stringify(Array.isArray(album.images) ? album.images : []);
+  const cover = album.coverImageUrl || (album.images && album.images[0]?.imageUrl) || "";
+
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        `INSERT INTO public.gallery_albums (id, title_en, title_ne, description_en, description_ne, cover_image_url, images, date_en, date_ne, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, NOW())
+         ON CONFLICT (id) DO UPDATE SET 
+           title_en = EXCLUDED.title_en,
+           title_ne = EXCLUDED.title_ne,
+           description_en = EXCLUDED.description_en,
+           description_ne = EXCLUDED.description_ne,
+           cover_image_url = EXCLUDED.cover_image_url,
+           images = EXCLUDED.images,
+           date_en = EXCLUDED.date_en,
+           date_ne = EXCLUDED.date_ne,
+           updated_at = NOW()
+         RETURNING *;`,
+        [
+          finalId,
+          album.titleEn,
+          album.titleNe,
+          album.descriptionEn ?? "",
+          album.descriptionNe ?? "",
+          cover,
+          imagesJson,
+          album.dateEn ?? "",
+          album.dateNe ?? "",
+        ]
+      );
+      if (res.rows && res.rows.length > 0) {
+        const row = res.rows[0];
+        return {
+          id: String(row.id),
+          titleEn: row.title_en ?? "",
+          titleNe: row.title_ne ?? "",
+          descriptionEn: row.description_en ?? "",
+          descriptionNe: row.description_ne ?? "",
+          coverImageUrl: row.cover_image_url ?? "",
+          images: Array.isArray(row.images) ? row.images : [],
+          dateEn: row.date_en ?? "",
+          dateNe: row.date_ne ?? "",
+          createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
+        };
+      }
+    } catch (err) {
+      console.warn("[saveGalleryAlbum] pg query failed:", err);
+    }
+  }
+
+  // Supabase fallback
+  try {
+    const supabase = makeAdminClient();
+    const payload: Record<string, unknown> = {
+      id: finalId,
+      title_en: album.titleEn,
+      title_ne: album.titleNe,
+      description_en: album.descriptionEn ?? "",
+      description_ne: album.descriptionNe ?? "",
+      cover_image_url: cover,
+      images: album.images ?? [],
+      date_en: album.dateEn ?? "",
+      date_ne: album.dateNe ?? "",
+      updated_at: new Date().toISOString(),
+    };
+    const { data } = await supabase.from("gallery_albums").upsert(payload).select().single();
+    if (data) {
+      return {
+        id: String(data.id),
+        titleEn: data.title_en ?? "",
+        titleNe: data.title_ne ?? "",
+        descriptionEn: data.description_en ?? "",
+        descriptionNe: data.description_ne ?? "",
+        coverImageUrl: data.cover_image_url ?? "",
+        images: Array.isArray(data.images) ? data.images : [],
+        dateEn: data.date_en ?? "",
+        dateNe: data.date_ne ?? "",
+        createdAt: data.created_at,
+      };
+    }
+  } catch (err) {
+    console.warn("[saveGalleryAlbum] Supabase fallback failed:", err);
+  }
+
+  // Fallback to site_settings
+  const existing = await fetchSiteSetting<GalleryAlbum[]>("gallery_albums", []);
+  const updatedAlbum: GalleryAlbum = { ...album, id: finalId, coverImageUrl: cover };
+  const updatedList = [updatedAlbum, ...existing.filter((a) => a.id !== finalId)];
+  await saveSiteSetting("gallery_albums", updatedList);
+  return updatedAlbum;
+}
+
+export async function deleteGalleryAlbum(id: string): Promise<void> {
+  if (!id) return;
+
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      await pg.query("DELETE FROM public.gallery_albums WHERE id::text = $1", [id]);
+      return;
+    } catch (err) {
+      console.warn("[deleteGalleryAlbum] pg query failed:", err);
+    }
+  }
+
+  try {
+    if (isValidUUID(id)) {
+      const supabase = makeAdminClient();
+      await supabase.from("gallery_albums").delete().eq("id", id);
+    }
+  } catch (err) {
+    console.warn("[deleteGalleryAlbum] Supabase fallback failed:", err);
+  }
+
+  try {
+    const existing = await fetchSiteSetting<GalleryAlbum[]>("gallery_albums", []);
+    await saveSiteSetting(
+      "gallery_albums",
+      existing.filter((a) => a.id !== id)
+    );
+  } catch {}
 }
 
 // ---------------------------------------------------------------------------

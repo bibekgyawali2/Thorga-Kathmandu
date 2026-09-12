@@ -21,6 +21,7 @@ import {
   ArrowLeft,
   X,
   Eye,
+  ArrowsOut,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
 import { useRemoteData } from "@/hooks/useRemoteData";
@@ -36,6 +37,7 @@ export default function EventsPage() {
   const remote = useRemoteData<EventItem[]>("/api/events", saveStoredEvents);
   const [statusFilter, setStatusFilter] = useState<"upcoming" | "completed">("upcoming");
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
+  const [isImageZoomed, setIsImageZoomed] = useState(false);
 
   const filteredEvents = events.filter((e) => e.status === statusFilter);
 
@@ -107,14 +109,14 @@ export default function EventsPage() {
                 onClick={() => setSelectedEvent(event)}
                 className="rounded-card border border-line bg-surface overflow-hidden flex flex-col sm:flex-row hover:border-accent transition-all group cursor-pointer shadow-e1 hover:shadow-e2"
               >
-                <div className="sm:w-56 relative h-48 sm:h-auto flex-shrink-0 bg-tint flex items-center justify-center overflow-hidden">
+                <div className="sm:w-56 relative h-52 sm:h-auto min-h-[160px] flex-shrink-0 bg-tint/60 flex items-center justify-center overflow-hidden p-2">
                   {isValidImageSrc(event.imageUrl) ? (
                     <Image
                       src={event.imageUrl}
                       alt={lang === "ne" ? event.titleNe : event.titleEn}
                       fill
                       sizes="(max-width: 640px) 100vw, 224px"
-                      className="object-cover group-hover:scale-105 transition-transform duration-200"
+                      className="object-contain group-hover:scale-105 transition-transform duration-200"
                     />
                   ) : (
                     <Calendar size={40} className="text-accent" weight="duotone" />
@@ -172,108 +174,170 @@ export default function EventsPage() {
       {/* EVENT DETAILS DIALOG MODAL */}
       {selectedEvent && (
         <div
-          onClick={() => setSelectedEvent(null)}
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer overflow-y-auto"
+          onClick={() => {
+            setSelectedEvent(null);
+            setIsImageZoomed(false);
+          }}
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 cursor-pointer overflow-y-auto"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-2xl w-full bg-surface rounded-card border border-line shadow-e3 overflow-hidden cursor-default my-8 animate-fade-in"
+            className="relative max-w-4xl lg:max-w-5xl w-full max-h-[90vh] bg-surface rounded-card border border-line shadow-e3 overflow-hidden cursor-default my-auto flex flex-col md:flex-row animate-fade-in"
           >
             <button
               type="button"
-              onClick={() => setSelectedEvent(null)}
-              className="absolute top-4 right-4 z-10 p-2 rounded-chip bg-black/60 text-white hover:bg-black transition-colors"
+              onClick={() => {
+                setSelectedEvent(null);
+                setIsImageZoomed(false);
+              }}
+              className="absolute top-3 right-3 z-20 p-2 rounded-chip bg-surface/90 hover:bg-surface text-fg border border-line shadow-sm transition-colors cursor-pointer"
               aria-label="Close"
             >
               <X size={20} />
             </button>
 
             {isValidImageSrc(selectedEvent.imageUrl) && (
-              <div className="relative h-60 sm:h-72 w-full bg-black">
+              <div className="relative md:w-[320px] lg:w-[360px] h-48 sm:h-60 md:h-auto min-h-[220px] bg-black/95 flex items-center justify-center p-3 sm:p-4 group/img flex-shrink-0 border-b md:border-b-0 md:border-r border-line">
                 <Image
                   src={selectedEvent.imageUrl}
                   alt={lang === "ne" ? selectedEvent.titleNe : selectedEvent.titleEn}
                   fill
-                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 360px"
+                  className="object-contain cursor-zoom-in"
+                  onClick={() => setIsImageZoomed(true)}
+                  priority
                 />
+                <button
+                  type="button"
+                  onClick={() => setIsImageZoomed(true)}
+                  className="absolute bottom-3 right-3 z-10 px-2.5 py-1 rounded-chip bg-black/75 hover:bg-black text-white text-[11px] font-semibold flex items-center gap-1 backdrop-blur-sm border border-white/20 shadow-md transition-all cursor-pointer"
+                  title={lang === "ne" ? "पूर्ण आकारमा हेर्नुहोस्" : "View Fullscreen"}
+                >
+                  <ArrowsOut size={13} />
+                  <span>{lang === "ne" ? "ठूलो बनाउनुहोस्" : "Expand"}</span>
+                </button>
               </div>
             )}
 
-            <div className="p-6 sm:p-8 space-y-5">
-              <div className="flex flex-wrap items-center gap-2">
-                {Boolean(
-                  (lang === "ne" ? selectedEvent.categoryNe : selectedEvent.categoryEn)?.trim() &&
-                  selectedEvent.categoryNe !== "साधारण सभा" &&
-                  selectedEvent.categoryEn !== "General Assembly"
-                ) && (
-                  <span className="px-2.5 py-1 rounded-chip bg-accent-soft text-accent text-xs font-bold">
-                    {lang === "ne" ? selectedEvent.categoryNe : selectedEvent.categoryEn}
+            {/* BIG DETAILS SECTION */}
+            <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1 flex flex-col justify-between">
+              <div className="space-y-4 pr-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  {Boolean(
+                    (lang === "ne" ? selectedEvent.categoryNe : selectedEvent.categoryEn)?.trim() &&
+                    selectedEvent.categoryNe !== "साधारण सभा" &&
+                    selectedEvent.categoryEn !== "General Assembly"
+                  ) && (
+                    <span className="px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-bold">
+                      {lang === "ne" ? selectedEvent.categoryNe : selectedEvent.categoryEn}
+                    </span>
+                  )}
+                  <span
+                    className={`px-3 py-1 rounded-chip text-xs font-bold ${
+                      selectedEvent.status === "upcoming"
+                        ? "bg-accent text-on-accent"
+                        : "bg-tint text-muted"
+                    }`}
+                  >
+                    {selectedEvent.status === "upcoming"
+                      ? lang === "ne" ? "आयोजना हुने" : "Scheduled"
+                      : lang === "ne" ? "सम्पन्न" : "Concluded"}
                   </span>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-fg leading-snug tracking-tight">
+                  {lang === "ne" ? selectedEvent.titleNe : selectedEvent.titleEn}
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-card bg-ground border border-line text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <Calendar size={20} className="text-accent flex-shrink-0" weight="duotone" />
+                    <div>
+                      <div className="text-[10px] text-muted uppercase font-bold">{lang === "ne" ? "मिति" : "Date"}</div>
+                      <div className="text-xs sm:text-sm font-bold text-fg">{lang === "ne" ? selectedEvent.dateNe : selectedEvent.dateEn}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <Clock size={20} className="text-accent flex-shrink-0" weight="duotone" />
+                    <div>
+                      <div className="text-[10px] text-muted uppercase font-bold">{lang === "ne" ? "समय" : "Time"}</div>
+                      <div className="text-xs sm:text-sm font-bold text-fg">{lang === "ne" ? selectedEvent.timeNe : selectedEvent.timeEn}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <MapPin size={20} className="text-accent flex-shrink-0" weight="duotone" />
+                    <div>
+                      <div className="text-[10px] text-muted uppercase font-bold">{lang === "ne" ? "स्थान" : "Location"}</div>
+                      <div className="text-xs sm:text-sm font-bold text-fg">{lang === "ne" ? selectedEvent.locationNe : selectedEvent.locationEn}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {Boolean(selectedEvent.descriptionNe || selectedEvent.descriptionEn) && (
+                  <div className="space-y-2.5 pt-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted">
+                      {lang === "ne" ? "गतिविधिको विस्तृत विवरण" : "Activity Description & Details"}
+                    </h4>
+                    <p className="text-sm sm:text-base leading-relaxed text-fg/90 whitespace-pre-line bg-ground/50 p-4 sm:p-5 rounded-card border border-line/60 font-sans">
+                      {lang === "ne"
+                        ? selectedEvent.descriptionNe || selectedEvent.descriptionEn
+                        : selectedEvent.descriptionEn || selectedEvent.descriptionNe}
+                    </p>
+                  </div>
                 )}
-                <span
-                  className={`px-2.5 py-1 rounded-chip text-xs font-bold ${
-                    selectedEvent.status === "upcoming"
-                      ? "bg-accent text-on-accent"
-                      : "bg-tint text-muted"
-                  }`}
-                >
-                  {selectedEvent.status === "upcoming"
-                    ? lang === "ne" ? "आयोजना हुने" : "Scheduled"
-                    : lang === "ne" ? "सम्पन्न" : "Concluded"}
-                </span>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-extrabold text-fg leading-snug">
-                {lang === "ne" ? selectedEvent.titleNe : selectedEvent.titleEn}
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-control bg-ground border border-line text-xs">
-                <div className="flex items-center gap-2">
-                  <Calendar size={18} className="text-accent flex-shrink-0" weight="duotone" />
-                  <div>
-                    <div className="text-[10px] text-muted uppercase font-bold">{lang === "ne" ? "मिति" : "Date"}</div>
-                    <div className="font-semibold text-fg">{lang === "ne" ? selectedEvent.dateNe : selectedEvent.dateEn}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock size={18} className="text-accent flex-shrink-0" weight="duotone" />
-                  <div>
-                    <div className="text-[10px] text-muted uppercase font-bold">{lang === "ne" ? "समय" : "Time"}</div>
-                    <div className="font-semibold text-fg">{lang === "ne" ? selectedEvent.timeNe : selectedEvent.timeEn}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin size={18} className="text-accent flex-shrink-0" weight="duotone" />
-                  <div>
-                    <div className="text-[10px] text-muted uppercase font-bold">{lang === "ne" ? "स्थान" : "Location"}</div>
-                    <div className="font-semibold text-fg">{lang === "ne" ? selectedEvent.locationNe : selectedEvent.locationEn}</div>
-                  </div>
-                </div>
-              </div>
-
-              {Boolean(selectedEvent.descriptionNe || selectedEvent.descriptionEn) && (
-                <div className="space-y-2 pt-2 border-t border-line">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted">
-                    {lang === "ne" ? "गतिविधिको विस्तृत विवरण" : "Activity Description & Details"}
-                  </h4>
-                  <p className="text-sm leading-relaxed text-fg/90 whitespace-pre-line bg-ground/50 p-4 rounded-control border border-line/60">
-                    {lang === "ne"
-                      ? selectedEvent.descriptionNe || selectedEvent.descriptionEn
-                      : selectedEvent.descriptionEn || selectedEvent.descriptionNe}
-                  </p>
-                </div>
-              )}
-
-              <div className="pt-3 flex justify-end">
+              <div className="pt-4 border-t border-line flex justify-end">
                 <button
                   type="button"
-                  onClick={() => setSelectedEvent(null)}
-                  className="px-5 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                  onClick={() => {
+                    setSelectedEvent(null);
+                    setIsImageZoomed(false);
+                  }}
+                  className="px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
                 >
                   {lang === "ne" ? "बन्द गर्नुहोस्" : "Close"}
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN EVENT IMAGE LIGHTBOX */}
+      {selectedEvent && isImageZoomed && isValidImageSrc(selectedEvent.imageUrl) && (
+        <div
+          onClick={() => setIsImageZoomed(false)}
+          className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-md flex flex-col justify-between p-4 cursor-zoom-out"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center justify-between text-white p-2 border-b border-white/10"
+          >
+            <span className="font-bold text-sm sm:text-base text-white/90">
+              {lang === "ne" ? selectedEvent.titleNe : selectedEvent.titleEn}
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsImageZoomed(false)}
+              className="p-2 rounded-chip bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <X size={22} />
+            </button>
+          </div>
+          <div
+            className="relative flex-1 w-full h-[82vh] flex items-center justify-center p-2"
+            onClick={() => setIsImageZoomed(false)}
+          >
+            <Image
+              src={selectedEvent.imageUrl}
+              alt={lang === "ne" ? selectedEvent.titleNe : selectedEvent.titleEn}
+              fill
+              sizes="100vw"
+              className="object-contain"
+              priority
+            />
           </div>
         </div>
       )}

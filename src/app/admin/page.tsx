@@ -25,6 +25,9 @@ import {
   saveStoredPublications,
   getStoredGallerySnapshot,
   saveStoredGallery,
+  GalleryAlbum,
+  getStoredGalleryAlbumsSnapshot,
+  saveStoredGalleryAlbums,
   getStoredBrandingSnapshot,
   saveStoredBranding,
 } from "@/data/mockData";
@@ -100,6 +103,7 @@ export default function AdminPage() {
   const [pubList, setPubList] = useState<Publication[]>(() => getStoredPublicationsSnapshot());
   const [eventsList, setEventsList] = useState<EventItem[]>(() => getStoredEventsSnapshot());
   const [galleryList, setGalleryList] = useState<GalleryItem[]>(() => getStoredGallerySnapshot());
+  const [albumsList, setAlbumsList] = useState<GalleryAlbum[]>(() => getStoredGalleryAlbumsSnapshot());
   const [inquiriesList, setInquiriesList] = useState<Inquiry[]>([]);
   const [inquiriesLoading, setInquiriesLoading] = useState(true);
   const [inquiriesError, setInquiriesError] = useState(false);
@@ -272,6 +276,16 @@ export default function AdminPage() {
         if (data && Array.isArray(data)) {
           setGalleryList(data);
           saveStoredGallery(data);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/gallery/albums", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          setAlbumsList(data);
+          saveStoredGalleryAlbums(data);
         }
       })
       .catch(() => {});
@@ -503,6 +517,8 @@ export default function AdminPage() {
               {...baseTabProps}
               galleryList={galleryList}
               setGalleryList={setGalleryList}
+              albumsList={albumsList}
+              setAlbumsList={setAlbumsList}
             />
           )}
 
