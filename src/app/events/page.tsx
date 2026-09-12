@@ -119,9 +119,15 @@ export default function EventsPage() {
                   ) : (
                     <Calendar size={40} className="text-accent" weight="duotone" />
                   )}
-                  <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface/95 text-[11px] font-bold text-accent shadow-e1">
-                    {lang === "ne" ? event.categoryNe : event.categoryEn}
-                  </div>
+                  {Boolean(
+                    (lang === "ne" ? event.categoryNe : event.categoryEn)?.trim() &&
+                    event.categoryNe !== "साधारण सभा" &&
+                    event.categoryEn !== "General Assembly"
+                  ) && (
+                    <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface/95 text-[11px] font-bold text-accent shadow-e1">
+                      {lang === "ne" ? event.categoryNe : event.categoryEn}
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
@@ -195,9 +201,15 @@ export default function EventsPage() {
 
             <div className="p-6 sm:p-8 space-y-5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-1 rounded-chip bg-accent-soft text-accent text-xs font-bold">
-                  {lang === "ne" ? selectedEvent.categoryNe : selectedEvent.categoryEn}
-                </span>
+                {Boolean(
+                  (lang === "ne" ? selectedEvent.categoryNe : selectedEvent.categoryEn)?.trim() &&
+                  selectedEvent.categoryNe !== "साधारण सभा" &&
+                  selectedEvent.categoryEn !== "General Assembly"
+                ) && (
+                  <span className="px-2.5 py-1 rounded-chip bg-accent-soft text-accent text-xs font-bold">
+                    {lang === "ne" ? selectedEvent.categoryNe : selectedEvent.categoryEn}
+                  </span>
+                )}
                 <span
                   className={`px-2.5 py-1 rounded-chip text-xs font-bold ${
                     selectedEvent.status === "upcoming"

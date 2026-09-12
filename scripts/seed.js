@@ -151,8 +151,8 @@ const events = [
     description_en: "Annual general assembly, presentation of annual reports, felicitation of senior citizens, and cultural programs.",
     description_ne: "वार्षिक साधारण सभा, प्रगति प्रतिवेदन प्रस्तुति, ज्येष्ठ नागरिक सम्मान तथा विविध सांस्कृतिक कार्यक्रम।",
     status: "upcoming",
-    category_en: "General Assembly",
-    category_ne: "साधारण सभा",
+    category_en: "",
+    category_ne: "",
     image_url: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80"
   },
   {

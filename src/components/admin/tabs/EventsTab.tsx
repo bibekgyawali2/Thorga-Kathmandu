@@ -43,8 +43,8 @@ export function EventsTab({
   const [eventForm, setEventForm] = useState({
     titleEn: "",
     titleNe: "",
-    categoryEn: "General Assembly",
-    categoryNe: "साधारण सभा",
+    categoryEn: "",
+    categoryNe: "",
     dateEn: "2081 Ashoj 12",
     dateNe: "२०८१ असोज १२",
     timeEn: "11:00 AM",
@@ -75,8 +75,8 @@ export function EventsTab({
     setEventForm({
       titleEn: ev.titleEn || "",
       titleNe: ev.titleNe || "",
-      categoryEn: ev.categoryEn || "Meeting",
-      categoryNe: ev.categoryNe || "भेला",
+      categoryEn: (ev.categoryEn === "General Assembly" ? "" : ev.categoryEn) || "",
+      categoryNe: (ev.categoryNe === "साधारण सभा" ? "" : ev.categoryNe) || "",
       dateEn: ev.dateEn || "",
       dateNe: ev.dateNe || "",
       timeEn: ev.timeEn || "",
@@ -182,8 +182,8 @@ export function EventsTab({
         setEventForm({
           titleEn: "",
           titleNe: "",
-          categoryEn: "General Assembly",
-          categoryNe: "साधारण सभा",
+          categoryEn: "",
+          categoryNe: "",
           dateEn: "2081 Ashoj 12",
           dateNe: "२०८१ असोज १२",
           timeEn: "11:00 AM",
@@ -250,8 +250,8 @@ export function EventsTab({
       setEventForm({
         titleEn: "",
         titleNe: "",
-        categoryEn: "General Assembly",
-        categoryNe: "साधारण सभा",
+        categoryEn: "",
+        categoryNe: "",
         dateEn: "2081 Ashoj 12",
         dateNe: "२०८१ असोज १२",
         timeEn: "11:00 AM",
@@ -365,8 +365,8 @@ export function EventsTab({
               setEventForm({
                 titleEn: "",
                 titleNe: "",
-                categoryEn: "General Assembly",
-                categoryNe: "साधारण सभा",
+                categoryEn: "",
+                categoryNe: "",
                 dateEn: "2081 Ashoj 12",
                 dateNe: "२०८१ असोज १२",
                 timeEn: "11:00 AM",
@@ -426,7 +426,7 @@ export function EventsTab({
                 onChange={(e) =>
                   setEventForm({ ...eventForm, titleNe: e.target.value })
                 }
-                placeholder="वार्षिक साधारण सभा"
+                placeholder="कार्यक्रमको शीर्षक"
                 className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
               />
             </div>
@@ -441,7 +441,7 @@ export function EventsTab({
                 onChange={(e) =>
                   setEventForm({ ...eventForm, titleEn: e.target.value })
                 }
-                placeholder="Annual General Assembly"
+                placeholder="Event Title"
                 className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent"
               />
             </div>

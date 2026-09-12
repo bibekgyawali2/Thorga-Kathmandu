@@ -682,9 +682,15 @@ export default function MainPortal() {
                     ) : (
                       <Calendar size={36} className="text-accent" weight="duotone" />
                     )}
-                    <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface text-[10px] font-bold text-accent shadow-e1">
-                      {lang === "ne" ? event.categoryNe : event.categoryEn}
-                    </div>
+                    {Boolean(
+                      (lang === "ne" ? event.categoryNe : event.categoryEn)?.trim() &&
+                      event.categoryNe !== "साधारण सभा" &&
+                      event.categoryEn !== "General Assembly"
+                    ) && (
+                      <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface text-[10px] font-bold text-accent shadow-e1">
+                        {lang === "ne" ? event.categoryNe : event.categoryEn}
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
@@ -1093,9 +1099,15 @@ export default function MainPortal() {
 
             <div className="p-6 sm:p-8 space-y-5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-1 rounded-chip bg-accent-soft text-accent text-xs font-bold">
-                  {lang === "ne" ? selectedEventModal.categoryNe : selectedEventModal.categoryEn}
-                </span>
+                {Boolean(
+                  (lang === "ne" ? selectedEventModal.categoryNe : selectedEventModal.categoryEn)?.trim() &&
+                  selectedEventModal.categoryNe !== "साधारण सभा" &&
+                  selectedEventModal.categoryEn !== "General Assembly"
+                ) && (
+                  <span className="px-2.5 py-1 rounded-chip bg-accent-soft text-accent text-xs font-bold">
+                    {lang === "ne" ? selectedEventModal.categoryNe : selectedEventModal.categoryEn}
+                  </span>
+                )}
                 <span
                   className={`px-2.5 py-1 rounded-chip text-xs font-bold ${
                     selectedEventModal.status === "upcoming"
