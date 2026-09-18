@@ -185,7 +185,7 @@ export default function GalleryPage() {
                   <article
                     key={item.id}
                     onClick={() => setActiveSinglePhoto(item)}
-                    className="relative h-72 rounded-card overflow-hidden border border-line bg-surface cursor-pointer group shadow-e1 hover:border-accent transition-all flex items-center justify-center"
+                    className="relative h-72 rounded-card overflow-hidden border border-line bg-black/90 cursor-pointer group shadow-e1 hover:border-accent transition-all flex items-center justify-center p-1"
                   >
                     {isValidImageSrc(item.imageUrl) ? (
                       <Image
@@ -193,7 +193,7 @@ export default function GalleryPage() {
                         alt={lang === "ne" ? item.titleNe : item.titleEn}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-200"
+                        className="object-contain group-hover:scale-105 transition-transform duration-200"
                       />
                     ) : (
                       <div className="flex flex-col items-center gap-2 text-muted">
@@ -253,14 +253,14 @@ export default function GalleryPage() {
                       className="group rounded-card overflow-hidden border border-line bg-surface cursor-pointer shadow-e1 hover:shadow-e2 hover:border-accent transition-all flex flex-col"
                     >
                       {/* Album Cover */}
-                      <div className="relative h-56 sm:h-60 w-full bg-tint overflow-hidden flex items-center justify-center">
+                      <div className="relative h-56 sm:h-60 w-full bg-black/90 overflow-hidden flex items-center justify-center p-1">
                         {isValidImageSrc(coverImage) ? (
                           <Image
                             src={coverImage}
                             alt={displayTitle}
                             fill
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="object-contain group-hover:scale-105 transition-transform duration-300"
                           />
                         ) : (
                           <Images size={48} className="text-muted/50" weight="duotone" />
@@ -381,14 +381,14 @@ export default function GalleryPage() {
                         onClick={() => setLightboxIndex(idx)}
                         className="group rounded-card border border-line bg-surface overflow-hidden cursor-pointer hover:border-accent hover:shadow-e2 transition-all flex flex-col"
                       >
-                        <div className="relative aspect-[4/3] w-full bg-tint overflow-hidden flex items-center justify-center">
+                        <div className="relative aspect-[4/3] w-full bg-black/90 overflow-hidden flex items-center justify-center p-1">
                           {isValidImageSrc(photo.imageUrl) ? (
                             <Image
                               src={photo.imageUrl}
                               alt={caption || `Photo ${idx + 1}`}
                               fill
                               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                              className="object-cover group-hover:scale-105 transition-transform duration-200"
+                              className="object-contain group-hover:scale-105 transition-transform duration-200"
                             />
                           ) : (
                             <ImageIcon size={32} className="text-muted" />

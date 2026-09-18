@@ -76,6 +76,19 @@ const nextConfig: NextConfig = {
         headers: SECURITY_HEADERS,
       },
       {
+        source: "/api/documents/file",
+        headers: [
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
+          },
+        ],
+      },
+      {
         source: "/api/:path*",
         headers: [
           {

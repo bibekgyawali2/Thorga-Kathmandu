@@ -64,7 +64,7 @@ export default function CurrentAdvisorsPage() {
                 key={advisor.id}
                 className="rounded-card border border-line bg-surface overflow-hidden"
               >
-                <div className="relative aspect-[4/5] w-full bg-accent-soft">
+                <div className="relative aspect-[4/5] w-full bg-accent-soft flex items-center justify-center overflow-hidden">
                   {isValidImageSrc(advisor.photoUrl) &&
                   !advisor.photoUrl.includes("images.unsplash.com") ? (
                     <Image
@@ -72,7 +72,7 @@ export default function CurrentAdvisorsPage() {
                       alt={name}
                       fill
                       sizes="(max-width: 640px) 100vw, 33vw"
-                      className="object-cover"
+                      className="object-contain"
                     />
                   ) : (
                     <div

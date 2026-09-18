@@ -11,9 +11,20 @@ import {
   PencilSimple,
   CaretUp,
   CaretDown,
+  Eye,
+  ArrowSquareOut,
+  Download,
+  X,
 } from "@phosphor-icons/react";
 import type { Language, PageDocument } from "@/data/mockData";
 import { documentUrl } from "@/lib/documentUrl";
+import { PdfModalViewer } from "@/components/PdfModalViewer";
+import {
+  isGoogleDriveUrl,
+  getGoogleDrivePreviewUrl,
+  getGoogleDriveViewUrl,
+  getGoogleDriveDownloadUrl,
+} from "@/lib/googleDrive";
 
 export interface DocumentSlugConfig {
   slug: PageDocument["slug"];
@@ -53,6 +64,7 @@ export function DocumentSectionEditor({
   const [activeSlug, setActiveSlug] = useState<PageDocument["slug"]>(slugs[0].slug);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [viewingDoc, setViewingDoc] = useState<PageDocument | null>(null);
 
   const t = (ne: string, en: string) => (lang === "ne" ? ne : en);
   const reload = useCallback(() => setReloadToken((n) => n + 1), []);
@@ -100,7 +112,7 @@ export function DocumentSectionEditor({
       return;
     }
 
-    const isPdf = form.fileUrl.toLowerCase().includes(".pdf");
+    const isPdf = form.fileUrl.toLowerCase().includes(".pdf") || isGoogleDriveUrl(form.fileUrl);
     setSaving(true);
     try {
       const res = await adminFetch("/api/documents", {
@@ -402,14 +414,28 @@ export function DocumentSectionEditor({
                     </button>
                   </div>
                 )}
-                <a
-                  href={documentUrl(doc.fileUrl, "inline", doc.titleEn)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-chip border border-line text-[11px] font-semibold text-fg hover:bg-tint transition-colors"
-                >
-                  {t("हेर्नुहोस्", "View")}
-                </a>
+                {isGoogleDriveUrl(doc.fileUrl) ? (
+                  <a
+                    href={getGoogleDriveViewUrl(doc.fileUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1 rounded-chip border border-accent/40 bg-accent/10 hover:bg-accent text-accent hover:text-on-accent text-[11px] font-semibold transition-colors flex items-center gap-1"
+                    title={t("Google Drive मा PDF खोल्नुहोस्", "Open PDF in Google Drive")}
+                  >
+                    <ArrowSquareOut size={13} />
+                    <span>{t("PDF हेर्नुहोस्", "View PDF")}</span>
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setViewingDoc(doc)}
+                    className="px-2.5 py-1 rounded-chip border border-accent/40 bg-accent/10 hover:bg-accent text-accent hover:text-on-accent text-[11px] font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                    title={t("PDF हेर्नुहोस्", "View PDF")}
+                  >
+                    <Eye size={13} />
+                    <span>{t("PDF हेर्नुहोस्", "View PDF")}</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -440,6 +466,18 @@ export function DocumentSectionEditor({
             </div>
           ))}
         </div>
+      )}
+
+      {/* Interactive PDF Viewer Modal in Document Section Editor */}
+      {viewingDoc && (
+        <PdfModalViewer
+          url={viewingDoc.fileUrl}
+          title={lang === "ne" ? viewingDoc.titleNe : viewingDoc.titleEn}
+          category={viewingDoc.slug}
+          pages={viewingDoc.pageCount}
+          lang={lang}
+          onClose={() => setViewingDoc(null)}
+        />
       )}
     </div>
   );

@@ -11,6 +11,12 @@ import {
 } from "@phosphor-icons/react";
 import type { Language, PageDocument } from "@/data/mockData";
 import { documentUrl, isCloudinaryAsset } from "@/lib/documentUrl";
+import {
+  isGoogleDriveUrl,
+  getGoogleDrivePreviewUrl,
+  getGoogleDriveViewUrl,
+  getGoogleDriveDownloadUrl,
+} from "@/lib/googleDrive";
 
 /**
  * Renders a document inline so a visitor can read it without downloading.
@@ -23,8 +29,6 @@ import { documentUrl, isCloudinaryAsset } from "@/lib/documentUrl";
  */
 
 const CLOUDINARY_PDF = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)\.pdf$/i;
-
-
 
 function cloudinaryPageImage(url: string, page: number): string | null {
   const match = url.match(CLOUDINARY_PDF);
@@ -49,6 +53,72 @@ export function DocumentViewer({
   const [lastKnownPage, setLastKnownPage] = useState<number | null>(doc.pageCount);
 
   const title = lang === "ne" ? doc.titleNe : doc.titleEn;
+
+  // Dedicated Google Drive PDF Viewer
+  if (isGoogleDriveUrl(doc.fileUrl)) {
+    const previewUrl = getGoogleDrivePreviewUrl(doc.fileUrl);
+    const viewUrl = getGoogleDriveViewUrl(doc.fileUrl);
+    const downloadUrl = getGoogleDriveDownloadUrl(doc.fileUrl);
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-line">
+          <h3 className="text-sm font-bold text-fg flex items-center gap-2 min-w-0">
+            <FileText size={18} weight="duotone" className="text-accent flex-shrink-0" />
+            <span className="truncate">{title}</span>
+            <span className="px-2 py-0.5 rounded-chip text-[10px] font-semibold bg-accent/10 text-accent flex-shrink-0">
+              Google Drive PDF
+            </span>
+          </h3>
+          <div className="flex items-center gap-3">
+            <a
+              href={viewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:text-accent-hover transition-colors"
+            >
+              <ArrowSquareOut size={14} />
+              {lang === "ne" ? "नयाँ ट्याबमा" : "Open in Google Drive"}
+            </a>
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-fg transition-colors"
+            >
+              <Download size={14} />
+              {lang === "ne" ? "डाउनलोड" : "Download"}
+            </a>
+          </div>
+        </div>
+
+        <div className="relative w-full rounded-card overflow-hidden border border-line bg-surface shadow-e1">
+          <iframe
+            src={previewUrl}
+            title={title}
+            className="w-full h-[75vh] min-h-[520px] border-0"
+            allow="autoplay"
+          />
+        </div>
+
+        <p className="text-[11px] text-muted flex items-center gap-1.5">
+          <span>
+            {lang === "ne"
+              ? "यदि यहाँ PDF खुलेन भने"
+              : "If the embedded PDF does not load in your browser,"}
+          </span>
+          <a
+            href={viewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent underline font-medium"
+          >
+            {lang === "ne" ? "Google Drive मा सिधै खोल्नुहोस्" : "open directly in Google Drive"}
+          </a>
+        </p>
+      </div>
+    );
+  }
 
   if (doc.fileType === "image") {
     return (

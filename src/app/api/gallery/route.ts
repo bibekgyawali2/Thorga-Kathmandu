@@ -37,15 +37,36 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = (await request.json()) as GalleryItem;
-    if (!body.titleEn || !body.titleNe || !body.imageUrl) {
+    const body = await request.json();
+
+    // Support batch saving multiple gallery items
+    if (Array.isArray(body)) {
+      const savedItems: GalleryItem[] = [];
+      for (const item of body) {
+        if (item.titleEn && item.titleNe && item.imageUrl) {
+          try {
+            const saved = await saveGalleryItem(item);
+            savedItems.push(saved);
+          } catch (err) {
+            console.error("[api/gallery] batch save item error:", err);
+          }
+        }
+      }
+      return new Response(JSON.stringify({ success: true, data: savedItems }), {
+        status: 200,
+        headers: NO_CACHE_HEADERS,
+      });
+    }
+
+    const singleItem = body as GalleryItem;
+    if (!singleItem.titleEn || !singleItem.titleNe || !singleItem.imageUrl) {
       return new Response(
         JSON.stringify({ error: "Photo title and image URL are required." }),
         { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
-    const saved = await saveGalleryItem(body);
+    const saved = await saveGalleryItem(singleItem);
     return new Response(JSON.stringify({ success: true, data: saved }), {
       status: 200,
       headers: NO_CACHE_HEADERS,

@@ -521,11 +521,11 @@ export function EventsTab({
                 }
                 className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs focus:border-accent capitalize"
               >
-                <option value="upcoming">
-                  {lang === "ne" ? "आगामी (Upcoming)" : "Upcoming"}
-                </option>
                 <option value="completed">
                   {lang === "ne" ? "सम्पन्न (Completed)" : "Completed"}
+                </option>
+                <option value="upcoming">
+                  {lang === "ne" ? "आगामी (Upcoming)" : "Upcoming"}
                 </option>
               </select>
             </div>

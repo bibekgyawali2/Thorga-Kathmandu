@@ -35,7 +35,7 @@ export default function EventsPage() {
     getServerEventsSnapshot
   );
   const remote = useRemoteData<EventItem[]>("/api/events", saveStoredEvents);
-  const [statusFilter, setStatusFilter] = useState<"upcoming" | "completed">("upcoming");
+  const [statusFilter, setStatusFilter] = useState<"upcoming" | "completed">("completed");
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
 
@@ -70,17 +70,6 @@ export default function EventsPage() {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setStatusFilter("upcoming")}
-              className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${
-                statusFilter === "upcoming"
-                  ? "bg-accent text-on-accent shadow-e1"
-                  : "bg-surface border border-line text-fg hover:bg-tint"
-              }`}
-            >
-              {lang === "ne" ? "आगामी गतिविधिहरू" : "Upcoming Activities"}
-            </button>
-            <button
-              type="button"
               onClick={() => setStatusFilter("completed")}
               className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${
                 statusFilter === "completed"
@@ -89,6 +78,17 @@ export default function EventsPage() {
               }`}
             >
               {lang === "ne" ? "सम्पन्न गतिविधिहरू" : "Completed Activities"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter("upcoming")}
+              className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${
+                statusFilter === "upcoming"
+                  ? "bg-accent text-on-accent shadow-e1"
+                  : "bg-surface border border-line text-fg hover:bg-tint"
+              }`}
+            >
+              {lang === "ne" ? "आगामी गतिविधिहरू" : "Upcoming Activities"}
             </button>
           </div>
         </div>

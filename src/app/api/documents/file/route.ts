@@ -26,7 +26,7 @@ const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
  * format. Anything pointing elsewhere returns null, so this route cannot be
  * used as an open proxy for arbitrary URLs.
  */
-function parseOwnAsset(raw: string): { publicId: string; format: string } | null {
+function parseOwnAsset(raw: string): { publicId: string; format: string; resourceType: "image" | "raw" } | null {
   if (!CLOUD_NAME) return null;
 
   let url: URL;
@@ -44,6 +44,8 @@ function parseOwnAsset(raw: string): { publicId: string; format: string } | null
   if (segments[1] !== "image" && segments[1] !== "raw") return null;
   if (segments[2] !== "upload") return null;
 
+  const resourceType = segments[1] as "image" | "raw";
+
   // Everything after /upload/ minus any transformation segment and the
   // version marker is the public id.
   let rest = segments.slice(3);
@@ -58,7 +60,7 @@ function parseOwnAsset(raw: string): { publicId: string; format: string } | null
   const format = joined.slice(dot + 1).toLowerCase();
 
   if (!publicId || !/^[a-z0-9]+$/.test(format)) return null;
-  return { publicId, format };
+  return { publicId, format, resourceType };
 }
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -89,13 +91,37 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const signed = cloudinary.utils.private_download_url(asset.publicId, asset.format, {
-      resource_type: "image",
-      type: "upload",
-      expires_at: Math.floor(Date.now() / 1000) + 300,
-    });
+    // 1. Try primary resource_type
+    const signed = cloudinary.utils.private_download_url(
+      asset.resourceType === "raw" ? `${asset.publicId}.${asset.format}` : asset.publicId,
+      asset.resourceType === "raw" ? "" : asset.format,
+      {
+        resource_type: asset.resourceType,
+        type: "upload",
+        expires_at: Math.floor(Date.now() / 1000) + 300,
+      }
+    );
 
-    const upstream = await fetch(signed);
+    let upstream = await fetch(signed);
+
+    // 2. Fallback: if upstream failed (e.g., 404), attempt alternative resource type
+    if (!upstream.ok) {
+      const altType = asset.resourceType === "image" ? "raw" : "image";
+      const altSigned = cloudinary.utils.private_download_url(
+        altType === "raw" ? `${asset.publicId}.${asset.format}` : asset.publicId,
+        altType === "raw" ? "" : asset.format,
+        {
+          resource_type: altType,
+          type: "upload",
+          expires_at: Math.floor(Date.now() / 1000) + 300,
+        }
+      );
+      const altUpstream = await fetch(altSigned);
+      if (altUpstream.ok && altUpstream.body) {
+        upstream = altUpstream;
+      }
+    }
+
     if (!upstream.ok || !upstream.body) {
       console.error("[api/documents/file] upstream returned", upstream.status);
       return NextResponse.json(
@@ -112,10 +138,12 @@ export async function GET(request: NextRequest) {
 
     return new NextResponse(upstream.body, {
       headers: {
-        "Content-Type": CONTENT_TYPES[asset.format] ?? "application/octet-stream",
+        "Content-Type": CONTENT_TYPES[asset.format] ?? "application/pdf",
         "Content-Disposition": `${disposition}; filename="${encodeURIComponent(safeName)}.${asset.format}"`,
         "Cache-Control": "public, max-age=3600",
         "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Content-Security-Policy": "frame-ancestors 'self'",
       },
     });
   } catch (error) {

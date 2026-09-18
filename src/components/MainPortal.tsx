@@ -43,6 +43,7 @@ import {
 } from "@/data/mockData";
 import { useRemoteData } from "@/hooks/useRemoteData";
 import { documentUrl } from "@/lib/documentUrl";
+import { PdfModalViewer } from "@/components/PdfModalViewer";
 import { DataStatus } from "@/components/DataStatus";
 import { HeroCarousel, type HeroSlide } from "@/components/HeroCarousel";
 import {
@@ -75,7 +76,14 @@ import {
   HandHeart,
   TrendUp,
   ArrowsOut,
+  ArrowSquareOut,
 } from "@phosphor-icons/react";
+import {
+  isGoogleDriveUrl,
+  getGoogleDrivePreviewUrl,
+  getGoogleDriveViewUrl,
+  getGoogleDriveDownloadUrl,
+} from "@/lib/googleDrive";
 
 /**
  * The forum's four stated areas of work. Parallel concerns that run at the
@@ -150,7 +158,7 @@ function Portrait({
           alt={name}
           fill
           sizes="(max-width: 640px) 100vw, 300px"
-          className={imgFit === "contain" ? "object-contain" : "object-cover"}
+          className="object-contain"
         />
       </div>
     );
@@ -330,7 +338,10 @@ export default function MainPortal() {
 
   // Curated showcase subsets
   const publicationsShowcase = publications.slice(0, 3);
-  const upcomingEventsShowcase = events.filter((e) => e.status === "upcoming").slice(0, 2);
+  const eventsShowcase = [
+    ...events.filter((e) => e.status === "completed"),
+    ...events.filter((e) => e.status === "upcoming"),
+  ].slice(0, 2);
   const galleryShowcase = gallery.slice(0, 3);
 
   const heroSlides: HeroSlide[] = [
@@ -583,7 +594,7 @@ export default function MainPortal() {
                         alt={pub.titleEn}
                         fill
                         sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover opacity-40 group-hover:opacity-60 transition-opacity"
+                        className="object-contain opacity-50 group-hover:opacity-75 transition-opacity"
                       />
                     )}
                     <div className="relative z-10 w-36 h-40 rounded-control shadow-e2 p-3 flex flex-col justify-between bg-surface border border-line">
@@ -612,23 +623,35 @@ export default function MainPortal() {
                     </div>
 
                     <div className="pt-3 border-t border-line flex items-center justify-between">
+                      {isGoogleDriveUrl(pub.pdfUrl) ? (
+                        <a
+                          href={getGoogleDriveViewUrl(pub.pdfUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors shadow-e1"
+                        >
+                          <ArrowSquareOut size={14} />
+                          <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setActivePdfPreview(pub)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors shadow-e1 cursor-pointer"
+                        >
+                          <Eye size={14} />
+                          <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
+                        </button>
+                      )}
                       <a
                         href={documentUrl(pub.pdfUrl, "download", lang === "ne" ? pub.titleNe : pub.titleEn)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold transition-colors"
+                        className="text-xs text-muted hover:text-fg font-medium flex items-center gap-1 transition-colors"
                       >
                         <Download size={14} />
                         <span>{lang === "ne" ? "डाउनलोड" : "Download"}</span>
                       </a>
-                      <button
-                        type="button"
-                        onClick={() => setActivePdfPreview(pub)}
-                        className="text-xs text-muted hover:text-fg font-medium flex items-center gap-1 transition-colors"
-                      >
-                        <Eye size={14} />
-                        <span>{lang === "ne" ? "हेर्नुहोस्" : "Preview"}</span>
-                      </button>
                     </div>
                   </div>
                 </article>
@@ -644,7 +667,7 @@ export default function MainPortal() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
               <h2 className="type-section text-fg">
-                {lang === "ne" ? "आगामी तथा सम्पन्न गतिविधिहरू" : "Upcoming & Recent Activities"}
+                {lang === "ne" ? "सम्पन्न तथा आगामी गतिविधिहरू" : "Completed & Upcoming Activities"}
               </h2>
             </div>
 
@@ -657,16 +680,16 @@ export default function MainPortal() {
             </Link>
           </div>
 
-          {upcomingEventsShowcase.length === 0 ? (
+          {eventsShowcase.length === 0 ? (
             <div className="rounded-card border border-dashed border-line p-12 text-center space-y-2 bg-ground">
               <Calendar size={32} className="text-accent mx-auto" weight="duotone" />
               <p className="text-sm font-semibold text-fg">
-                {lang === "ne" ? "हाल कुनै नयाँ गतिविधि छैन" : "No upcoming activities scheduled"}
+                {lang === "ne" ? "हाल कुनै गतिविधि छैन" : "No activities scheduled"}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {upcomingEventsShowcase.map((event) => (
+              {eventsShowcase.map((event) => (
                 <article
                   key={event.id}
                   onClick={() => setSelectedEventModal(event)}
@@ -759,7 +782,7 @@ export default function MainPortal() {
                 <Link
                   key={item.id}
                   href="/gallery"
-                  className="relative h-64 rounded-card overflow-hidden border border-line bg-surface group shadow-e1 hover:border-accent transition-all flex items-center justify-center"
+                  className="relative h-64 rounded-card overflow-hidden border border-line bg-black/85 group shadow-e1 hover:border-accent transition-all flex items-center justify-center p-1"
                 >
                   {isValidImageSrc(item.imageUrl) ? (
                     <Image
@@ -767,7 +790,7 @@ export default function MainPortal() {
                       alt={item.titleEn}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-200"
+                      className="object-contain group-hover:scale-105 transition-transform duration-200"
                     />
                   ) : (
                     <Sparkle size={36} className="text-accent" weight="duotone" />
@@ -1024,49 +1047,15 @@ export default function MainPortal() {
 
       {/* PDF PREVIEW MODAL */}
       {activePdfPreview && (
-        <div className="fixed inset-0 z-50 bg-fg/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-surface border border-line rounded-card max-w-2xl w-full p-6 space-y-6 shadow-e3">
-            <div className="flex items-center justify-between border-b border-line pb-4">
-              <div className="flex items-center gap-2 truncate">
-                <FileText size={22} className="text-accent flex-shrink-0" weight="duotone" />
-                <h3 className="text-base font-bold text-fg truncate">
-                  {lang === "ne" ? activePdfPreview.titleNe : activePdfPreview.titleEn}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActivePdfPreview(null)}
-                className="p-1 rounded-chip text-muted hover:text-fg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-8 text-center space-y-4 bg-tint rounded-card border border-line">
-              <FileText size={44} className="text-accent mx-auto" weight="duotone" />
-              <div className="space-y-1">
-                <h4 className="text-lg font-bold text-fg">
-                  {lang === "ne" ? activePdfPreview.titleNe : activePdfPreview.titleEn}
-                </h4>
-                <div className="text-xs text-muted font-mono">
-                  {activePdfPreview.fileSize} · {activePdfPreview.pages} Pages · {activePdfPreview.publishedYearEn}
-                </div>
-              </div>
-              <p className="text-xs leading-relaxed text-muted max-w-md mx-auto">
-                {lang === "ne" ? activePdfPreview.descriptionNe : activePdfPreview.descriptionEn}
-              </p>
-              <a
-                href={documentUrl(activePdfPreview.pdfUrl, "download", lang === "ne" ? activePdfPreview.titleNe : activePdfPreview.titleEn)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1"
-              >
-                <Download size={16} />
-                <span>{lang === "ne" ? "पूर्ण PDF दस्तावेज डाउनलोड गर्नुहोस्" : "Download Complete PDF"}</span>
-              </a>
-            </div>
-          </div>
-        </div>
+        <PdfModalViewer
+          url={activePdfPreview.pdfUrl}
+          title={lang === "ne" ? activePdfPreview.titleNe : activePdfPreview.titleEn}
+          category={lang === "ne" ? activePdfPreview.categoryNe : activePdfPreview.categoryEn}
+          pages={activePdfPreview.pages}
+          fileSize={activePdfPreview.fileSize}
+          lang={lang}
+          onClose={() => setActivePdfPreview(null)}
+        />
       )}
 
       {/* EVENT DETAILS DIALOG MODAL */}

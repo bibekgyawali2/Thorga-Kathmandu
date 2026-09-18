@@ -654,10 +654,19 @@ export function MembersTab({
               </div>
 
               <CloudinaryUploader
-                label="Member Portrait Photo (Max 2MB)"
-                description="Clear portrait photo"
+                label={
+                  lang === "ne"
+                    ? "सदस्यको तस्बिर (अधिकतम 5MB)"
+                    : "Member Portrait Photo (Max 5MB)"
+                }
+                description={
+                  lang === "ne"
+                    ? "स्पष्ट पोट्रेट तस्बिर ५ एमबीसम्म"
+                    : "Clear portrait photo up to 5MB"
+                }
                 folder="members"
                 accept="image/*"
+                maxSizeMb={5}
                 value={memberForm.photoUrl}
                 onChange={(url) =>
                   setMemberForm({ ...memberForm, photoUrl: url })

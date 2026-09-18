@@ -65,6 +65,11 @@ export function GalleryTab({
     imageUrl: "",
   });
 
+  // Batch photos state for multi-photo uploading in Single Photos
+  const [batchPhotos, setBatchPhotos] = useState<
+    { id: string; url: string; titleNe: string; titleEn: string }[]
+  >([]);
+
   // Album States
   const [editingAlbum, setEditingAlbum] = useState<GalleryAlbum | null>(null);
   const [showAddAlbumModal, setShowAddAlbumModal] = useState(false);
@@ -109,6 +114,7 @@ export function GalleryTab({
   // -------------------------------------------------------------------------
   const handleStartEditGallery = (g: GalleryItem) => {
     setEditingGallery(g);
+    setBatchPhotos([]);
     setGalleryForm({
       titleEn: g.titleEn || "",
       titleNe: g.titleNe || "",
@@ -134,13 +140,15 @@ export function GalleryTab({
       });
       return;
     }
-    if (!galleryForm.imageUrl.trim()) {
+
+    const effectiveImageUrl = (batchPhotos.length > 0 ? batchPhotos[0].url : galleryForm.imageUrl).trim();
+    if (!effectiveImageUrl && batchPhotos.length === 0) {
       dialogAlert({
         title: lang === "ne" ? "तस्बिर आवश्यक" : "Image Required",
         description:
           lang === "ne"
-            ? "कृपया क्लाउडिनरी मार्फत तस्बिर अपलोड गर्नुहोस्।"
-            : "Please upload an image via Cloudinary uploader.",
+            ? "कृपया तस्बिर अपलोड गर्नुहोस् वा लिङ्क राख्नुहोस्।"
+            : "Please upload an image or provide a link.",
         type: "warning",
       });
       return;
@@ -148,10 +156,68 @@ export function GalleryTab({
 
     setIsSavingGallery(true);
     try {
+      // Batch creation if multiple photos were uploaded
+      if (!editingGallery && batchPhotos.length > 1) {
+        const newItems: GalleryItem[] = batchPhotos.map((bp, idx) => ({
+          id:
+            typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+              ? crypto.randomUUID()
+              : `g-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+          imageUrl: bp.url,
+          titleNe: bp.titleNe.trim() || galleryForm.titleNe.trim() || `तस्बिर ${idx + 1}`,
+          titleEn: bp.titleEn.trim() || galleryForm.titleEn.trim() || `Photo ${idx + 1}`,
+          categoryNe: galleryForm.categoryNe.trim(),
+          categoryEn: galleryForm.categoryEn.trim(),
+          dateNe: galleryForm.dateNe.trim(),
+          dateEn: galleryForm.dateEn.trim(),
+        }));
+
+        let finalSavedItems = newItems;
+        try {
+          const res = await adminFetch("/api/gallery", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newItems),
+          });
+          const data = await res.json();
+          if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+            finalSavedItems = data.data;
+          }
+        } catch (err) {
+          console.error("Failed to sync batch gallery to db:", err);
+        }
+
+        const updated = [...finalSavedItems, ...galleryList];
+        setGalleryList(updated);
+        saveStoredGallery(updated);
+        revalidateCollection("gallery");
+        setShowAddGalleryModal(false);
+        setBatchPhotos([]);
+        setGalleryForm({
+          titleEn: "",
+          titleNe: "",
+          categoryEn: "",
+          categoryNe: "",
+          dateEn: "",
+          dateNe: "",
+          imageUrl: "",
+        });
+        dialogAlert({
+          title: lang === "ne" ? "तस्बिरहरू थपिए" : "Photos Added",
+          description:
+            lang === "ne"
+              ? `${finalSavedItems.length} वटा तस्बिरहरू ग्यालरीमा सफलतापूर्वक थपिए।`
+              : `${finalSavedItems.length} photos added to gallery successfully.`,
+          type: "success",
+        });
+        return;
+      }
+
       if (editingGallery) {
         const updatedG: GalleryItem = {
           ...editingGallery,
           ...galleryForm,
+          imageUrl: effectiveImageUrl,
           titleNe: galleryForm.titleNe.trim(),
           titleEn: galleryForm.titleEn.trim(),
         };
@@ -179,6 +245,7 @@ export function GalleryTab({
         revalidateCollection("gallery");
         setShowAddGalleryModal(false);
         setEditingGallery(null);
+        setBatchPhotos([]);
         setGalleryForm({
           titleEn: "",
           titleNe: "",
@@ -207,6 +274,7 @@ export function GalleryTab({
       const newG: GalleryItem = {
         id: generatedId,
         ...galleryForm,
+        imageUrl: effectiveImageUrl,
         titleNe: galleryForm.titleNe.trim(),
         titleEn: galleryForm.titleEn.trim(),
       };
@@ -234,6 +302,7 @@ export function GalleryTab({
       saveStoredGallery(updated);
       revalidateCollection("gallery");
       setShowAddGalleryModal(false);
+      setBatchPhotos([]);
       setGalleryForm({
         titleEn: "",
         titleNe: "",
@@ -775,23 +844,58 @@ export function GalleryTab({
                 <CloudinaryUploader
                   label={
                     lang === "ne"
-                      ? "एल्बममा तस्बिर थप्नुहोस् (अधिकतम २MB)"
-                      : "Add Photo to Album (Max 2MB)"
+                      ? "एल्बममा तस्बिरहरू थप्नुहोस् (अधिकतम २MB/तस्बिर)"
+                      : "Add Photos to Album (Max 2MB/photo)"
                   }
                   description={
                     lang === "ne"
-                      ? "क्लाउडिनरीमा तस्बिर अपलोड गरी एल्बममा थपिनेछ"
-                      : "Image will be uploaded to Cloudinary and appended to this album"
+                      ? "एक वा एकैपटक धेरै तस्बिरहरू छान्न सक्नुहुन्छ (अथवा गुगल ड्राइभ लिङ्क राख्नुहोस्)"
+                      : "Choose single or multiple photos at once (or paste a Google Drive link)"
                   }
                   folder="gallery/albums"
                   accept="image/*"
+                  multiple={true}
+                  buttonLabel={
+                    lang === "ne"
+                      ? "तस्बिर(हरू) छान्नुहोस्"
+                      : "Choose Photo(s)"
+                  }
+                  onMultipleUpload={(urls) => {
+                    if (urls.length > 0) {
+                      const newImgs: GalleryAlbumImage[] = urls.map((url, idx) => ({
+                        id:
+                          typeof crypto !== "undefined" &&
+                          typeof crypto.randomUUID === "function"
+                            ? crypto.randomUUID()
+                            : `img-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`,
+                        imageUrl: url,
+                        captionNe: "",
+                        captionEn: "",
+                      }));
+
+                      setAlbumForm((prev) => ({
+                        ...prev,
+                        images: [...prev.images, ...newImgs],
+                        coverImageUrl: prev.coverImageUrl || urls[0],
+                      }));
+
+                      dialogAlert({
+                        title: lang === "ne" ? "तस्बिरहरू थपिए" : "Photos Added",
+                        description:
+                          lang === "ne"
+                            ? `${urls.length} वटा तस्बिरहरू एल्बममा थपिए।`
+                            : `${urls.length} photo(s) added to this album.`,
+                        type: "success",
+                      });
+                    }
+                  }}
                   onChange={(url) => {
                     if (url) {
                       const newId =
                         typeof crypto !== "undefined" &&
                         typeof crypto.randomUUID === "function"
                           ? crypto.randomUUID()
-                          : `img-${Date.now()}-${Math.random()}`;
+                          : `img-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
                       const newImg: GalleryAlbumImage = {
                         id: newId,
@@ -840,7 +944,7 @@ export function GalleryTab({
                                 alt={`Album photo ${idx + 1}`}
                                 fill
                                 sizes="96px"
-                                className="object-cover"
+                                className="object-contain"
                               />
                             ) : (
                               <ImageIcon size={24} className="text-muted" />
@@ -1033,7 +1137,7 @@ export function GalleryTab({
                             alt={album.titleEn}
                             fill
                             sizes="350px"
-                            className="object-cover group-hover:scale-105 transition-transform duration-200"
+                            className="object-contain group-hover:scale-105 transition-transform duration-200"
                           />
                         ) : (
                           <ImagesIcon size={36} className="text-muted" weight="duotone" />
@@ -1279,15 +1383,154 @@ export function GalleryTab({
               </div>
 
               <CloudinaryUploader
-                label="Gallery Photo (Max 2MB)"
-                description="Community activity image"
+                label={
+                  editingGallery
+                    ? "Gallery Photo (Max 2MB)"
+                    : lang === "ne"
+                    ? "ग्यालरी तस्बिर(हरू) छान्नुहोस्"
+                    : "Choose Gallery Photo(s)"
+                }
+                description={
+                  editingGallery
+                    ? "Replace current image"
+                    : lang === "ne"
+                    ? "एक वा एकैपटक धेरै तस्बिरहरू छान्न सक्नुहुन्छ (अथवा गुगल ड्राइभ लिङ्क राख्नुहोस्)"
+                    : "Upload one or multiple photos at once (or paste a Google Drive link)"
+                }
                 folder="gallery"
                 accept="image/*"
-                value={galleryForm.imageUrl}
-                onChange={(url) =>
-                  setGalleryForm({ ...galleryForm, imageUrl: url })
+                multiple={!editingGallery}
+                buttonLabel={
+                  !editingGallery
+                    ? lang === "ne"
+                      ? "तस्बिर(हरू) छान्नुहोस्"
+                      : "Choose Photo(s)"
+                    : undefined
                 }
+                value={batchPhotos.length === 1 ? batchPhotos[0].url : galleryForm.imageUrl}
+                onMultipleUpload={(urls) => {
+                  if (urls.length > 0) {
+                    const newBatch = urls.map((url, i) => ({
+                      id: `batch-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
+                      url,
+                      titleNe: galleryForm.titleNe || "",
+                      titleEn: galleryForm.titleEn || "",
+                    }));
+                    setBatchPhotos((prev) => [...prev, ...newBatch]);
+                    setGalleryForm((prev) => ({
+                      ...prev,
+                      imageUrl: prev.imageUrl || urls[0],
+                    }));
+                  }
+                }}
+                onChange={(url) => {
+                  setGalleryForm({ ...galleryForm, imageUrl: url });
+                  if (!editingGallery && url) {
+                    setBatchPhotos((prev) =>
+                      prev.length === 0
+                        ? [
+                            {
+                              id: `batch-${Date.now()}`,
+                              url,
+                              titleNe: galleryForm.titleNe || "",
+                              titleEn: galleryForm.titleEn || "",
+                            },
+                          ]
+                        : prev
+                    );
+                  }
+                }}
               />
+
+              {/* Multi-Photo Batch Preview */}
+              {!editingGallery && batchPhotos.length > 1 && (
+                <div className="p-4 rounded-control border border-accent/30 bg-ground space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-accent">
+                      {lang === "ne"
+                        ? `एकैपटक थपिने तस्बिरहरू (${batchPhotos.length})`
+                        : `Photos to be Added (${batchPhotos.length})`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBatchPhotos([]);
+                        setGalleryForm((prev) => ({ ...prev, imageUrl: "" }));
+                      }}
+                      className="text-[11px] text-danger hover:underline cursor-pointer"
+                    >
+                      {lang === "ne" ? "सबै हटाउनुहोस्" : "Clear All"}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">
+                    {batchPhotos.map((bp, idx) => (
+                      <div
+                        key={bp.id}
+                        className="p-2.5 rounded-control border border-line bg-surface flex items-start gap-3 relative group"
+                      >
+                        <div className="relative w-16 h-16 rounded-control overflow-hidden border border-line flex-shrink-0 bg-black/90 flex items-center justify-center p-0.5">
+                          {isValidImageSrc(bp.url) ? (
+                            <Image
+                              src={bp.url}
+                              alt={`Batch photo ${idx + 1}`}
+                              fill
+                              sizes="64px"
+                              className="object-contain"
+                            />
+                          ) : (
+                            <ImageIcon size={20} className="text-muted m-auto" />
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-1.5 min-w-0">
+                          <input
+                            type="text"
+                            value={bp.titleNe}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBatchPhotos((prev) =>
+                                prev.map((p) =>
+                                  p.id === bp.id ? { ...p, titleNe: val } : p
+                                )
+                              );
+                            }}
+                            placeholder={galleryForm.titleNe || "नेपाली शीर्षक..."}
+                            className="w-full px-2 py-1 rounded border border-line bg-ground text-fg text-xs focus:border-accent"
+                          />
+                          <input
+                            type="text"
+                            value={bp.titleEn}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBatchPhotos((prev) =>
+                                prev.map((p) =>
+                                  p.id === bp.id ? { ...p, titleEn: val } : p
+                                )
+                              );
+                            }}
+                            placeholder={galleryForm.titleEn || "English caption..."}
+                            className="w-full px-2 py-1 rounded border border-line bg-ground text-fg text-xs focus:border-accent"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const remaining = batchPhotos.filter((p) => p.id !== bp.id);
+                            setBatchPhotos(remaining);
+                            setGalleryForm((prev) => ({
+                              ...prev,
+                              imageUrl: remaining[0]?.url || "",
+                            }));
+                          }}
+                          className="p-1 rounded text-danger hover:bg-danger/10 transition-colors flex-shrink-0 cursor-pointer"
+                          title="Remove photo"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-2 pt-1">
                 <button
@@ -1338,14 +1581,14 @@ export function GalleryTab({
                     key={g.id}
                     className="rounded-control overflow-hidden border border-line bg-ground"
                   >
-                    <div className="relative h-36 w-full bg-tint flex items-center justify-center">
+                    <div className="relative h-36 w-full bg-black/90 flex items-center justify-center p-2">
                       {isValidImageSrc(g.imageUrl) ? (
                         <Image
                           src={g.imageUrl}
                           alt={g.titleEn}
                           fill
                           sizes="300px"
-                          className="object-cover"
+                          className="object-contain"
                         />
                       ) : (
                         <ImageIcon

@@ -11,7 +11,19 @@ import {
   Trash,
   PencilSimple,
   CircleNotch,
+  Eye,
+  Download,
+  ArrowSquareOut,
+  X,
 } from "@phosphor-icons/react";
+import {
+  isGoogleDriveUrl,
+  getGoogleDrivePreviewUrl,
+  getGoogleDriveViewUrl,
+  getGoogleDriveDownloadUrl,
+} from "@/lib/googleDrive";
+import { documentUrl } from "@/lib/documentUrl";
+import { PdfModalViewer } from "@/components/PdfModalViewer";
 
 interface PublicationsTabProps extends BaseTabProps {
   pubList: Publication[];
@@ -33,6 +45,7 @@ export function PublicationsTab({
   const [showAddPubModal, setShowAddPubModal] = useState(showAddModalInitial);
   const [isSavingPub, setIsSavingPub] = useState(false);
   const [deletingPubId, setDeletingPubId] = useState<string | null>(null);
+  const [viewingPdfPub, setViewingPdfPub] = useState<Publication | null>(null);
 
   const [pubForm, setPubForm] = useState({
     titleEn: "",
@@ -504,6 +517,30 @@ export function PublicationsTab({
               </div>
 
               <div className="flex items-center gap-1.5">
+                {pub.pdfUrl && (
+                  isGoogleDriveUrl(pub.pdfUrl) ? (
+                    <a
+                      href={getGoogleDriveViewUrl(pub.pdfUrl)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded-control bg-accent/10 hover:bg-accent text-accent hover:text-on-accent text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                      title={lang === "ne" ? "Google Drive मा PDF खोल्नुहोस्" : "Open PDF in Google Drive"}
+                    >
+                      <ArrowSquareOut size={14} />
+                      <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setViewingPdfPub(pub)}
+                      className="px-2.5 py-1 rounded-control bg-accent/10 hover:bg-accent text-accent hover:text-on-accent text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title={lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}
+                    >
+                      <Eye size={14} />
+                      <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
+                    </button>
+                  )
+                )}
                 <button
                   type="button"
                   onClick={() => handleStartEditPub(pub)}
@@ -530,6 +567,19 @@ export function PublicationsTab({
           ))}
         </div>
       </div>
+
+      {/* Interactive PDF Viewer Modal in Publications Admin */}
+      {viewingPdfPub && (
+        <PdfModalViewer
+          url={viewingPdfPub.pdfUrl}
+          title={lang === "ne" ? viewingPdfPub.titleNe : viewingPdfPub.titleEn}
+          category={lang === "ne" ? viewingPdfPub.categoryNe : viewingPdfPub.categoryEn}
+          pages={viewingPdfPub.pages}
+          fileSize={viewingPdfPub.fileSize}
+          lang={lang}
+          onClose={() => setViewingPdfPub(null)}
+        />
+      )}
     </div>
   );
 }

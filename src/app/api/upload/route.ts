@@ -12,7 +12,7 @@ const NO_CACHE_HEADERS = {
   Expires: "0",
 };
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB limit
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
 
 const ALLOWED_MIME_TYPES = [
   "image/jpeg",
@@ -41,11 +41,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Validate File Size (Max 2MB)
+    // 1. Validate File Size (Max 5MB)
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         {
-          error: `File size exceeds 2MB limit. (Your file: ${(file.size / (1024 * 1024)).toFixed(2)} MB)`,
+          error: `File size exceeds 5MB limit. (Your file: ${(file.size / (1024 * 1024)).toFixed(2)} MB)`,
         },
         { status: 400, headers: NO_CACHE_HEADERS }
       );

@@ -55,13 +55,13 @@ function Portrait({
 
   if (hasRealPhoto(member.photoUrl)) {
     return (
-      <div className={`relative overflow-hidden bg-tint ${sizeClass}`}>
+      <div className={`relative overflow-hidden bg-tint flex items-center justify-center ${sizeClass}`}>
         <Image
           src={member.photoUrl}
           alt={name}
           fill
           sizes="(max-width: 640px) 100vw, 300px"
-          className="object-cover"
+          className="object-contain"
         />
       </div>
     );

@@ -21,9 +21,17 @@ import {
   ArrowLeft,
   X,
   MagnifyingGlass,
+  ArrowSquareOut,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
 import { documentUrl } from "@/lib/documentUrl";
+import { PdfModalViewer } from "@/components/PdfModalViewer";
+import {
+  isGoogleDriveUrl,
+  getGoogleDrivePreviewUrl,
+  getGoogleDriveViewUrl,
+  getGoogleDriveDownloadUrl,
+} from "@/lib/googleDrive";
 import { useRemoteData } from "@/hooks/useRemoteData";
 import { DataStatus } from "@/components/DataStatus";
 
@@ -112,7 +120,7 @@ export default function PublicationsPage() {
                       alt={lang === "ne" ? pub.titleNe : pub.titleEn}
                       fill
                       sizes="(max-width: 768px) 100vw, 33vw"
-                      className="object-cover opacity-40 group-hover:opacity-60 transition-opacity"
+                      className="object-contain opacity-50 group-hover:opacity-75 transition-opacity"
                     />
                   )}
 
@@ -152,14 +160,26 @@ export default function PublicationsPage() {
                   </div>
 
                   <div className="pt-4 border-t border-line flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setActivePdfPreview(pub)}
-                      className="flex-1 py-2 px-3 rounded-control text-xs font-semibold flex items-center justify-center gap-1.5 bg-tint hover:bg-accent-soft text-fg transition-colors"
-                    >
-                      <Eye size={15} />
-                      <span>{lang === "ne" ? "पूर्वावलोकन" : "Preview"}</span>
-                    </button>
+                    {isGoogleDriveUrl(pub.pdfUrl) ? (
+                      <a
+                        href={getGoogleDriveViewUrl(pub.pdfUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-2 px-3 rounded-control text-xs font-semibold flex items-center justify-center gap-1.5 bg-tint hover:bg-accent-soft text-accent transition-colors"
+                      >
+                        <ArrowSquareOut size={15} />
+                        <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setActivePdfPreview(pub)}
+                        className="flex-1 py-2 px-3 rounded-control text-xs font-semibold flex items-center justify-center gap-1.5 bg-tint hover:bg-accent-soft text-accent transition-colors cursor-pointer"
+                      >
+                        <Eye size={15} />
+                        <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
+                      </button>
+                    )}
                     <a
                       href={documentUrl(pub.pdfUrl, "download", lang === "ne" ? pub.titleNe : pub.titleEn)}
                       target="_blank"
@@ -179,49 +199,15 @@ export default function PublicationsPage() {
 
       {/* PDF PREVIEW MODAL */}
       {activePdfPreview && (
-        <div className="fixed inset-0 z-50 bg-fg/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-surface border border-line rounded-card max-w-2xl w-full p-6 space-y-6 shadow-e3">
-            <div className="flex items-center justify-between border-b border-line pb-4">
-              <div className="flex items-center gap-2 truncate">
-                <FileText size={22} className="text-accent flex-shrink-0" weight="duotone" />
-                <h3 className="text-base font-bold text-fg truncate">
-                  {lang === "ne" ? activePdfPreview.titleNe : activePdfPreview.titleEn}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActivePdfPreview(null)}
-                className="p-1 rounded-chip text-muted hover:text-fg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-8 text-center space-y-4 bg-tint rounded-card border border-line">
-              <FileText size={44} className="text-accent mx-auto" weight="duotone" />
-              <div className="space-y-1">
-                <h4 className="text-lg font-bold text-fg">
-                  {lang === "ne" ? activePdfPreview.titleNe : activePdfPreview.titleEn}
-                </h4>
-                <div className="text-xs text-muted font-mono">
-                  {activePdfPreview.fileSize} · {activePdfPreview.pages} Pages · {activePdfPreview.publishedYearEn}
-                </div>
-              </div>
-              <p className="text-xs leading-relaxed text-muted max-w-md mx-auto">
-                {lang === "ne" ? activePdfPreview.descriptionNe : activePdfPreview.descriptionEn}
-              </p>
-              <a
-                href={documentUrl(activePdfPreview.pdfUrl, "download", lang === "ne" ? activePdfPreview.titleNe : activePdfPreview.titleEn)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1"
-              >
-                <Download size={16} />
-                <span>{lang === "ne" ? "पूर्ण PDF दस्तावेज डाउनलोड गर्नुहोस्" : "Download Complete PDF"}</span>
-              </a>
-            </div>
-          </div>
-        </div>
+        <PdfModalViewer
+          url={activePdfPreview.pdfUrl}
+          title={lang === "ne" ? activePdfPreview.titleNe : activePdfPreview.titleEn}
+          category={lang === "ne" ? activePdfPreview.categoryNe : activePdfPreview.categoryEn}
+          pages={activePdfPreview.pages}
+          fileSize={activePdfPreview.fileSize}
+          lang={lang}
+          onClose={() => setActivePdfPreview(null)}
+        />
       )}
 
       <SiteFooter lang={lang} />

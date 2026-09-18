@@ -59,12 +59,12 @@ export function BrandingTab({
         {/* Live Preview */}
         {brandingState.logoUrl && (
           <div className="flex items-center gap-3 p-3 rounded-control border border-line bg-tint">
-            <div className="w-12 h-12 rounded-card bg-accent overflow-hidden flex-shrink-0 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-card bg-surface border border-line p-1 overflow-hidden flex-shrink-0 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={brandingState.logoUrl}
                 alt="Logo preview"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </div>
             <div>
