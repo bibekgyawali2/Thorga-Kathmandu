@@ -22,7 +22,10 @@ export function DocumentPageView({
 }) {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
   const [documents, setDocuments] = useState<PageDocument[]>([]);
-  const remote = useRemoteData<PageDocument[]>("/api/documents", setDocuments);
+  const remote = useRemoteData<PageDocument[]>(
+    `/api/documents?slug=${encodeURIComponent(slug)}`,
+    setDocuments
+  );
 
   const visible = documents.filter((d) => d.slug === slug);
 

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { fetchGallery, saveGalleryItem, deleteGalleryItem } from "@/lib/supabase/data";
+import { fetchGallery, saveGalleryItem, saveGalleryItemsBatch, deleteGalleryItem } from "@/lib/supabase/data";
 import { GalleryItem } from "@/data/mockData";
 import { verifyAuth } from "@/lib/authGuard";
 
@@ -39,19 +39,12 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Support batch saving multiple gallery items
+    // Support atomic batch saving multiple gallery items
     if (Array.isArray(body)) {
-      const savedItems: GalleryItem[] = [];
-      for (const item of body) {
-        if (item.titleEn && item.titleNe && item.imageUrl) {
-          try {
-            const saved = await saveGalleryItem(item);
-            savedItems.push(saved);
-          } catch (err) {
-            console.error("[api/gallery] batch save item error:", err);
-          }
-        }
-      }
+      const validItems = body.filter(
+        (item): item is GalleryItem => Boolean(item && item.titleEn && item.titleNe && item.imageUrl)
+      );
+      const savedItems = await saveGalleryItemsBatch(validItems);
       return new Response(JSON.stringify({ success: true, data: savedItems }), {
         status: 200,
         headers: NO_CACHE_HEADERS,

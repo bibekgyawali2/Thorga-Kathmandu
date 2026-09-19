@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchPageDocuments, savePageDocument, deletePageDocument } from "@/lib/supabase/data";
+import {
+  fetchPageDocuments,
+  savePageDocument,
+  deletePageDocument,
+  deletePageDocumentsBySlugExcept,
+  reorderPageDocuments,
+} from "@/lib/supabase/data";
 import { verifyAuth } from "@/lib/authGuard";
 import { isValidUrl } from "@/lib/validation";
 import type { PageDocument } from "@/data/mockData";
@@ -44,9 +50,10 @@ const SINGLE_DOCUMENT_SLUGS = new Set([
   "other",
 ]);
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    return NextResponse.json(await fetchPageDocuments(), { headers: NO_CACHE_HEADERS });
+    const slug = request.nextUrl.searchParams.get("slug") || undefined;
+    return NextResponse.json(await fetchPageDocuments(slug), { headers: NO_CACHE_HEADERS });
   } catch (error) {
     console.error("[api/documents] GET error:", error);
     return NextResponse.json(
@@ -61,54 +68,67 @@ export async function POST(request: NextRequest) {
   if (!auth.authorized) return auth.response!;
 
   try {
-    const body = (await request.json().catch(() => null)) as PageDocument | null;
-    if (!body || !ALLOWED_SLUGS.includes(body.slug)) {
+    const body = (await request.json().catch(() => null)) as
+      | (PageDocument & { reorder?: { id: string; order: number }[] })
+      | { reorder?: { id: string; order: number }[] }
+      | null;
+
+    if (!body) {
+      return NextResponse.json(
+        { error: "Request body is required." },
+        { status: 400, headers: NO_CACHE_HEADERS }
+      );
+    }
+
+    // Support atomic batch reorder in a single query
+    if (body.reorder && Array.isArray(body.reorder)) {
+      await reorderPageDocuments(body.reorder);
+      return NextResponse.json({ success: true }, { headers: NO_CACHE_HEADERS });
+    }
+
+    const docBody = body as PageDocument;
+    if (!docBody.slug || !ALLOWED_SLUGS.includes(docBody.slug)) {
       return NextResponse.json(
         { error: "Unknown document page." },
         { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
-    if (!ALLOWED_TYPES.includes(body.fileType)) {
+    if (!ALLOWED_TYPES.includes(docBody.fileType)) {
       return NextResponse.json(
         { error: "Only PDF and image files are supported." },
         { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
-    if (!body.fileUrl || !isValidUrl(body.fileUrl)) {
+    if (!docBody.fileUrl || !isValidUrl(docBody.fileUrl)) {
       return NextResponse.json(
         { error: "A valid file link is required." },
         { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
-    if (!body.titleEn?.trim() || !body.titleNe?.trim()) {
+    if (!docBody.titleEn?.trim() || !docBody.titleNe?.trim()) {
       return NextResponse.json(
         { error: "Document title in both English and Nepali is required." },
         { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
-    // Replace the existing file on single-document pages.
-    if (SINGLE_DOCUMENT_SLUGS.has(body.slug)) {
-      const existing = await fetchPageDocuments();
-      await Promise.all(
-        existing
-          .filter((d) => d.slug === body.slug && d.id !== body.id)
-          .map((d) => deletePageDocument(d.id))
-      );
+    // Replace existing file on single-document pages in a single atomic DELETE query.
+    if (SINGLE_DOCUMENT_SLUGS.has(docBody.slug)) {
+      await deletePageDocumentsBySlugExcept(docBody.slug, docBody.id);
     }
 
     const saved = await savePageDocument({
-      id: body.id,
-      slug: body.slug,
-      titleEn: String(body.titleEn).trim().slice(0, 200),
-      titleNe: String(body.titleNe).trim().slice(0, 200),
-      fileUrl: body.fileUrl,
-      fileType: body.fileType,
+      id: docBody.id,
+      slug: docBody.slug,
+      titleEn: String(docBody.titleEn).trim().slice(0, 200),
+      titleNe: String(docBody.titleNe).trim().slice(0, 200),
+      fileUrl: docBody.fileUrl,
+      fileType: docBody.fileType,
       pageCount:
-        body.pageCount === null || body.pageCount === undefined
+        docBody.pageCount === null || docBody.pageCount === undefined
           ? null
-          : Math.max(1, Math.min(500, Number(body.pageCount) || 1)),
-      order: Number(body.order) || 0,
+          : Math.max(1, Math.min(500, Number(docBody.pageCount) || 1)),
+      order: Number(docBody.order) || 0,
     });
 
     return NextResponse.json({ success: true, data: saved }, { headers: NO_CACHE_HEADERS });

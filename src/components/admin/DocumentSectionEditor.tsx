@@ -176,16 +176,14 @@ export function DocumentSectionEditor({
     );
 
     try {
-      const results = await Promise.all(
-        changed.map((payload) =>
-          adminFetch("/api/documents", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          })
-        )
-      );
-      if (results.some((r) => !r.ok)) throw new Error("Reorder failed");
+      const res = await adminFetch("/api/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reorder: changed.map((d) => ({ id: d.id, order: d.order })),
+        }),
+      });
+      if (!res.ok) throw new Error("Reorder failed");
     } catch {
       setDocuments(previous);
       toast.error(t("क्रम मिलाउन सकिएन", "Could not reorder"));

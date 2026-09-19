@@ -367,6 +367,113 @@ export async function saveGalleryItem(item: GalleryItem): Promise<GalleryItem> {
   throw new Error("Could not save the gallery item: no database backend accepted the write.");
 }
 
+export async function saveGalleryItemsBatch(items: GalleryItem[]): Promise<GalleryItem[]> {
+  if (!items || items.length === 0) return [];
+  if (items.length === 1) return [await saveGalleryItem(items[0])];
+
+  const prepared = items.map((item) => ({
+    id: isValidUUID(item.id) ? item.id : generateUUID(),
+    titleEn: item.titleEn ?? "",
+    titleNe: item.titleNe ?? "",
+    categoryEn: item.categoryEn ?? "Events",
+    categoryNe: item.categoryNe ?? "कार्यक्रम",
+    imageUrl: item.imageUrl,
+    dateEn: item.dateEn ?? "",
+    dateNe: item.dateNe ?? "",
+  }));
+
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const valuesPlaceholders: string[] = [];
+      const values: unknown[] = [];
+      prepared.forEach((item, idx) => {
+        const offset = idx * 8;
+        valuesPlaceholders.push(
+          `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`
+        );
+        values.push(
+          item.id,
+          item.titleEn,
+          item.titleNe,
+          item.categoryEn,
+          item.categoryNe,
+          item.imageUrl,
+          item.dateEn,
+          item.dateNe
+        );
+      });
+
+      const res = await pg.query(
+        `INSERT INTO public.gallery (id, title_en, title_ne, category_en, category_ne, image_url, date_en, date_ne)
+         VALUES ${valuesPlaceholders.join(", ")}
+         ON CONFLICT (id) DO UPDATE SET 
+           title_en = EXCLUDED.title_en,
+           title_ne = EXCLUDED.title_ne,
+           category_en = EXCLUDED.category_en,
+           category_ne = EXCLUDED.category_ne,
+           image_url = EXCLUDED.image_url,
+           date_en = EXCLUDED.date_en,
+           date_ne = EXCLUDED.date_ne
+         RETURNING *;`,
+        values
+      );
+
+      if (res.rows && res.rows.length > 0) {
+        return res.rows.map((row) => ({
+          id: String(row.id),
+          titleEn: row.title_en ?? "",
+          titleNe: row.title_ne ?? "",
+          categoryEn: row.category_en ?? "",
+          categoryNe: row.category_ne ?? "",
+          imageUrl: row.image_url ?? "",
+          dateEn: row.date_en ?? "",
+          dateNe: row.date_ne ?? "",
+        }));
+      }
+    } catch (err) {
+      console.warn("[saveGalleryItemsBatch] pg query failed:", err);
+    }
+  }
+
+  // Supabase fallback
+  try {
+    const supabase = makeAdminClient();
+    const payload = prepared.map((item) => ({
+      id: item.id,
+      title_en: item.titleEn,
+      title_ne: item.titleNe,
+      category_en: item.categoryEn,
+      category_ne: item.categoryNe,
+      image_url: item.imageUrl,
+      date_en: item.dateEn,
+      date_ne: item.dateNe,
+    }));
+    const { data } = await supabase.from("gallery").upsert(payload).select();
+    if (data && data.length > 0) {
+      return data.map((d) => ({
+        id: String(d.id),
+        titleEn: d.title_en ?? "",
+        titleNe: d.title_ne ?? "",
+        categoryEn: d.category_en ?? "",
+        categoryNe: d.category_ne ?? "",
+        imageUrl: d.image_url ?? "",
+        dateEn: d.date_en ?? "",
+        dateNe: d.date_ne ?? "",
+      }));
+    }
+  } catch (err) {
+    console.warn("[saveGalleryItemsBatch] Supabase fallback failed:", err);
+  }
+
+  // Final fallback: save individually
+  const results: GalleryItem[] = [];
+  for (const item of items) {
+    results.push(await saveGalleryItem(item));
+  }
+  return results;
+}
+
 export async function deleteGalleryItem(id: string): Promise<void> {
   if (!id) return;
 
@@ -1424,13 +1531,15 @@ function mapPageDocument(row: Record<string, unknown>): PageDocument {
   };
 }
 
-export async function fetchPageDocuments(): Promise<PageDocument[]> {
+export async function fetchPageDocuments(slug?: string): Promise<PageDocument[]> {
   const pg = getPgPool();
   if (pg) {
     try {
-      const res = await pg.query(
-        "SELECT id, slug, title_en, title_ne, file_url, file_type, page_count, display_order FROM public.page_documents ORDER BY display_order ASC, created_at ASC"
-      );
+      const query = slug
+        ? "SELECT id, slug, title_en, title_ne, file_url, file_type, page_count, display_order FROM public.page_documents WHERE slug = $1 ORDER BY display_order ASC, created_at ASC"
+        : "SELECT id, slug, title_en, title_ne, file_url, file_type, page_count, display_order FROM public.page_documents ORDER BY display_order ASC, created_at ASC";
+      const params = slug ? [slug] : [];
+      const res = await pg.query(query, params);
       if (res.rows) return res.rows.map(mapPageDocument);
     } catch (err) {
       console.warn("[fetchPageDocuments] pg query failed:", err);
@@ -1439,10 +1548,11 @@ export async function fetchPageDocuments(): Promise<PageDocument[]> {
 
   try {
     const supabase = makeAdminClient();
-    const { data, error } = await supabase
-      .from("page_documents")
-      .select("*")
-      .order("display_order", { ascending: true });
+    let q = supabase.from("page_documents").select("*");
+    if (slug) {
+      q = q.eq("slug", slug);
+    }
+    const { data, error } = await q.order("display_order", { ascending: true });
     if (!error && data) return data.map(mapPageDocument);
   } catch (err) {
     console.warn("[fetchPageDocuments] supabase query failed:", err);
@@ -1510,6 +1620,75 @@ export async function savePageDocument(doc: PageDocument): Promise<PageDocument>
   throw new Error("Could not save the document: no database backend accepted the write.");
 }
 
+/**
+ * Replaces N individual delete queries on single-document pages with a single atomic DELETE.
+ */
+export async function deletePageDocumentsBySlugExcept(slug: string, keepId?: string): Promise<void> {
+  if (!slug) return;
+
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      if (keepId) {
+        await pg.query("DELETE FROM public.page_documents WHERE slug = $1 AND id::text <> $2", [slug, keepId]);
+      } else {
+        await pg.query("DELETE FROM public.page_documents WHERE slug = $1", [slug]);
+      }
+      return;
+    } catch (err) {
+      console.warn("[deletePageDocumentsBySlugExcept] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    let q = supabase.from("page_documents").delete().eq("slug", slug);
+    if (keepId) {
+      q = q.neq("id", keepId);
+    }
+    await q;
+  } catch (err) {
+    console.warn("[deletePageDocumentsBySlugExcept] supabase delete failed:", err);
+  }
+}
+
+/**
+ * Updates display orders of multiple documents in a single atomic database roundtrip.
+ */
+export async function reorderPageDocuments(items: { id: string; order: number }[]): Promise<void> {
+  if (!items || items.length === 0) return;
+
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const valuePairs = items.map((_, i) => `($${i * 2 + 1}::uuid, $${i * 2 + 2}::int)`).join(", ");
+      const params = items.flatMap((it) => [it.id, it.order]);
+      await pg.query(
+        `UPDATE public.page_documents AS d
+         SET display_order = u.display_order
+         FROM (VALUES ${valuePairs}) AS u(id, display_order)
+         WHERE d.id = u.id`,
+        params
+      );
+      return;
+    } catch (err) {
+      console.warn("[reorderPageDocuments] pg batch update failed:", err);
+    }
+  }
+
+  // Fallback: update in parallel
+  try {
+    const supabase = makeAdminClient();
+    await Promise.all(
+      items.map((it) =>
+        supabase.from("page_documents").update({ display_order: it.order }).eq("id", it.id)
+      )
+    );
+  } catch (err) {
+    console.warn("[reorderPageDocuments] supabase update failed:", err);
+  }
+}
+
 export async function deletePageDocument(id: string): Promise<void> {
   if (!id) return;
 
@@ -1530,3 +1709,4 @@ export async function deletePageDocument(id: string): Promise<void> {
     console.warn("[deletePageDocument] supabase delete failed:", err);
   }
 }
+
