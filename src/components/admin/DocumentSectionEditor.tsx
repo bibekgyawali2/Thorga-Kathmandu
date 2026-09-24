@@ -506,5 +506,5 @@ export const ABOUT_DOC_SLUGS: DocumentSlugConfig[] = [
  */
 export const FORMER_COMMITTEE_DOC_SLUGS: DocumentSlugConfig[] = [
   { slug: "former-officials", ne: "हालसम्मका पदाधिकारीहरू", en: "Former Office Bearers", single: false },
-  { slug: "former-advisors", ne: "हालसम्मका सल्लाहाकारहरू", en: "Former Advisors", single: false },
+  { slug: "former-advisors", ne: "हालसम्मका सल्लाहकारहरू", en: "Former Advisors", single: false },
 ];

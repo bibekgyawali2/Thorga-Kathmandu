@@ -500,11 +500,18 @@ export default function MainPortal() {
                       textClass="text-3xl"
                       imgFit="contain"
                     />
-                    <div className="absolute top-2.5 left-2.5 z-10">
-                      <span className="inline-block px-2.5 py-1 rounded-chip text-[11px] font-bold bg-accent text-on-accent shadow-e1">
-                        {lang === "ne" ? member.roleNe : member.roleEn}
-                      </span>
-                    </div>
+                    {member.committeeType !== "advisor" &&
+                      member.roleNe !== "सल्लाहकार" &&
+                      member.roleEn !== "Advisor" &&
+                      member.roleNe &&
+                      member.roleNe !== "." &&
+                      member.roleNe !== "।" && (
+                        <div className="absolute top-2.5 left-2.5 z-10">
+                          <span className="inline-block px-2.5 py-1 rounded-chip text-[11px] font-bold bg-accent text-on-accent shadow-e1">
+                            {lang === "ne" ? member.roleNe : member.roleEn}
+                          </span>
+                        </div>
+                      )}
                   </div>
 
                   {/* Bottom Details Content */}

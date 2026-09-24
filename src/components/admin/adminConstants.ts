@@ -5,7 +5,7 @@ export const COMMITTEE_SECTIONS: { key: CommitteeSection; ne: string; en: string
   { key: "officials", ne: "वर्तमान कार्यसमिति", en: "Current Executive Committee" },
   { key: "advisor", ne: "सल्लाहकार परिषद्", en: "Advisory Council" },
   { key: "former-officials", ne: "हालसम्मका पदाधिकारी", en: "Former Office Bearers" },
-  { key: "former-advisors", ne: "हालसम्मका सल्लाहाकार", en: "Former Advisors" },
+  { key: "former-advisors", ne: "हालसम्मका सल्लाहकार", en: "Former Advisors" },
 ];
 
 export const ADMIN_I18N = {
