@@ -166,7 +166,7 @@ export function PdfModalViewer({
                 )}
                 {fileSize && <span>• {fileSize}</span>}
                 {isDrive && (
-                  <span className="px-1.5 py-0.5 rounded-chip text-[9px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <span className="px-1.5 py-0.5 rounded-chip text-[9px] font-semibold bg-accent/10 text-accent border border-accent/20">
                     Google Drive
                   </span>
                 )}
@@ -345,7 +345,7 @@ export function PdfModalViewer({
             <div className="w-full h-full flex flex-col items-center justify-center space-y-4 max-w-4xl">
               <div className="w-full rounded-control p-3 bg-neutral-800/80 border border-neutral-700/60 text-xs text-neutral-300 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <FilePdf size={18} className="text-emerald-400" />
+                  <FilePdf size={18} className="text-accent" />
                   <span>
                     {lang === "ne"
                       ? "यो कागजात Google Drive मा होस्ट गरिएको छ।"
@@ -356,7 +356,7 @@ export function PdfModalViewer({
                   href={getGoogleDriveViewUrl(url)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-emerald-400 hover:text-emerald-300 font-semibold underline flex items-center gap-1"
+                  className="text-accent hover:underline font-semibold flex items-center gap-1"
                 >
                   <ArrowSquareOut size={13} />
                   {lang === "ne" ? "सिधै खोल्नुहोस्" : "Open directly"}

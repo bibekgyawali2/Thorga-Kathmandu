@@ -20,45 +20,53 @@
 */
 
 :root {
-  --ground: #eef4ef;
-  --surface: #fcfdfc;
-  --tint: #e4ede5;
-  --accent: #1b5e3f;
-  --accent-hover: #164c33;
-  --accent-soft: #dcebe1;
+  --ground: #f0f6fa;
+  --surface: #ffffff;
+  --tint: #e3eef8;
+  --accent: #0066b3;
+  --accent-hover: #00508f;
+  --accent-soft: #ddf3fc;
   --on-accent: #ffffff;
-  --fg: #12211a;
-  --muted: #47574f;
-  --line: #d7e3d9;
+  --fg: #0f2030;
+  --muted: #466177;
+  --line: #cfdfed;
   --danger: #9f2f28;
   --warning: #8a5a10;
-  --nav: #175136;
-  --on-nav: #f2f8f3;
+  --header-bg: #00447a;
+  --header-fg: #ffffff;
+  --header-muted: #d0e4f7;
+  --header-line: rgba(255, 255, 255, 0.18);
+  --nav: #003660;
+  --on-nav: #ffffff;
   /* Elevation. Tailwind's stock shadows are pure black, which reads as grey
-     smudge over a green ground; these are tinted to the brand hue and layered
+     smudge over a blue ground; these are tinted to the WorldLink brand blue hue and layered
      (a tight contact shadow plus a wider ambient one) the way real light
      falls. Three steps only: resting, raised, overlay. */
-  --elev-1: 0 1px 1px rgba(23, 81, 54, 0.05), 0 1px 2px -1px rgba(23, 81, 54, 0.08);
-  --elev-2: 0 1px 2px rgba(23, 81, 54, 0.05), 0 6px 12px -6px rgba(23, 81, 54, 0.13);
-  --elev-3: 0 2px 4px rgba(23, 81, 54, 0.06), 0 18px 32px -14px rgba(23, 81, 54, 0.20);
+  --elev-1: 0 1px 1px rgba(0, 102, 179, 0.05), 0 1px 2px -1px rgba(0, 102, 179, 0.08);
+  --elev-2: 0 1px 2px rgba(0, 102, 179, 0.05), 0 6px 12px -6px rgba(0, 102, 179, 0.13);
+  --elev-3: 0 2px 4px rgba(0, 102, 179, 0.06), 0 18px 32px -14px rgba(0, 102, 179, 0.20);
   --shadow: var(--elev-2);
 }
 
 [data-theme="dark"] {
-  --ground: #0e1512;
-  --surface: #161f1a;
-  --tint: #1d2a23;
-  --accent: #5cb98b;
-  --accent-hover: #74c89d;
-  --accent-soft: #1e3a2c;
-  --on-accent: #08120d;
-  --fg: #e6efe8;
-  --muted: #9dafa4;
-  --line: #25332b;
+  --ground: #0a121d;
+  --surface: #111d2e;
+  --tint: #16263b;
+  --accent: #38bdf8;
+  --accent-hover: #60cdff;
+  --accent-soft: #102c48;
+  --on-accent: #041424;
+  --fg: #ecf3fb;
+  --muted: #91a7bc;
+  --line: #1d334b;
   --danger: #f08a80;
-  --warning: #e0aa5a;
-  --nav: #10291f;
-  --on-nav: #dfeae2;
+  --warning: #f5c567;
+  --header-bg: #071322;
+  --header-fg: #ffffff;
+  --header-muted: #95afcd;
+  --header-line: rgba(255, 255, 255, 0.12);
+  --nav: #050d18;
+  --on-nav: #e1effa;
   /* Dark mode needs deeper shadows and a faint top highlight, otherwise
      raised surfaces vanish into the background. */
   --elev-1: 0 1px 1px rgba(0, 0, 0, 0.35), 0 1px 2px -1px rgba(0, 0, 0, 0.45);
@@ -84,6 +92,10 @@
   --color-line: var(--line);
   --color-danger: var(--danger);
   --color-warning: var(--warning);
+  --color-header-bg: var(--header-bg);
+  --color-header-fg: var(--header-fg);
+  --color-header-muted: var(--header-muted);
+  --color-header-line: var(--header-line);
   --color-nav: var(--nav);
   --color-on-nav: var(--on-nav);
 

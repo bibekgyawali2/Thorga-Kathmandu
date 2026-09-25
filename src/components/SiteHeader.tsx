@@ -123,7 +123,7 @@ function SkylineWatermark() {
       aria-hidden="true"
       viewBox="0 0 1200 120"
       preserveAspectRatio="none"
-      className="absolute inset-x-0 bottom-0 h-16 sm:h-20 w-full text-accent opacity-[0.13] pointer-events-none"
+      className="absolute inset-x-0 bottom-0 h-16 sm:h-20 w-full text-white opacity-[0.10] pointer-events-none"
       fill="currentColor"
     >
       <path d="M0 120V96h34l10-14 10 14h26V78l18-12 18 12v18h30l14-20 14 20h28V72l22-14 22 14v24h26l12-18 12 18h32V84l16-12 16 12v12h30l14-22 14 22h26V70l20-13 20 13v26h28l12-16 12 16h30V80l18-13 18 13v16h28l14-20 14 20h26V74l22-14 22 14v22h26l12-18 12 18h32V82l16-12 16 12v14h30l14-20 14 20h26V76l20-13 20 13v20h28l12-16 12 16h30V86l18-12 18 12v10h28l14-18 14 18h26V120z" />
@@ -269,14 +269,14 @@ export function SiteHeader({
   return (
     <>
       {/* Band 1: institutional identity */}
-      <div className="relative bg-tint border-b border-line overflow-hidden">
+      <div className="relative bg-header-bg border-b border-header-line overflow-hidden">
         <SkylineWatermark />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5">
           <div className="flex items-center justify-between gap-3 sm:gap-6">
             {/* Left Logo slot */}
             <Link href="/" className="flex-shrink-0" aria-label={lang === "ne" ? "गृहपृष्ठ" : "Home"}>
-              <div className="w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-surface border-2 border-accent/25 flex items-center justify-center overflow-hidden shadow-e1 p-1">
+              <div className="w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-white border-2 border-white/40 flex items-center justify-center overflow-hidden shadow-e2 p-1">
                 {branding.logoUrl ? (
                   <Image
                     src={branding.logoUrl}
@@ -294,17 +294,17 @@ export function SiteHeader({
             {/* Name, motto and date */}
             <div className="flex-1 min-w-0 text-center px-2 sm:px-4 flex flex-col items-center justify-center space-y-1.5">
               <Link href="/" className="block group">
-                <div className="text-xl sm:text-3xl lg:text-4xl xl:text-[2.5rem] font-bold tracking-normal text-fg leading-tight group-hover:text-accent transition-colors">
+                <div className="text-xl sm:text-3xl lg:text-4xl xl:text-[2.5rem] font-bold tracking-normal text-header-fg leading-tight group-hover:text-white/90 transition-colors">
                   {lang === "ne"
                     ? "थोर्गा काठमाडौं सम्पर्क तथा विकास मञ्च"
                     : "Thorga Kathmandu Liaison and Development Forum"}
                 </div>
               </Link>
               {/* Date line with small gap directly under title */}
-              <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 text-xs sm:text-[13px] font-normal text-muted/90 pt-0.5">
+              <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 text-xs sm:text-[13px] font-medium text-header-muted pt-0.5">
                 {lang === "ne" && bsDate && <span>{bsDate}</span>}
                 {lang === "ne" && bsDate && adDate && (
-                  <span aria-hidden="true" className="text-line">
+                  <span aria-hidden="true" className="text-header-line">
                     |
                   </span>
                 )}
@@ -313,7 +313,7 @@ export function SiteHeader({
             </div>
 
             {/* Right Logo slot */}
-            <div className="flex-shrink-0 flex w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-surface border-2 border-accent/25 items-center justify-center overflow-hidden shadow-e1 p-1">
+            <div className="flex-shrink-0 flex w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-white border-2 border-white/40 items-center justify-center overflow-hidden shadow-e2 p-1">
               {branding.logoUrl ? (
                 <Image
                   src={branding.logoUrl}

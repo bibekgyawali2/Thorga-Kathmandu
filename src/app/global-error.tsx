@@ -20,8 +20,8 @@ export default function GlobalError({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#f3f7f3",
-          color: "#12211a",
+          background: "#f0f6fa",
+          color: "#0f2030",
           fontFamily: "system-ui, -apple-system, sans-serif",
           padding: "1rem",
         }}
@@ -30,12 +30,12 @@ export default function GlobalError({
           <h1 style={{ fontSize: "1.5rem", marginBottom: "0.75rem" }}>
             Something went wrong
           </h1>
-          <p style={{ fontSize: "0.875rem", lineHeight: 1.6, color: "#47574f" }}>
+          <p style={{ fontSize: "0.875rem", lineHeight: 1.6, color: "#466177" }}>
             The application failed to load. Please refresh the page. If the problem continues,
             contact the secretariat at thorgakathmandu@gmail.com.
           </p>
           {error.digest && (
-            <p style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "#47574f" }}>
+            <p style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "#466177" }}>
               Reference: {error.digest}
             </p>
           )}
@@ -47,7 +47,7 @@ export default function GlobalError({
               padding: "0.65rem 1.25rem",
               borderRadius: "12px",
               border: "none",
-              background: "#1b5e3f",
+              background: "#0066b3",
               color: "#ffffff",
               fontSize: "0.8rem",
               fontWeight: 600,
