@@ -18,6 +18,7 @@ import type {
   ContactSettings,
   ContentPage,
   PageDocument,
+  BusinessItem,
 } from "@/data/mockData";
 import {
   initialHeroContent,
@@ -1707,6 +1708,141 @@ export async function deletePageDocument(id: string): Promise<void> {
     await supabase.from("page_documents").delete().eq("id", id);
   } catch (err) {
     console.warn("[deletePageDocument] supabase delete failed:", err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Business Showcase (पेशा तथा व्यवसाय)
+// ---------------------------------------------------------------------------
+
+function mapBusinessItem(row: any): BusinessItem {
+  return {
+    id: String(row.id),
+    title: row.title ?? "",
+    description: row.description ?? "",
+    category: row.category ?? "",
+    fileType: (row.file_type === "pdf" ? "pdf" : "image") as "image" | "pdf",
+    fileUrl: row.file_url ?? "",
+    contactPhone: row.contact_phone ?? "",
+    contactEmail: row.contact_email ?? "",
+    contactAddress: row.contact_address ?? "",
+    order: Number(row.display_order ?? 0),
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
+  };
+}
+
+export async function fetchBusinesses(): Promise<BusinessItem[]> {
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        "SELECT * FROM public.businesses ORDER BY display_order ASC, created_at DESC"
+      );
+      if (res.rows) return res.rows.map(mapBusinessItem);
+    } catch (err) {
+      console.warn("[fetchBusinesses] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("businesses")
+      .select("*")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false });
+
+    if (!error && data) return data.map(mapBusinessItem);
+  } catch (err) {
+    console.warn("[fetchBusinesses] supabase query failed:", err);
+  }
+
+  return [];
+}
+
+export async function saveBusinessItem(item: BusinessItem): Promise<BusinessItem> {
+  const finalId = isValidUUID(item.id) ? item.id : generateUUID();
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        `INSERT INTO public.businesses (id, title, description, category, file_type, file_url, contact_phone, contact_email, contact_address, display_order, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           title = EXCLUDED.title,
+           description = EXCLUDED.description,
+           category = EXCLUDED.category,
+           file_type = EXCLUDED.file_type,
+           file_url = EXCLUDED.file_url,
+           contact_phone = EXCLUDED.contact_phone,
+           contact_email = EXCLUDED.contact_email,
+           contact_address = EXCLUDED.contact_address,
+           display_order = EXCLUDED.display_order,
+           updated_at = NOW()
+         RETURNING *;`,
+        [
+          finalId,
+          item.title,
+          item.description ?? "",
+          item.category ?? "",
+          item.fileType,
+          item.fileUrl,
+          item.contactPhone ?? "",
+          item.contactEmail ?? "",
+          item.contactAddress ?? "",
+          item.order ?? 0,
+        ]
+      );
+      if (res.rows && res.rows.length > 0) return mapBusinessItem(res.rows[0]);
+    } catch (err) {
+      console.warn("[saveBusinessItem] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("businesses")
+      .upsert({
+        id: finalId,
+        title: item.title,
+        description: item.description ?? "",
+        category: item.category ?? "",
+        file_type: item.fileType,
+        file_url: item.fileUrl,
+        contact_phone: item.contactPhone ?? "",
+        contact_email: item.contactEmail ?? "",
+        contact_address: item.contactAddress ?? "",
+        display_order: item.order ?? 0,
+      })
+      .select()
+      .single();
+
+    if (!error && data) return mapBusinessItem(data);
+  } catch (err) {
+    console.warn("[saveBusinessItem] supabase upsert failed:", err);
+  }
+
+  throw new Error("Could not save the business item: no database backend accepted the write.");
+}
+
+export async function deleteBusinessItem(id: string): Promise<void> {
+  if (!id) return;
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      await pg.query("DELETE FROM public.businesses WHERE id::text = $1", [id]);
+      return;
+    } catch (err) {
+      console.warn("[deleteBusinessItem] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    await supabase.from("businesses").delete().eq("id", id);
+  } catch (err) {
+    console.warn("[deleteBusinessItem] supabase delete failed:", err);
   }
 }
 

@@ -1,24 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import localFont from "next/font/local";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_Devanagari } from "next/font/google";
 import { DialogProvider } from "@/components/Dialog";
 import { ToastProvider } from "@/components/Toast";
 import NavigationProgressBar from "@/components/NavigationProgressBar";
 import FaviconInjector from "@/components/FaviconInjector";
 import "./globals.css";
-
-const kalimati = localFont({
-  src: "../fonts/Kalimati.ttf",
-  variable: "--font-nepali",
-  display: "swap",
-  declarations: [
-    {
-      prop: "unicode-range",
-      value: "U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+A8E0-A8FF, U+20A8",
-    },
-  ],
-});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +17,13 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
   display: "swap",
+});
+
+const notoSansDevanagari = Noto_Sans_Devanagari({
+  variable: "--font-devanagari",
+  subsets: ["devanagari"],
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 export const dynamic = "force-dynamic";
@@ -52,7 +46,7 @@ export default function RootLayout({
     <html
       lang="ne"
       suppressHydrationWarning
-      className={`${kalimati.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${notoSansDevanagari.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />

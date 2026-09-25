@@ -71,6 +71,11 @@ export function SiteFooter({ lang }: { lang: Language }) {
                   {lang === "ne" ? "तस्बिर सङ्ग्रहहरू" : "Photo Gallery"}
                 </Link>
               </li>
+              <li>
+                <Link href="/business" className="hover:text-accent transition-colors">
+                  {lang === "ne" ? "पेशा तथा व्यवसाय" : "Business Showcase"}
+                </Link>
+              </li>
             </ul>
           </div>
 

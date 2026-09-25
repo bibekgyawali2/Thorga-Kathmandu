@@ -14,7 +14,8 @@ export type AdminTab =
   | "access"
   | "branding"
   | "about"
-  | "publication-pages";
+  | "publication-pages"
+  | "businesses";
 
 export type CommitteeSection =
   | "current"

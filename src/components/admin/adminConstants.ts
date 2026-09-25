@@ -18,6 +18,7 @@ export const ADMIN_I18N = {
     publications: "प्रकाशनहरू",
     events: "गतिविधिहरू",
     gallery: "तस्बिरहरू",
+    businesses: "पेशा तथा व्यवसाय",
     inquiries: "सम्पर्क सन्देश",
     settings: "सम्पर्क सेटिङ्स",
     adminAccess: "प्रशासक व्यवस्थापन",
@@ -102,6 +103,7 @@ export const ADMIN_I18N = {
     publications: "Publications",
     events: "Events",
     gallery: "Gallery",
+    businesses: "Business Showcase",
     inquiries: "Inquiries",
     settings: "Settings",
     adminAccess: "Admin Access",
@@ -190,6 +192,7 @@ export async function revalidateCollection(
     | "branding"
     | "contact"
     | "settings"
+    | "businesses"
 ) {
   try {
     await fetch(`/api/revalidate?tag=${tag}`, {

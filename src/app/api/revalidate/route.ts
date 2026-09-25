@@ -16,6 +16,7 @@ const VALID_TAGS = [
   "contact",
   "settings",
   "users",
+  "businesses",
 ] as const;
 type ValidTag = (typeof VALID_TAGS)[number];
 

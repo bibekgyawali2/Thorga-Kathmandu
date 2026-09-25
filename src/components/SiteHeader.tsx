@@ -67,6 +67,7 @@ export const NAV_LINKS: NavLink[] = [
     en: "Thorga Sambandhi Anya Prakashan",
   },
   { href: "/events", ne: "गतिविधिहरू", en: "Activities" },
+  { href: "/business", ne: "पेशा तथा व्यवसाय", en: "Businesses" },
   { href: "/gallery", ne: "तस्बिरहरू", en: "Gallery" },
   { href: "/#contact", ne: "सम्पर्क", en: "Contact" },
 ];
@@ -291,16 +292,16 @@ export function SiteHeader({
             </Link>
 
             {/* Name, motto and date */}
-            <div className="flex-1 min-w-0 text-center px-1 sm:px-2 flex flex-col items-center justify-center space-y-1">
+            <div className="flex-1 min-w-0 text-center px-2 sm:px-4 flex flex-col items-center justify-center space-y-1.5">
               <Link href="/" className="block group">
-                <div className="text-lg sm:text-2xl lg:text-[1.75rem] font-extrabold tracking-tight text-fg leading-tight group-hover:text-accent transition-colors">
+                <div className="text-xl sm:text-3xl lg:text-4xl xl:text-[2.5rem] font-bold tracking-normal text-fg leading-tight group-hover:text-accent transition-colors">
                   {lang === "ne"
                     ? "थोर्गा काठमाडौं सम्पर्क तथा विकास मञ्च"
                     : "Thorga Kathmandu Liaison and Development Forum"}
                 </div>
               </Link>
               {/* Date line with small gap directly under title */}
-              <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 text-[11px] sm:text-xs font-medium text-muted/90 pt-0.5">
+              <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 text-xs sm:text-[13px] font-normal text-muted/90 pt-0.5">
                 {lang === "ne" && bsDate && <span>{bsDate}</span>}
                 {lang === "ne" && bsDate && adDate && (
                   <span aria-hidden="true" className="text-line">

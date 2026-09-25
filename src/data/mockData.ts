@@ -715,3 +715,82 @@ export interface PageDocument {
 
 export const initialContentPages: ContentPage[] = [];
 export const initialPageDocuments: PageDocument[] = [];
+
+// ==========================================
+// 7. COMMUNITY BUSINESS & PROFESSION SHOWCASE (पेशा तथा व्यवसाय)
+// ==========================================
+
+export interface BusinessItem {
+  id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  fileType: "image" | "pdf";
+  fileUrl: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  contactAddress?: string;
+  order?: number;
+  createdAt?: string;
+}
+
+export const BUSINESS_CATEGORIES = [
+  "खाद्य, फलफूल तथा किराना",
+  "औषधी व्यवसाय",
+  "फेन्सी सामान",
+  "स्टेशनरी, छपाई तथा खेलकुदका सामान",
+  "फर्निचर तथा फर्निसिङ्ग र हार्डवेयर",
+  "आई. टि. (वेबसाईट तथा एप्लिकेसन)",
+  "वैदेशिक रोजगारी र कन्सल्टेन्सी",
+  "होटल, रेष्टुरेन्ट तथा क्यान्टिन",
+] as const;
+
+export const initialBusinesses: BusinessItem[] = [];
+
+const BUSINESSES_STORAGE_KEY = "thorga_businesses_list";
+let businessSubscribers: Array<() => void> = [];
+let _bizCacheRaw: string | null = undefined as unknown as string | null;
+let _bizCache: BusinessItem[] = initialBusinesses;
+
+export function subscribeBusinesses(callback: () => void) {
+  businessSubscribers.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === BUSINESSES_STORAGE_KEY) {
+      _bizCacheRaw = undefined as unknown as string | null;
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
+  return () => {
+    businessSubscribers = businessSubscribers.filter((s) => s !== callback);
+    if (typeof window !== "undefined") window.removeEventListener("storage", handleStorage);
+  };
+}
+
+export function getStoredBusinessesSnapshot(): BusinessItem[] {
+  if (typeof window === "undefined") return initialBusinesses;
+  try {
+    const raw = localStorage.getItem(BUSINESSES_STORAGE_KEY);
+    if (!raw) return initialBusinesses;
+    if (raw === _bizCacheRaw) return _bizCache;
+    _bizCacheRaw = raw;
+    _bizCache = JSON.parse(raw);
+    return _bizCache;
+  } catch {
+    return initialBusinesses;
+  }
+}
+
+export function getServerBusinessesSnapshot(): BusinessItem[] {
+  return initialBusinesses;
+}
+
+export function saveStoredBusinesses(businesses: BusinessItem[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(BUSINESSES_STORAGE_KEY, JSON.stringify(businesses));
+    _bizCacheRaw = undefined as unknown as string | null;
+    _bizCache = businesses;
+    businessSubscribers.forEach((s) => s());
+  } catch {}
+}

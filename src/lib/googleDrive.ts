@@ -64,3 +64,13 @@ export function getGoogleDriveDownloadUrl(url?: string | null): string {
   if (!id) return url || "";
   return `https://drive.google.com/uc?export=download&id=${id}`;
 }
+
+/**
+ * Returns a direct web-embeddable image URL for Google Drive image files.
+ * Format: https://lh3.googleusercontent.com/d/<ID>
+ */
+export function getGoogleDriveImageUrl(url?: string | null): string {
+  const id = getGoogleDriveFileId(url);
+  if (!id) return url || "";
+  return `https://lh3.googleusercontent.com/d/${id}`;
+}

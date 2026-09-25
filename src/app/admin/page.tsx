@@ -30,6 +30,9 @@ import {
   saveStoredGalleryAlbums,
   getStoredBrandingSnapshot,
   saveStoredBranding,
+  BusinessItem,
+  getStoredBusinessesSnapshot,
+  saveStoredBusinesses,
 } from "@/data/mockData";
 import {
   AdminUser,
@@ -58,6 +61,7 @@ import { MembersTab } from "@/components/admin/tabs/MembersTab";
 import { EventsTab } from "@/components/admin/tabs/EventsTab";
 import { PublicationsTab } from "@/components/admin/tabs/PublicationsTab";
 import { GalleryTab } from "@/components/admin/tabs/GalleryTab";
+import { BusinessesTab } from "@/components/admin/tabs/BusinessesTab";
 import { InquiriesTab } from "@/components/admin/tabs/InquiriesTab";
 import { SettingsTab } from "@/components/admin/tabs/SettingsTab";
 import { BrandingTab } from "@/components/admin/tabs/BrandingTab";
@@ -104,6 +108,7 @@ export default function AdminPage() {
   const [eventsList, setEventsList] = useState<EventItem[]>(() => getStoredEventsSnapshot());
   const [galleryList, setGalleryList] = useState<GalleryItem[]>(() => getStoredGallerySnapshot());
   const [albumsList, setAlbumsList] = useState<GalleryAlbum[]>(() => getStoredGalleryAlbumsSnapshot());
+  const [businessesList, setBusinessesList] = useState<BusinessItem[]>(() => getStoredBusinessesSnapshot());
   const [inquiriesList, setInquiriesList] = useState<Inquiry[]>([]);
   const [inquiriesLoading, setInquiriesLoading] = useState(true);
   const [inquiriesError, setInquiriesError] = useState(false);
@@ -290,6 +295,16 @@ export default function AdminPage() {
       })
       .catch(() => {});
 
+    fetch("/api/businesses", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          setBusinessesList(data);
+          saveStoredBusinesses(data);
+        }
+      })
+      .catch(() => {});
+
     const currentSession = getAdminSession();
     const userHeaders: Record<string, string> = {};
     if (currentSession?.token) {
@@ -446,6 +461,7 @@ export default function AdminPage() {
     gallery: galleryList.length,
     inquiries: inquiriesList.length,
     adminUsers: adminUsersList.length,
+    businesses: businessesList.length,
   };
 
   return (
@@ -519,6 +535,14 @@ export default function AdminPage() {
               setGalleryList={setGalleryList}
               albumsList={albumsList}
               setAlbumsList={setAlbumsList}
+            />
+          )}
+
+          {activeTab === "businesses" && (
+            <BusinessesTab
+              {...baseTabProps}
+              businessesList={businessesList}
+              setBusinessesList={setBusinessesList}
             />
           )}
 

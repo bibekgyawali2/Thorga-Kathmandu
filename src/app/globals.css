@@ -93,17 +93,8 @@
   --radius-control: 12px;
   --radius-chip: 8px;
 
-  --font-sans: var(--font-geist-sans), var(--font-nepali), "Kalimati", sans-serif;
+  --font-sans: var(--font-geist-sans), var(--font-devanagari), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono);
-}
-
-@font-face {
-  font-family: "Kalimati";
-  src: url("/fonts/Kalimati.ttf") format("truetype");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0900-097F, U+1CD0-1CF9, U+200C-200D, U+A8E0-A8FF, U+20A8;
 }
 
 body {
@@ -111,25 +102,12 @@ body {
   color: var(--fg);
 }
 
-/* Enhanced legibility & weight for Kalimati Nepali text */
+/* Modern Devanagari & Nepali typography (Geist + Noto Sans Devanagari / Kohinoor) */
 :lang(ne),
 [lang="ne"] {
-  font-weight: 500;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-}
-
-:lang(ne) body,
-:lang(ne) p,
-:lang(ne) li,
-:lang(ne) span,
-:lang(ne) a,
-:lang(ne) button,
-:lang(ne) input,
-:lang(ne) textarea,
-:lang(ne) select {
-  font-weight: 500;
 }
 
 :lang(ne) h1,
@@ -137,15 +115,8 @@ body {
 :lang(ne) h3,
 :lang(ne) h4,
 :lang(ne) h5,
-:lang(ne) h6,
-:lang(ne) strong,
-:lang(ne) b,
-:lang(ne) .font-bold,
-:lang(ne) .font-extrabold,
-:lang(ne) .font-semibold {
-  font-weight: 700;
-  -webkit-text-stroke: 0.2px currentColor;
-  line-height: 1.35;
+:lang(ne) h6 {
+  line-height: 1.32;
 }
 
 *:focus-visible {

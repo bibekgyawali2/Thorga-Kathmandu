@@ -21,6 +21,7 @@ import {
   UserGear,
   ArrowSquareOut,
   X,
+  Storefront,
 } from "@phosphor-icons/react";
 
 interface AdminSidebarProps {
@@ -37,6 +38,7 @@ interface AdminSidebarProps {
     gallery: number;
     inquiries: number;
     adminUsers: number;
+    businesses?: number;
   };
 }
 
@@ -128,6 +130,20 @@ export function AdminSidebar({
           }`}
         >
           {counts.gallery}
+        </span>
+      ),
+    },
+    {
+      tab: "businesses",
+      label: t.businesses,
+      icon: <Storefront size={18} />,
+      badge: (
+        <span
+          className={`text-xs font-mono px-2 py-0.5 rounded-chip ${
+            activeTab === "businesses" ? "bg-black/20 text-white" : "bg-tint text-muted"
+          }`}
+        >
+          {counts.businesses ?? 0}
         </span>
       ),
     },
