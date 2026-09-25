@@ -139,14 +139,14 @@ export default function BusinessShowcasePage() {
           </div>
 
           {/* Category Filter Pills (Derived from sketch categories) */}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-2">
             <button
               type="button"
               onClick={() => setSelectedCategory("all")}
-              className={`px-3.5 py-1.5 rounded-control text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-control text-sm sm:text-base font-semibold transition-all cursor-pointer ${
                 selectedCategory === "all"
                   ? "bg-accent text-on-accent shadow-e1"
-                  : "bg-surface border border-line text-fg hover:bg-tint"
+                  : "bg-surface border border-line text-fg hover:bg-tint hover:border-accent/40"
               }`}
             >
               {lang === "ne" ? "सबै वर्गहरू" : "All Categories"}
@@ -156,10 +156,10 @@ export default function BusinessShowcasePage() {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-control text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-control text-sm sm:text-base font-semibold transition-all cursor-pointer ${
                   selectedCategory === cat
                     ? "bg-accent text-on-accent shadow-e1"
-                    : "bg-surface border border-line text-fg hover:bg-tint"
+                    : "bg-surface border border-line text-fg hover:bg-tint hover:border-accent/40"
                 }`}
               >
                 {cat}
