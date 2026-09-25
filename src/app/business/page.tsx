@@ -100,10 +100,6 @@ export default function BusinessShowcasePage() {
           <div className="absolute -right-12 -bottom-12 w-64 h-64 rounded-full bg-accent-soft/40 pointer-events-none blur-2xl" />
 
           <div className="max-w-3xl space-y-4 relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-bold">
-              <Storefront size={16} weight="duotone" />
-              <span>{lang === "ne" ? "थोर्गा समुदाय व्यावसायिक सञ्जाल" : "Thorga Community Business Directory"}</span>
-            </div>
 
             <h1 className="type-section text-2xl sm:text-4xl font-extrabold text-fg">
               {lang === "ne" ? "पेशा तथा व्यवसाय" : "Professions & Community Businesses"}
@@ -116,11 +112,6 @@ export default function BusinessShowcasePage() {
                 : "Looking to purchase goods or hire services? Prioritize our own community members."}
             </p>
 
-            <p className="text-xs sm:text-sm text-muted leading-relaxed max-w-2xl">
-              {lang === "ne"
-                ? "काठमाडौं उपत्यका तथा देश-विदेशमा रहेका थोर्गावासी दिदीबहिनी तथा दाजुभाइहरूले सञ्चालन गरेका विभिन्न पसल, उद्योग, पेशा, प्राविधिक तथा परामर्श सेवाहरूको आधिकारिक विवरण।"
-                : "A directory connecting members with businesses, stores, IT services, consultancies, and enterprises run by fellow Thorga community natives."}
-            </p>
           </div>
         </div>
 
