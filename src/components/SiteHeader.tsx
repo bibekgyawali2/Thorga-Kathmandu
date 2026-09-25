@@ -273,16 +273,16 @@ export function SiteHeader({
         <SkylineWatermark />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5">
-          <div className="flex items-center justify-between gap-3 sm:gap-6">
+          <div className="flex items-center justify-center gap-3 sm:gap-4 md:gap-5">
             {/* Left Logo slot */}
             <Link href="/" className="flex-shrink-0" aria-label={lang === "ne" ? "गृहपृष्ठ" : "Home"}>
-              <div className="w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-white border-2 border-white/40 flex items-center justify-center overflow-hidden shadow-e2 p-1">
+              <div className="w-16 h-16 sm:w-22 sm:h-22 lg:w-26 lg:h-26 rounded-full bg-white border-2 border-white/40 flex items-center justify-center overflow-hidden shadow-e2 p-1">
                 {branding.logoUrl ? (
                   <Image
                     src={branding.logoUrl}
                     alt={lang === "ne" ? "संस्थाको छाप" : "Organisation emblem"}
-                    width={112}
-                    height={112}
+                    width={104}
+                    height={104}
                     className="w-full h-full object-contain"
                   />
                 ) : (
@@ -292,16 +292,16 @@ export function SiteHeader({
             </Link>
 
             {/* Name, motto and date */}
-            <div className="flex-1 min-w-0 text-center px-2 sm:px-4 flex flex-col items-center justify-center space-y-1.5">
+            <div className="min-w-0 text-left flex flex-col items-start justify-center space-y-1">
               <Link href="/" className="block group">
-                <div className="text-xl sm:text-3xl lg:text-4xl xl:text-[2.5rem] font-bold tracking-normal text-header-fg leading-tight group-hover:text-white/90 transition-colors">
+                <div className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-[3.25rem] font-extrabold tracking-tight text-header-fg leading-tight sm:leading-tight group-hover:text-white/90 transition-colors">
                   {lang === "ne"
                     ? "थोर्गा काठमाडौं सम्पर्क तथा विकास मञ्च"
                     : "Thorga Kathmandu Liaison and Development Forum"}
                 </div>
               </Link>
               {/* Date line with small gap directly under title */}
-              <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 text-xs sm:text-[13px] font-medium text-header-muted pt-0.5">
+              <div className="w-full flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 text-xs sm:text-[13px] font-medium text-header-muted pt-0.5 text-center">
                 {lang === "ne" && bsDate && <span>{bsDate}</span>}
                 {lang === "ne" && bsDate && adDate && (
                   <span aria-hidden="true" className="text-header-line">
@@ -310,21 +310,6 @@ export function SiteHeader({
                 )}
                 {adDate && <span>{adDate}</span>}
               </div>
-            </div>
-
-            {/* Right Logo slot */}
-            <div className="flex-shrink-0 flex w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-full bg-white border-2 border-white/40 items-center justify-center overflow-hidden shadow-e2 p-1">
-              {branding.logoUrl ? (
-                <Image
-                  src={branding.logoUrl}
-                  alt={lang === "ne" ? "संस्थाको छाप" : "Organisation emblem"}
-                  width={112}
-                  height={112}
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <Buildings size={40} weight="duotone" className="text-accent" />
-              )}
             </div>
           </div>
         </div>
