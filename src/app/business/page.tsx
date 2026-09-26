@@ -26,7 +26,6 @@ import {
   ArrowSquareOut,
   ArrowsOut,
   Phone,
-  MapPin,
   EnvelopeSimple,
   X,
   GoogleLogo,
@@ -186,6 +185,7 @@ export default function BusinessShowcasePage() {
             {filteredBusinesses.map((item) => {
               const isDrive = isGoogleDriveUrl(item.fileUrl);
               const isPdf = item.fileType === "pdf";
+              const hasBody = Boolean(item.description || item.contactPhone || item.contactEmail || isPdf || isDrive);
 
               return (
                 <article
@@ -196,20 +196,20 @@ export default function BusinessShowcasePage() {
                   <div
                     onClick={() => {
                       if (isPdf) {
-                        setActivePdf({ url: item.fileUrl, title: item.title });
+                        setActivePdf({ url: item.fileUrl, title: item.title && item.title !== "." ? item.title : (lang === "ne" ? "कागजात" : "Document") });
                       } else {
                         const imgUrl = isDrive ? getGoogleDriveImageUrl(item.fileUrl) : item.fileUrl;
                         setActiveImage({ url: imgUrl, title: item.title });
                       }
                     }}
-                    className="relative h-56 w-full bg-tint/60 border-b border-line overflow-hidden flex items-center justify-center p-2 cursor-pointer group/media"
+                    className={`relative ${hasBody ? "h-56 sm:h-60 border-b border-line" : "h-64 sm:h-72"} w-full bg-tint/60 overflow-hidden flex items-center justify-center p-2 cursor-pointer group/media`}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         if (isPdf) {
-                          setActivePdf({ url: item.fileUrl, title: item.title });
+                          setActivePdf({ url: item.fileUrl, title: item.title && item.title !== "." ? item.title : (lang === "ne" ? "कागजात" : "Document") });
                         } else {
                           const imgUrl = isDrive ? getGoogleDriveImageUrl(item.fileUrl) : item.fileUrl;
                           setActiveImage({ url: imgUrl, title: item.title });
@@ -225,9 +225,6 @@ export default function BusinessShowcasePage() {
                           <FilePdf size={36} weight="duotone" />
                         </div>
                         <div className="space-y-1">
-                          <span className="text-xs font-bold text-fg line-clamp-1 block">
-                            {item.title}
-                          </span>
                           <span className="text-[10px] font-mono px-2 py-0.5 rounded-chip bg-surface border border-line text-muted inline-block">
                             PDF Document {isDrive && "• Google Drive"}
                           </span>
@@ -238,7 +235,7 @@ export default function BusinessShowcasePage() {
                       <div className="relative w-full h-full flex items-center justify-center">
                         <Image
                           src={getGoogleDriveImageUrl(item.fileUrl)}
-                          alt={item.title}
+                          alt={item.title && item.title !== "." ? item.title : "Business"}
                           fill
                           sizes="(max-width: 768px) 100vw, 33vw"
                           className="object-contain group-hover:scale-105 transition-transform duration-200"
@@ -254,7 +251,7 @@ export default function BusinessShowcasePage() {
                       <div className="relative w-full h-full flex items-center justify-center">
                         <Image
                           src={item.fileUrl}
-                          alt={item.title}
+                          alt={item.title && item.title !== "." ? item.title : "Business"}
                           fill
                           sizes="(max-width: 768px) 100vw, 33vw"
                           className="object-contain group-hover:scale-105 transition-transform duration-200"
@@ -273,7 +270,7 @@ export default function BusinessShowcasePage() {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (isPdf) {
-                          setActivePdf({ url: item.fileUrl, title: item.title });
+                          setActivePdf({ url: item.fileUrl, title: item.title && item.title !== "." ? item.title : (lang === "ne" ? "कागजात" : "Document") });
                         } else {
                           const imgUrl = isDrive ? getGoogleDriveImageUrl(item.fileUrl) : item.fileUrl;
                           setActiveImage({ url: imgUrl, title: item.title });
@@ -287,95 +284,87 @@ export default function BusinessShowcasePage() {
                   </div>
 
                   {/* Body Info */}
-                  <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                        <h3 className="text-base sm:text-lg font-bold text-fg leading-snug group-hover:text-accent transition-colors">
-                          {item.title}
-                        </h3>
-                        {item.contactAddress && (
-                          <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-muted font-normal shrink-0">
-                            <MapPin size={13} className="text-accent flex-shrink-0" />
-                            <span>{item.contactAddress}</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {item.description && (
-                        <p className="text-xs leading-relaxed text-muted line-clamp-3">
-                          {item.description}
-                        </p>
-                      )}
-
-                      {/* Contact metadata */}
-                      {(item.contactPhone || item.contactEmail) && (
-                        <div className="pt-3 space-y-1.5 text-xs text-muted border-t border-line/60">
-                          {item.contactPhone && (
-                            <div className="flex items-center gap-2 font-mono text-fg">
-                              <Phone size={14} className="text-accent flex-shrink-0" />
-                              <a href={`tel:${item.contactPhone}`} className="hover:text-accent transition-colors">
-                                {item.contactPhone}
-                              </a>
-                            </div>
+                  {hasBody && (
+                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                      {(item.description || item.contactPhone || item.contactEmail) && (
+                        <div className="space-y-2">
+                          {item.description && (
+                            <p className="text-xs leading-relaxed text-muted line-clamp-3">
+                              {item.description}
+                            </p>
                           )}
-                          {item.contactEmail && (
-                            <div className="flex items-center gap-2 font-mono">
-                              <EnvelopeSimple size={14} className="text-accent flex-shrink-0" />
-                              <a href={`mailto:${item.contactEmail}`} className="hover:text-accent transition-colors truncate">
-                                {item.contactEmail}
-                              </a>
+
+                          {/* Contact metadata */}
+                          {(item.contactPhone || item.contactEmail) && (
+                            <div className="pt-2 space-y-1.5 text-xs text-muted border-t border-line/60">
+                              {item.contactPhone && (
+                                <div className="flex items-center gap-2 font-mono text-fg">
+                                  <Phone size={14} className="text-accent flex-shrink-0" />
+                                  <a href={`tel:${item.contactPhone}`} className="hover:text-accent transition-colors">
+                                    {item.contactPhone}
+                                  </a>
+                                </div>
+                              )}
+                              {item.contactEmail && (
+                                <div className="flex items-center gap-2 font-mono">
+                                  <EnvelopeSimple size={14} className="text-accent flex-shrink-0" />
+                                  <a href={`mailto:${item.contactEmail}`} className="hover:text-accent transition-colors truncate">
+                                    {item.contactEmail}
+                                  </a>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
                       )}
-                    </div>
 
-                    {/* Action Links */}
-                    {(isPdf || isDrive) && (
-                      <div className="pt-4 border-t border-line flex items-center gap-2">
-                        {isPdf && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setActivePdf({ url: item.fileUrl, title: item.title })}
-                              className="flex-1 py-2 px-3 rounded-control text-xs font-semibold flex items-center justify-center gap-1.5 bg-tint hover:bg-accent-soft text-accent transition-colors cursor-pointer"
-                            >
-                              <Eye size={15} />
-                              <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
-                            </button>
+                      {/* Action Links */}
+                      {(isPdf || isDrive) && (
+                        <div className="pt-3 border-t border-line flex items-center gap-2">
+                          {isPdf && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setActivePdf({ url: item.fileUrl, title: item.title && item.title !== "." ? item.title : (lang === "ne" ? "कागजात" : "Document") })}
+                                className="flex-1 py-2 px-3 rounded-control text-xs font-semibold flex items-center justify-center gap-1.5 bg-tint hover:bg-accent-soft text-accent transition-colors cursor-pointer"
+                              >
+                                <Eye size={15} />
+                                <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
+                              </button>
+                              <a
+                                href={
+                                  isDrive
+                                    ? getGoogleDriveDownloadUrl(item.fileUrl)
+                                    : documentUrl(item.fileUrl, "download", item.title)
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="py-2 px-3 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-e1"
+                                title={lang === "ne" ? "डाउनलोड" : "Download"}
+                              >
+                                <Download size={15} />
+                              </a>
+                            </>
+                          )}
+
+                          {isDrive && (
                             <a
-                              href={
-                                isDrive
-                                  ? getGoogleDriveDownloadUrl(item.fileUrl)
-                                  : documentUrl(item.fileUrl, "download", item.title)
-                              }
+                              href={getGoogleDriveViewUrl(item.fileUrl)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="py-2 px-3 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-e1"
-                              title={lang === "ne" ? "डाउनलोड" : "Download"}
+                              className={`p-2 rounded-control border border-line bg-surface hover:bg-tint text-muted hover:text-fg transition-colors ${
+                                !isPdf ? "w-full justify-center flex items-center gap-1.5 text-xs font-medium" : ""
+                              }`}
+                              title={lang === "ne" ? "गुगल ड्राइभमा खोल्नुहोस्" : "Open in Google Drive"}
                             >
-                              <Download size={15} />
+                              <ArrowSquareOut size={16} />
+                              {!isPdf && <span>{lang === "ne" ? "गुगल ड्राइभमा खोल्नुहोस्" : "Open in Google Drive"}</span>}
                             </a>
-                          </>
-                        )}
-
-                        {isDrive && (
-                          <a
-                            href={getGoogleDriveViewUrl(item.fileUrl)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`p-2 rounded-control border border-line bg-surface hover:bg-tint text-muted hover:text-fg transition-colors ${
-                              !isPdf ? "w-full justify-center flex items-center gap-1.5 text-xs font-medium" : ""
-                            }`}
-                            title={lang === "ne" ? "गुगल ड्राइभमा खोल्नुहोस्" : "Open in Google Drive"}
-                          >
-                            <ArrowSquareOut size={16} />
-                            {!isPdf && <span>{lang === "ne" ? "गुगल ड्राइभमा खोल्नुहोस्" : "Open in Google Drive"}</span>}
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </article>
               );
             })}
@@ -405,7 +394,7 @@ export default function BusinessShowcasePage() {
             className="flex items-center justify-between text-white p-2 border-b border-white/10"
           >
             <span className="font-bold text-sm sm:text-base text-white/90">
-              {activeImage.title}
+              {activeImage.title && activeImage.title !== "." ? activeImage.title : (lang === "ne" ? "व्यवसाय" : "Business")}
             </span>
             <button
               type="button"
@@ -422,7 +411,7 @@ export default function BusinessShowcasePage() {
           >
             <Image
               src={activeImage.url}
-              alt={activeImage.title}
+              alt={activeImage.title && activeImage.title !== "." ? activeImage.title : "Business"}
               fill
               sizes="100vw"
               className="object-contain"

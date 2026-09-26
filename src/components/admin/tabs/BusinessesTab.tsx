@@ -26,7 +26,6 @@ import {
   GoogleLogo,
   Phone,
   EnvelopeSimple,
-  MapPin,
   ArrowsOut,
 } from "@phosphor-icons/react";
 import {
@@ -121,17 +120,6 @@ export function BusinessesTab({
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim()) {
-      dialogAlert({
-        title: lang === "ne" ? "शीर्षक आवश्यक" : "Title Required",
-        description:
-          lang === "ne"
-            ? "कृपया व्यवसाय वा पेशाको नाम अनिवार्य भर्नुहोस्।"
-            : "Please enter a title for the business.",
-        type: "warning",
-      });
-      return;
-    }
 
     if (!form.fileUrl.trim()) {
       dialogAlert({
@@ -152,11 +140,15 @@ export function BusinessesTab({
         ? form.customCategory.trim() || "अन्य"
         : form.category;
 
+    const finalTitle =
+      form.title.trim() ||
+      (resolvedCategory ? resolvedCategory : lang === "ne" ? "व्यवसाय" : "Business");
+
     setIsSaving(true);
     try {
       const payload: BusinessItem = {
         id: editingBusiness ? editingBusiness.id : `biz_${Date.now()}`,
-        title: form.title.trim(),
+        title: finalTitle,
         description: form.description.trim(),
         category: resolvedCategory,
         fileType: form.fileType,
@@ -453,43 +445,33 @@ export function BusinessesTab({
                 </div>
 
                 {/* Details Content Area */}
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                      <h3 className="text-base font-bold text-fg leading-snug group-hover:text-accent transition-colors">
-                        {item.title}
-                      </h3>
-                      {item.contactAddress && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted font-normal shrink-0">
-                          <MapPin size={12} className="text-accent flex-shrink-0" />
-                          <span>{item.contactAddress}</span>
-                        </span>
+                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                  {(item.description || item.contactPhone || item.contactEmail) && (
+                    <div className="space-y-2">
+                      {item.description && (
+                        <p className="text-xs leading-relaxed text-muted line-clamp-3">
+                          {item.description}
+                        </p>
+                      )}
+
+                      {(item.contactPhone || item.contactEmail) && (
+                        <div className="pt-2 space-y-1 text-xs text-muted border-t border-line/60">
+                          {item.contactPhone && (
+                            <div className="flex items-center gap-1.5 font-mono text-[11px] text-fg">
+                              <Phone size={13} className="text-accent flex-shrink-0" />
+                              <span>{item.contactPhone}</span>
+                            </div>
+                          )}
+                          {item.contactEmail && (
+                            <div className="flex items-center gap-1.5 font-mono text-[11px] text-fg">
+                              <EnvelopeSimple size={13} className="text-accent flex-shrink-0" />
+                              <span>{item.contactEmail}</span>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
-
-                    {item.description && (
-                      <p className="text-xs leading-relaxed text-muted line-clamp-3">
-                        {item.description}
-                      </p>
-                    )}
-
-                    {(item.contactPhone || item.contactEmail) && (
-                      <div className="pt-2 space-y-1 text-xs text-muted border-t border-line/60">
-                        {item.contactPhone && (
-                          <div className="flex items-center gap-1.5 font-mono text-[11px] text-fg">
-                            <Phone size={13} className="text-accent flex-shrink-0" />
-                            <span>{item.contactPhone}</span>
-                          </div>
-                        )}
-                        {item.contactEmail && (
-                          <div className="flex items-center gap-1.5 font-mono text-[11px] text-fg">
-                            <EnvelopeSimple size={13} className="text-accent flex-shrink-0" />
-                            <span>{item.contactEmail}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  )}
 
                   {/* Actions Footer */}
                   <div className="pt-3 border-t border-line flex items-center justify-between gap-2">
@@ -569,12 +551,11 @@ export function BusinessesTab({
               {/* Title */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-fg flex items-center justify-between">
-                  <span>{lang === "ne" ? "व्यवसाय / पेशाको नाम *" : "Business or Profession Title *"}</span>
-                  <span className="text-[10px] text-muted font-normal">अनिवार्य</span>
+                  <span>{lang === "ne" ? "व्यवसाय / पेशाको नाम (ऐच्छिक)" : "Business or Profession Title (Optional)"}</span>
+                  <span className="text-[10px] text-muted font-normal">{lang === "ne" ? "ऐच्छिक" : "Optional"}</span>
                 </label>
                 <input
                   type="text"
-                  required
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder={lang === "ne" ? "उदा: थोर्गा अर्गानिक फलफूल तथा किराना पसल" : "e.g. Thorga Agro & Grocery Store"}
