@@ -193,7 +193,31 @@ export default function BusinessShowcasePage() {
                   className="rounded-card border border-line bg-surface overflow-hidden flex flex-col justify-between hover:border-accent transition-all duration-200 shadow-e1 hover:shadow-e2 group"
                 >
                   {/* Media Banner / Visual Display Area */}
-                  <div className="relative h-56 w-full bg-tint/60 border-b border-line overflow-hidden flex items-center justify-center p-2">
+                  <div
+                    onClick={() => {
+                      if (isPdf) {
+                        setActivePdf({ url: item.fileUrl, title: item.title });
+                      } else {
+                        const imgUrl = isDrive ? getGoogleDriveImageUrl(item.fileUrl) : item.fileUrl;
+                        setActiveImage({ url: imgUrl, title: item.title });
+                      }
+                    }}
+                    className="relative h-56 w-full bg-tint/60 border-b border-line overflow-hidden flex items-center justify-center p-2 cursor-pointer group/media"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (isPdf) {
+                          setActivePdf({ url: item.fileUrl, title: item.title });
+                        } else {
+                          const imgUrl = isDrive ? getGoogleDriveImageUrl(item.fileUrl) : item.fileUrl;
+                          setActiveImage({ url: imgUrl, title: item.title });
+                        }
+                      }
+                    }}
+                    title={lang === "ne" ? "विस्तृत हेर्न थिच्नुहोस्" : "Click to view full image"}
+                  >
                     {isPdf ? (
                       /* PDF Document Card Frame */
                       <div className="relative z-10 w-full h-full flex flex-col items-center justify-center space-y-2 p-4 text-center">
@@ -243,17 +267,11 @@ export default function BusinessShowcasePage() {
                       </div>
                     )}
 
-                    {/* Category Chip Badge */}
-                    {item.category && (
-                      <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded-chip bg-surface/90 text-accent text-[11px] font-bold border border-line shadow-xs backdrop-blur-xs">
-                        {item.category}
-                      </div>
-                    )}
-
                     {/* Fullscreen Expand Trigger Button */}
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (isPdf) {
                           setActivePdf({ url: item.fileUrl, title: item.title });
                         } else {
@@ -269,11 +287,19 @@ export default function BusinessShowcasePage() {
                   </div>
 
                   {/* Body Info */}
-                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
                     <div className="space-y-2">
-                      <h3 className="text-lg font-bold text-fg leading-snug group-hover:text-accent transition-colors">
-                        {item.title}
-                      </h3>
+                      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                        <h3 className="text-base sm:text-lg font-bold text-fg leading-snug group-hover:text-accent transition-colors">
+                          {item.title}
+                        </h3>
+                        {item.contactAddress && (
+                          <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-muted font-normal shrink-0">
+                            <MapPin size={13} className="text-accent flex-shrink-0" />
+                            <span>{item.contactAddress}</span>
+                          </span>
+                        )}
+                      </div>
 
                       {item.description && (
                         <p className="text-xs leading-relaxed text-muted line-clamp-3">
@@ -282,7 +308,7 @@ export default function BusinessShowcasePage() {
                       )}
 
                       {/* Contact metadata */}
-                      {(item.contactPhone || item.contactAddress || item.contactEmail) && (
+                      {(item.contactPhone || item.contactEmail) && (
                         <div className="pt-3 space-y-1.5 text-xs text-muted border-t border-line/60">
                           {item.contactPhone && (
                             <div className="flex items-center gap-2 font-mono text-fg">
@@ -290,12 +316,6 @@ export default function BusinessShowcasePage() {
                               <a href={`tel:${item.contactPhone}`} className="hover:text-accent transition-colors">
                                 {item.contactPhone}
                               </a>
-                            </div>
-                          )}
-                          {item.contactAddress && (
-                            <div className="flex items-center gap-2">
-                              <MapPin size={14} className="text-accent flex-shrink-0" />
-                              <span className="truncate">{item.contactAddress}</span>
                             </div>
                           )}
                           {item.contactEmail && (
@@ -311,57 +331,50 @@ export default function BusinessShowcasePage() {
                     </div>
 
                     {/* Action Links */}
-                    <div className="pt-4 border-t border-line flex items-center gap-2">
-                      {isPdf ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => setActivePdf({ url: item.fileUrl, title: item.title })}
-                            className="flex-1 py-2 px-3 rounded-control text-xs font-semibold flex items-center justify-center gap-1.5 bg-tint hover:bg-accent-soft text-accent transition-colors cursor-pointer"
-                          >
-                            <Eye size={15} />
-                            <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
-                          </button>
+                    {(isPdf || isDrive) && (
+                      <div className="pt-4 border-t border-line flex items-center gap-2">
+                        {isPdf && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setActivePdf({ url: item.fileUrl, title: item.title })}
+                              className="flex-1 py-2 px-3 rounded-control text-xs font-semibold flex items-center justify-center gap-1.5 bg-tint hover:bg-accent-soft text-accent transition-colors cursor-pointer"
+                            >
+                              <Eye size={15} />
+                              <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
+                            </button>
+                            <a
+                              href={
+                                isDrive
+                                  ? getGoogleDriveDownloadUrl(item.fileUrl)
+                                  : documentUrl(item.fileUrl, "download", item.title)
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="py-2 px-3 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-e1"
+                              title={lang === "ne" ? "डाउनलोड" : "Download"}
+                            >
+                              <Download size={15} />
+                            </a>
+                          </>
+                        )}
+
+                        {isDrive && (
                           <a
-                            href={
-                              isDrive
-                                ? getGoogleDriveDownloadUrl(item.fileUrl)
-                                : documentUrl(item.fileUrl, "download", item.title)
-                            }
+                            href={getGoogleDriveViewUrl(item.fileUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="py-2 px-3 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-e1"
-                            title={lang === "ne" ? "डाउनलोड" : "Download"}
+                            className={`p-2 rounded-control border border-line bg-surface hover:bg-tint text-muted hover:text-fg transition-colors ${
+                              !isPdf ? "w-full justify-center flex items-center gap-1.5 text-xs font-medium" : ""
+                            }`}
+                            title={lang === "ne" ? "गुगल ड्राइभमा खोल्नुहोस्" : "Open in Google Drive"}
                           >
-                            <Download size={15} />
+                            <ArrowSquareOut size={16} />
+                            {!isPdf && <span>{lang === "ne" ? "गुगल ड्राइभमा खोल्नुहोस्" : "Open in Google Drive"}</span>}
                           </a>
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const imgUrl = isDrive ? getGoogleDriveImageUrl(item.fileUrl) : item.fileUrl;
-                            setActiveImage({ url: imgUrl, title: item.title });
-                          }}
-                          className="flex-1 py-2 px-3 rounded-control text-xs font-semibold flex items-center justify-center gap-1.5 bg-tint hover:bg-accent-soft text-accent transition-colors cursor-pointer"
-                        >
-                          <Eye size={15} />
-                          <span>{lang === "ne" ? "तस्बिर हेर्नुहोस्" : "View Image"}</span>
-                        </button>
-                      )}
-
-                      {isDrive && (
-                        <a
-                          href={getGoogleDriveViewUrl(item.fileUrl)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-control border border-line bg-surface hover:bg-tint text-muted hover:text-fg transition-colors"
-                          title={lang === "ne" ? "गुगल ड्राइभमा खोल्नुहोस्" : "Open in Google Drive"}
-                        >
-                          <ArrowSquareOut size={16} />
-                        </a>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </article>
               );

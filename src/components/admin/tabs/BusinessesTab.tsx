@@ -362,7 +362,31 @@ export function BusinessesTab({
                 className="rounded-card border border-line bg-surface overflow-hidden flex flex-col justify-between hover:border-accent transition-all shadow-e1 hover:shadow-e2 group"
               >
                 {/* Visual Media Thumbnail Area */}
-                <div className="relative h-48 w-full bg-tint/60 border-b border-line overflow-hidden flex items-center justify-center p-2">
+                <div
+                  onClick={() => {
+                    if (isPdf) {
+                      setPreviewPdf({ url: item.fileUrl, title: item.title });
+                    } else {
+                      const imgUrl = isDrive ? getGoogleDriveImageUrl(item.fileUrl) : item.fileUrl;
+                      setPreviewImage({ url: imgUrl, title: item.title });
+                    }
+                  }}
+                  className="relative h-48 w-full bg-tint/60 border-b border-line overflow-hidden flex items-center justify-center p-2 cursor-pointer group/media"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      if (isPdf) {
+                        setPreviewPdf({ url: item.fileUrl, title: item.title });
+                      } else {
+                        const imgUrl = isDrive ? getGoogleDriveImageUrl(item.fileUrl) : item.fileUrl;
+                        setPreviewImage({ url: imgUrl, title: item.title });
+                      }
+                    }
+                  }}
+                  title={lang === "ne" ? "पूर्वावलोकन हेर्न थिच्नुहोस्" : "Click to preview"}
+                >
                   {isPdf ? (
                     <div className="flex flex-col items-center justify-center space-y-2 text-center p-4">
                       <div className="w-12 h-12 rounded-control bg-danger/10 text-danger flex items-center justify-center">
@@ -409,17 +433,11 @@ export function BusinessesTab({
                     </div>
                   )}
 
-                  {/* Category Pill Tag */}
-                  {item.category && (
-                    <div className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-chip bg-surface/90 text-accent text-[11px] font-bold border border-line shadow-xs backdrop-blur-xs">
-                      {item.category}
-                    </div>
-                  )}
-
                   {/* Quick Expand Button */}
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (isPdf) {
                         setPreviewPdf({ url: item.fileUrl, title: item.title });
                       } else {
@@ -437,9 +455,17 @@ export function BusinessesTab({
                 {/* Details Content Area */}
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                   <div className="space-y-2">
-                    <h3 className="text-base font-bold text-fg leading-snug group-hover:text-accent transition-colors">
-                      {item.title}
-                    </h3>
+                    <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                      <h3 className="text-base font-bold text-fg leading-snug group-hover:text-accent transition-colors">
+                        {item.title}
+                      </h3>
+                      {item.contactAddress && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted font-normal shrink-0">
+                          <MapPin size={12} className="text-accent flex-shrink-0" />
+                          <span>{item.contactAddress}</span>
+                        </span>
+                      )}
+                    </div>
 
                     {item.description && (
                       <p className="text-xs leading-relaxed text-muted line-clamp-3">
@@ -447,7 +473,7 @@ export function BusinessesTab({
                       </p>
                     )}
 
-                    {(item.contactPhone || item.contactAddress || item.contactEmail) && (
+                    {(item.contactPhone || item.contactEmail) && (
                       <div className="pt-2 space-y-1 text-xs text-muted border-t border-line/60">
                         {item.contactPhone && (
                           <div className="flex items-center gap-1.5 font-mono text-[11px] text-fg">
@@ -455,10 +481,10 @@ export function BusinessesTab({
                             <span>{item.contactPhone}</span>
                           </div>
                         )}
-                        {item.contactAddress && (
-                          <div className="flex items-center gap-1.5 text-[11px]">
-                            <MapPin size={13} className="text-accent flex-shrink-0" />
-                            <span className="truncate">{item.contactAddress}</span>
+                        {item.contactEmail && (
+                          <div className="flex items-center gap-1.5 font-mono text-[11px] text-fg">
+                            <EnvelopeSimple size={13} className="text-accent flex-shrink-0" />
+                            <span>{item.contactEmail}</span>
                           </div>
                         )}
                       </div>
@@ -468,21 +494,16 @@ export function BusinessesTab({
                   {/* Actions Footer */}
                   <div className="pt-3 border-t border-line flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (isPdf) {
-                            setPreviewPdf({ url: item.fileUrl, title: item.title });
-                          } else {
-                            const imgUrl = isDrive ? getGoogleDriveImageUrl(item.fileUrl) : item.fileUrl;
-                            setPreviewImage({ url: imgUrl, title: item.title });
-                          }
-                        }}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline cursor-pointer"
-                      >
-                        <Eye size={14} />
-                        <span>{isPdf ? "PDF हेर्नुहोस्" : "तस्बिर हेर्नुहोस्"}</span>
-                      </button>
+                      {isPdf && (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewPdf({ url: item.fileUrl, title: item.title })}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline cursor-pointer"
+                        >
+                          <Eye size={14} />
+                          <span>PDF हेर्नुहोस्</span>
+                        </button>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1.5">

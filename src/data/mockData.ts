@@ -109,8 +109,8 @@ export interface HeroContent {
 }
 
 export const initialHeroContent: HeroContent = {
-  badgeNe: "थोर्गा, गुल्मी र काठमाडौँ सम्पर्क सञ्जाल",
-  badgeEn: "Thorga, Gulmi and Kathmandu Liaison",
+  badgeNe: "थोर्गा सम्पर्क मञ्च",
+  badgeEn: "Thorga Liaison Forum",
   titleNe: "थोर्गाको पहिचान, काठमाडौँमा एकता र सेवाको अभियान",
   titleEn: "Uniting Thorga Heritage, Advancing Community Welfare",
   descriptionNe: "काठमाडौँ उपत्यकामा रहेका थोर्गाबासीहरुलाई एकताबद्ध गर्दै गाउँको शैक्षिक, स्वास्थ्य तथा पूर्वाधार विकासमा समर्पित गैरनाफामूलक सामाजिक संस्था।",
@@ -743,6 +743,7 @@ export const BUSINESS_CATEGORIES = [
   "आई. टि. (वेबसाईट तथा एप्लिकेसन)",
   "वैदेशिक रोजगारी र कन्सल्टेन्सी",
   "होटल, रेष्टुरेन्ट तथा क्यान्टिन",
+  "लेखापरीक्षण",
 ] as const;
 
 export const initialBusinesses: BusinessItem[] = [];
