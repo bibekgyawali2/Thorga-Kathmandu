@@ -11,7 +11,6 @@ import {
   getStoredBrandingSnapshot,
   getServerBrandingSnapshot,
 } from "@/data/mockData";
-import { formatBikramSambat, formatGregorian } from "@/lib/nepaliDate";
 import {
   Buildings,
   SlidersHorizontal,
@@ -89,28 +88,6 @@ function getThemeSnapshot(): "light" | "dark" {
 
 function getServerThemeSnapshot(): "light" | "dark" {
   return "light";
-}
-
-function todayKey(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-}
-
-function getDateSnapshot(): string {
-  return todayKey();
-}
-
-/** The server cannot know the visitor's local date, so it renders no date. */
-function getServerDateSnapshot(): string | null {
-  return null;
-}
-
-function subscribeDate(onChange: () => void) {
-  const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 500);
-  const timer = setTimeout(onChange, midnight.getTime() - now.getTime());
-  return () => clearTimeout(timer);
 }
 
 /**
@@ -270,15 +247,6 @@ export function SiteHeader({
     }));
   };
 
-  const dateKey = useSyncExternalStore(subscribeDate, getDateSnapshot, getServerDateSnapshot);
-
-  const today = dateKey
-    ? (() => {
-      const [y, m, d] = dateKey.split("-").map(Number);
-      return new Date(y, m, d);
-    })()
-    : null;
-
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     if (typeof document !== "undefined") {
@@ -296,16 +264,18 @@ export function SiteHeader({
     saveStoredLanguage(newLang);
   };
 
-  const bsDate = today ? formatBikramSambat(today) : null;
-  const adDate = today ? formatGregorian(today) : null;
-
   return (
     <>
       {/* Band 1: institutional identity */}
       <div className="relative bg-header-bg border-b border-header-line overflow-hidden">
         <SkylineWatermark />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2.5 pb-3 sm:pt-3 sm:pb-3.5">
+          {/* Top Header Motto - Truly centered across the header */}
+          <p className="w-full text-center text-sm sm:text-base font-bold text-header-muted tracking-wide leading-tight mb-0.5 sm:mb-1">
+            जननी जन्मभूमिश्च स्वर्गादपि गरीयसी
+          </p>
+
           <div className="flex items-center justify-center gap-3 sm:gap-4 md:gap-5">
             {/* Left Logo slot */}
             <Link href="/" className="flex-shrink-0" aria-label={lang === "ne" ? "गृहपृष्ठ" : "Home"}>
@@ -324,26 +294,27 @@ export function SiteHeader({
               </div>
             </Link>
 
-            {/* Name, motto and date */}
-            <div className="min-w-0 text-left flex flex-col items-start justify-center space-y-1">
-              <Link href="/" className="block group">
-                <div className="text-xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-[3.25rem] font-extrabold tracking-tight text-header-fg leading-tight sm:leading-tight group-hover:text-white/90 transition-colors break-words">
+            {/* Name, location and date */}
+            <div className="min-w-0 text-center flex flex-col items-center justify-center space-y-1">
+              <Link href="/" className="block group w-full">
+                <div className="text-xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-[3.25rem] font-extrabold tracking-tight text-header-fg leading-tight sm:leading-tight group-hover:text-white/90 transition-colors break-words text-center">
                   {lang === "ne"
                     ? "थोर्गा काठमाडौं सम्पर्क तथा विकास मञ्च"
                     : "Thorga Kathmandu Liaison and Development Forum"}
                 </div>
               </Link>
-              {/* Date line with small gap directly under title */}
-              <div className="w-full flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 text-xs sm:text-[13px] font-medium text-header-muted pt-0.5 text-center">
-                {lang === "ne" && bsDate && <span>{bsDate}</span>}
-                {lang === "ne" && bsDate && adDate && (
-                  <span aria-hidden="true" className="text-header-line">
-                    |
-                  </span>
-                )}
-                {adDate && <span>{adDate}</span>}
-              </div>
+              {/* Location - Same bold & bigger styling as top motto */}
+              <p className="w-full text-center text-sm sm:text-base font-bold text-header-muted tracking-wide">
+                {lang === "ne" ? "काठमाडौं" : "Kathmandu"}
+              </p>
+
             </div>
+
+            {/* Right Spacer balancing the Left Logo for true center alignment */}
+            <div
+              className="w-16 sm:w-22 lg:w-26 flex-shrink-0 hidden sm:block pointer-events-none"
+              aria-hidden="true"
+            />
           </div>
         </div>
       </div>
