@@ -8,11 +8,21 @@ import { SiteFooter } from "@/components/SiteFooter";
 import {
   Language,
   EventItem,
+  GalleryItem,
+  GalleryAlbum,
   getStoredLanguage,
   subscribeEvents,
   getStoredEventsSnapshot,
   getServerEventsSnapshot,
   saveStoredEvents,
+  subscribeGallery,
+  getStoredGallerySnapshot,
+  getServerGallerySnapshot,
+  saveStoredGallery,
+  subscribeGalleryAlbums,
+  getStoredGalleryAlbumsSnapshot,
+  getServerGalleryAlbumsSnapshot,
+  saveStoredGalleryAlbums,
 } from "@/data/mockData";
 import {
   Calendar,
@@ -22,6 +32,8 @@ import {
   X,
   Eye,
   ArrowsOut,
+  Images,
+  ArrowSquareOut,
 } from "@phosphor-icons/react";
 import { isValidImageSrc } from "@/lib/validation";
 import { useRemoteData } from "@/hooks/useRemoteData";
@@ -34,10 +46,24 @@ export default function EventsPage() {
     getStoredEventsSnapshot,
     getServerEventsSnapshot
   );
+  const gallery = useSyncExternalStore(
+    subscribeGallery,
+    getStoredGallerySnapshot,
+    getServerGallerySnapshot
+  );
+  const albums = useSyncExternalStore(
+    subscribeGalleryAlbums,
+    getStoredGalleryAlbumsSnapshot,
+    getServerGalleryAlbumsSnapshot
+  );
+
   const remote = useRemoteData<EventItem[]>("/api/events", saveStoredEvents);
+  useRemoteData<GalleryItem[]>("/api/gallery", saveStoredGallery);
+  useRemoteData<GalleryAlbum[]>("/api/gallery/albums", saveStoredGalleryAlbums);
+
   const [statusFilter, setStatusFilter] = useState<"upcoming" | "completed">("completed");
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
-  const [isImageZoomed, setIsImageZoomed] = useState(false);
+  const [zoomedImageUrl, setZoomedImageUrl] = useState<{ url: string; title: string } | null>(null);
 
   const filteredEvents = events.filter((e) => e.status === statusFilter);
 
@@ -154,11 +180,19 @@ export default function EventsPage() {
                     </p>
                   </div>
 
-                  <div className="pt-3 border-t border-line flex items-center justify-between text-xs text-muted">
-                    <span className="flex items-center gap-1">
-                      <MapPin size={14} className="text-accent flex-shrink-0" />
-                      <span>{lang === "ne" ? event.locationNe : event.locationEn}</span>
-                    </span>
+                  <div className="pt-3 border-t border-line flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1">
+                        <MapPin size={14} className="text-accent flex-shrink-0" />
+                        <span>{lang === "ne" ? event.locationNe : event.locationEn}</span>
+                      </span>
+                      {event.galleryId && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent bg-accent-soft px-2 py-0.5 rounded-chip border border-accent/20">
+                          <Images size={12} weight="bold" />
+                          <span>{lang === "ne" ? "ग्यालरी जोडिएको" : "Gallery Attached"}</span>
+                        </span>
+                      )}
+                    </div>
                     <span className="inline-flex items-center gap-1 font-semibold text-accent group-hover:underline">
                       <Eye size={14} />
                       <span>{lang === "ne" ? "विवरण हेर्नुहोस्" : "View Details"}</span>
@@ -176,7 +210,7 @@ export default function EventsPage() {
         <div
           onClick={() => {
             setSelectedEvent(null);
-            setIsImageZoomed(false);
+            setZoomedImageUrl(null);
           }}
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 cursor-pointer overflow-y-auto"
         >
@@ -188,7 +222,7 @@ export default function EventsPage() {
               type="button"
               onClick={() => {
                 setSelectedEvent(null);
-                setIsImageZoomed(false);
+                setZoomedImageUrl(null);
               }}
               className="absolute top-3 right-3 z-20 p-2 rounded-chip bg-surface/90 hover:bg-surface text-fg border border-line shadow-sm transition-colors cursor-pointer"
               aria-label="Close"
@@ -204,12 +238,22 @@ export default function EventsPage() {
                   fill
                   sizes="(max-width: 768px) 100vw, 360px"
                   className="object-contain cursor-zoom-in"
-                  onClick={() => setIsImageZoomed(true)}
+                  onClick={() =>
+                    setZoomedImageUrl({
+                      url: selectedEvent.imageUrl,
+                      title: lang === "ne" ? selectedEvent.titleNe : selectedEvent.titleEn,
+                    })
+                  }
                   priority
                 />
                 <button
                   type="button"
-                  onClick={() => setIsImageZoomed(true)}
+                  onClick={() =>
+                    setZoomedImageUrl({
+                      url: selectedEvent.imageUrl,
+                      title: lang === "ne" ? selectedEvent.titleNe : selectedEvent.titleEn,
+                    })
+                  }
                   className="absolute bottom-3 right-3 z-10 px-2.5 py-1 rounded-chip bg-black/75 hover:bg-black text-white text-[11px] font-semibold flex items-center gap-1 backdrop-blur-sm border border-white/20 shadow-md transition-all cursor-pointer"
                   title={lang === "ne" ? "पूर्ण आकारमा हेर्नुहोस्" : "View Fullscreen"}
                 >
@@ -285,6 +329,143 @@ export default function EventsPage() {
                     </p>
                   </div>
                 )}
+
+                {/* RELATED GALLERY SECTION */}
+                {(() => {
+                  const linkedItem = selectedEvent.galleryId
+                    ? gallery.find((g) => g.id === selectedEvent.galleryId)
+                    : null;
+                  const linkedAlbum = selectedEvent.galleryId
+                    ? albums.find((a) => a.id === selectedEvent.galleryId)
+                    : null;
+
+                  if (!linkedItem && !linkedAlbum) return null;
+
+                  return (
+                    <div className="space-y-3 pt-4 border-t border-line">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                          <Images size={16} className="text-accent" />
+                          <span>{lang === "ne" ? "सम्बन्धित ग्यालरी" : "Related Gallery"}</span>
+                        </h4>
+                        <Link
+                          href="/gallery"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
+                        >
+                          <span>{lang === "ne" ? "ग्यालरीमा हेर्नुहोस्" : "View in Gallery"}</span>
+                          <ArrowSquareOut size={13} />
+                        </Link>
+                      </div>
+
+                      {linkedItem && (
+                        <div className="p-3.5 rounded-card bg-ground border border-line flex flex-col sm:flex-row items-center gap-4">
+                          {isValidImageSrc(linkedItem.imageUrl) && (
+                            <div
+                              onClick={() =>
+                                setZoomedImageUrl({
+                                  url: linkedItem.imageUrl,
+                                  title: lang === "ne" ? linkedItem.titleNe : linkedItem.titleEn,
+                                })
+                              }
+                              className="relative w-full sm:w-44 h-32 rounded-control overflow-hidden bg-tint flex-shrink-0 cursor-zoom-in group/gimg border border-line"
+                            >
+                              <Image
+                                src={linkedItem.imageUrl}
+                                alt={lang === "ne" ? linkedItem.titleNe : linkedItem.titleEn}
+                                fill
+                                sizes="(max-width: 640px) 100vw, 176px"
+                                className="object-cover group-hover/gimg:scale-105 transition-transform duration-200"
+                              />
+                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/gimg:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                <ArrowsOut size={20} />
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex-1 space-y-1.5 min-w-0 w-full">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-chip bg-accent-soft text-accent">
+                                {lang === "ne" ? linkedItem.categoryNe : linkedItem.categoryEn}
+                              </span>
+                              <span className="text-[11px] text-muted font-mono">
+                                {lang === "ne" ? linkedItem.dateNe : linkedItem.dateEn}
+                              </span>
+                            </div>
+                            <div className="text-sm font-bold text-fg truncate">
+                              {lang === "ne" ? linkedItem.titleNe : linkedItem.titleEn}
+                            </div>
+                            <p className="text-xs text-muted">
+                              {lang === "ne"
+                                ? "यस गतिविधिसँग सम्बन्धित तस्बिर ग्यालरीमा उपलब्ध छ। पूर्ण आकारमा हेर्न तस्बिरमा थिच्नुहोस्।"
+                                : "Photo associated with this event is available in the gallery. Click image to expand."}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {linkedAlbum && (
+                        <div className="p-3.5 rounded-card bg-ground border border-line space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-0.5 min-w-0">
+                              <div className="text-sm font-bold text-fg truncate">
+                                {lang === "ne" ? linkedAlbum.titleNe : linkedAlbum.titleEn}
+                              </div>
+                              {Boolean(linkedAlbum.descriptionNe || linkedAlbum.descriptionEn) && (
+                                <p className="text-xs text-muted line-clamp-1">
+                                  {lang === "ne"
+                                    ? linkedAlbum.descriptionNe || linkedAlbum.descriptionEn
+                                    : linkedAlbum.descriptionEn || linkedAlbum.descriptionNe}
+                                </p>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-chip bg-accent-soft text-accent flex-shrink-0">
+                              {linkedAlbum.images?.length || 0} {lang === "ne" ? "तस्बिरहरू" : "photos"}
+                            </span>
+                          </div>
+
+                          {linkedAlbum.images && linkedAlbum.images.length > 0 && (
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                              {linkedAlbum.images.slice(0, 6).map((img, idx) => (
+                                <div
+                                  key={img.id || idx}
+                                  onClick={() =>
+                                    setZoomedImageUrl({
+                                      url: img.imageUrl,
+                                      title:
+                                        lang === "ne"
+                                          ? img.captionNe || linkedAlbum.titleNe
+                                          : img.captionEn || linkedAlbum.titleEn,
+                                    })
+                                  }
+                                  className="relative aspect-square rounded-control overflow-hidden bg-tint cursor-zoom-in group/aimg border border-line"
+                                >
+                                  <Image
+                                    src={img.imageUrl}
+                                    alt={
+                                      lang === "ne"
+                                        ? img.captionNe || linkedAlbum.titleNe
+                                        : img.captionEn || linkedAlbum.titleEn
+                                    }
+                                    fill
+                                    sizes="120px"
+                                    className="object-cover group-hover/aimg:scale-105 transition-transform duration-200"
+                                  />
+                                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover/aimg:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                    <ArrowsOut size={16} />
+                                  </div>
+                                  {idx === 5 && linkedAlbum.images.length > 6 && (
+                                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white font-bold text-xs">
+                                      +{linkedAlbum.images.length - 6}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="pt-4 border-t border-line flex justify-end">
@@ -292,7 +473,7 @@ export default function EventsPage() {
                   type="button"
                   onClick={() => {
                     setSelectedEvent(null);
-                    setIsImageZoomed(false);
+                    setZoomedImageUrl(null);
                   }}
                   className="px-6 py-2.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
                 >
@@ -304,10 +485,10 @@ export default function EventsPage() {
         </div>
       )}
 
-      {/* FULLSCREEN EVENT IMAGE LIGHTBOX */}
-      {selectedEvent && isImageZoomed && isValidImageSrc(selectedEvent.imageUrl) && (
+      {/* FULLSCREEN IMAGE LIGHTBOX */}
+      {zoomedImageUrl && isValidImageSrc(zoomedImageUrl.url) && (
         <div
-          onClick={() => setIsImageZoomed(false)}
+          onClick={() => setZoomedImageUrl(null)}
           className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-md flex flex-col justify-between p-4 cursor-zoom-out"
         >
           <div
@@ -315,11 +496,11 @@ export default function EventsPage() {
             className="flex items-center justify-between text-white p-2 border-b border-white/10"
           >
             <span className="font-bold text-sm sm:text-base text-white/90">
-              {lang === "ne" ? selectedEvent.titleNe : selectedEvent.titleEn}
+              {zoomedImageUrl.title}
             </span>
             <button
               type="button"
-              onClick={() => setIsImageZoomed(false)}
+              onClick={() => setZoomedImageUrl(null)}
               className="p-2 rounded-chip bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
               aria-label="Close"
             >
@@ -328,11 +509,11 @@ export default function EventsPage() {
           </div>
           <div
             className="relative flex-1 w-full h-[82vh] flex items-center justify-center p-2"
-            onClick={() => setIsImageZoomed(false)}
+            onClick={() => setZoomedImageUrl(null)}
           >
             <Image
-              src={selectedEvent.imageUrl}
-              alt={lang === "ne" ? selectedEvent.titleNe : selectedEvent.titleEn}
+              src={zoomedImageUrl.url}
+              alt={zoomedImageUrl.title}
               fill
               sizes="100vw"
               className="object-contain"

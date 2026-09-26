@@ -1,9 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { BaseTabProps } from "../adminTypes";
 import { ADMIN_I18N, revalidateCollection } from "../adminConstants";
-import { EventItem, saveStoredEvents } from "@/data/mockData";
+import {
+  EventItem,
+  GalleryItem,
+  GalleryAlbum,
+  saveStoredEvents,
+  getStoredGallerySnapshot,
+  getStoredGalleryAlbumsSnapshot,
+} from "@/data/mockData";
 import { CloudinaryUploader } from "@/components/CloudinaryUploader";
 import {
   Calendar,
@@ -15,13 +23,35 @@ import {
   Clock,
   MapPin,
   X,
+  Images,
+  Image as ImageIcon,
 } from "@phosphor-icons/react";
 
 interface EventsTabProps extends BaseTabProps {
   eventsList: EventItem[];
   setEventsList: React.Dispatch<React.SetStateAction<EventItem[]>>;
+  galleryList?: GalleryItem[];
+  albumsList?: GalleryAlbum[];
   showAddModalInitial?: boolean;
 }
+
+const initialEventForm = {
+  titleEn: "",
+  titleNe: "",
+  categoryEn: "",
+  categoryNe: "",
+  dateEn: "2081 Ashoj 12",
+  dateNe: "२०८१ असोज १२",
+  timeEn: "11:00 AM",
+  timeNe: "बिहान ११:०० बजे",
+  locationEn: "Kathmandu",
+  locationNe: "काठमाडौँ",
+  descriptionEn: "",
+  descriptionNe: "",
+  imageUrl: "",
+  status: "upcoming" as "upcoming" | "completed",
+  galleryId: "",
+};
 
 export function EventsTab({
   lang,
@@ -30,6 +60,8 @@ export function EventsTab({
   dialogConfirm,
   eventsList,
   setEventsList,
+  galleryList = [],
+  albumsList = [],
   showAddModalInitial = false,
 }: EventsTabProps) {
   const t = ADMIN_I18N[lang];
@@ -40,22 +72,20 @@ export function EventsTab({
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
-  const [eventForm, setEventForm] = useState({
-    titleEn: "",
-    titleNe: "",
-    categoryEn: "",
-    categoryNe: "",
-    dateEn: "2081 Ashoj 12",
-    dateNe: "२०८१ असोज १२",
-    timeEn: "11:00 AM",
-    timeNe: "बिहान ११:०० बजे",
-    locationEn: "Kathmandu",
-    locationNe: "काठमाडौँ",
-    descriptionEn: "",
-    descriptionNe: "",
-    imageUrl: "",
-    status: "upcoming" as "upcoming" | "completed",
-  });
+  const allGalleries =
+    galleryList.length > 0
+      ? galleryList
+      : typeof window !== "undefined"
+      ? getStoredGallerySnapshot()
+      : [];
+  const allAlbums =
+    albumsList.length > 0
+      ? albumsList
+      : typeof window !== "undefined"
+      ? getStoredGalleryAlbumsSnapshot()
+      : [];
+
+  const [eventForm, setEventForm] = useState(initialEventForm);
 
   const deleteCloudinaryAsset = async (url?: string) => {
     if (!url || !url.includes("cloudinary.com")) return;
@@ -87,6 +117,7 @@ export function EventsTab({
       descriptionNe: ev.descriptionNe || ev.descriptionEn || "",
       imageUrl: ev.imageUrl || "",
       status: ev.status || "upcoming",
+      galleryId: ev.galleryId || "",
     });
     setShowAddEventModal(true);
 
@@ -179,22 +210,7 @@ export function EventsTab({
         revalidateCollection("events");
         setShowAddEventModal(false);
         setEditingEvent(null);
-        setEventForm({
-          titleEn: "",
-          titleNe: "",
-          categoryEn: "",
-          categoryNe: "",
-          dateEn: "2081 Ashoj 12",
-          dateNe: "२०८१ असोज १२",
-          timeEn: "11:00 AM",
-          timeNe: "बिहान ११:०० बजे",
-          locationEn: "Kathmandu",
-          locationNe: "काठमाडौँ",
-          descriptionEn: "",
-          descriptionNe: "",
-          imageUrl: "",
-          status: "upcoming",
-        });
+        setEventForm(initialEventForm);
         dialogAlert({
           title: lang === "ne" ? "गतिविधि सम्पादन भयो" : "Event Updated",
           description:
@@ -247,22 +263,7 @@ export function EventsTab({
       saveStoredEvents(updated);
       revalidateCollection("events");
       setShowAddEventModal(false);
-      setEventForm({
-        titleEn: "",
-        titleNe: "",
-        categoryEn: "",
-        categoryNe: "",
-        dateEn: "2081 Ashoj 12",
-        dateNe: "२०८१ असोज १२",
-        timeEn: "11:00 AM",
-        timeNe: "बिहान ११:०० बजे",
-        locationEn: "Kathmandu",
-        locationNe: "काठमाडौँ",
-        descriptionEn: "",
-        descriptionNe: "",
-        imageUrl: "",
-        status: "upcoming",
-      });
+      setEventForm(initialEventForm);
       dialogAlert({
         title: lang === "ne" ? "गतिविधि थपियो" : "Event Scheduled",
         description:
@@ -362,22 +363,7 @@ export function EventsTab({
               setShowAddEventModal(false);
             } else {
               setEditingEvent(null);
-              setEventForm({
-                titleEn: "",
-                titleNe: "",
-                categoryEn: "",
-                categoryNe: "",
-                dateEn: "2081 Ashoj 12",
-                dateNe: "२०८१ असोज १२",
-                timeEn: "11:00 AM",
-                timeNe: "बिहान ११:०० बजे",
-                locationEn: "Kathmandu",
-                locationNe: "काठमाडौँ",
-                descriptionEn: "",
-                descriptionNe: "",
-                imageUrl: "",
-                status: "upcoming",
-              });
+              setEventForm(initialEventForm);
               setShowAddEventModal(true);
             }
           }}
@@ -592,6 +578,116 @@ export function EventsTab({
             }
           />
 
+          {/* Link Gallery Selection (1 gallery per event) */}
+          <div className="space-y-2.5 p-4 rounded-card border border-line bg-ground/50">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-fg flex items-center gap-1.5">
+                <Images size={16} className="text-accent" />
+                <span>
+                  {lang === "ne"
+                    ? "सम्बन्धित ग्यालरी जोड्नुहोस् (प्रति गतिविधि १ ग्यालरी)"
+                    : "Link Related Gallery (1 gallery per event)"}
+                </span>
+              </label>
+              {eventForm.galleryId && (
+                <button
+                  type="button"
+                  onClick={() => setEventForm({ ...eventForm, galleryId: "" })}
+                  className="text-[11px] text-danger hover:underline cursor-pointer flex items-center gap-1 font-medium"
+                >
+                  <X size={12} />
+                  <span>{lang === "ne" ? "लिंक हटाउनुहोस्" : "Remove Link"}</span>
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-muted leading-relaxed">
+              {lang === "ne"
+                ? "यस गतिविधिसँग सम्बन्धित ग्यालरी तस्बिर वा एल्बम छान्नुहोस्। प्रयोगकर्ताले गतिविधि हेर्दा यो तस्बिर/एल्बम पनि देख्न सक्नेछन्।"
+                : "Select a gallery photo or album for this event. Visitors will see this related gallery when viewing the event."}
+            </p>
+
+            <select
+              value={eventForm.galleryId}
+              onChange={(e) => setEventForm({ ...eventForm, galleryId: e.target.value })}
+              className="w-full px-3.5 py-2.5 rounded-control border border-line bg-surface text-fg text-xs focus:border-accent"
+            >
+              <option value="">
+                {lang === "ne"
+                  ? "-- कुनै पनि ग्यालरी नजोड्ने (कुनै लिंक छैन) --"
+                  : "-- Do not link any gallery (None) --"}
+              </option>
+
+              {allGalleries.length > 0 && (
+                <optgroup label={lang === "ne" ? "📷 ग्यालरी तस्बिरहरू (Photos)" : "📷 Gallery Photos"}>
+                  {allGalleries.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {lang === "ne" ? g.titleNe || g.titleEn : g.titleEn || g.titleNe}
+                      {g.dateNe ? ` (${g.dateNe})` : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
+              {allAlbums.length > 0 && (
+                <optgroup label={lang === "ne" ? "📁 ग्यालरी एल्बमहरू (Albums)" : "📁 Gallery Albums"}>
+                  {allAlbums.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {lang === "ne" ? a.titleNe || a.titleEn : a.titleEn || a.titleNe}
+                      {` (${a.images?.length || 0} ${lang === "ne" ? "तस्बिरहरू" : "photos"})`}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+
+            {/* Selected Gallery Preview Card */}
+            {eventForm.galleryId && (() => {
+              const selectedPhoto = allGalleries.find((g) => g.id === eventForm.galleryId);
+              const selectedAlbum = allAlbums.find((a) => a.id === eventForm.galleryId);
+              const previewImg = selectedPhoto?.imageUrl || selectedAlbum?.coverImageUrl || selectedAlbum?.images?.[0]?.imageUrl;
+              const previewTitle = selectedPhoto
+                ? (lang === "ne" ? selectedPhoto.titleNe : selectedPhoto.titleEn)
+                : selectedAlbum
+                ? (lang === "ne" ? selectedAlbum.titleNe : selectedAlbum.titleEn)
+                : "";
+              const previewType = selectedPhoto
+                ? (lang === "ne" ? "ग्यालरी तस्बिर" : "Gallery Photo")
+                : (lang === "ne" ? `एल्बम (${selectedAlbum?.images?.length || 0} तस्बिरहरू)` : `Album (${selectedAlbum?.images?.length || 0} photos)`);
+
+              if (!previewImg && !previewTitle) return null;
+
+              return (
+                <div className="mt-2.5 p-3 rounded-control border border-accent/40 bg-accent-soft/30 flex items-center gap-3">
+                  {previewImg ? (
+                    <div className="relative w-16 h-12 rounded-control overflow-hidden bg-black flex-shrink-0 border border-line">
+                      <Image
+                        src={previewImg}
+                        alt={previewTitle}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-12 rounded-control bg-tint flex items-center justify-center flex-shrink-0 text-muted">
+                      <ImageIcon size={20} />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] font-bold text-accent uppercase tracking-wider block">
+                      {previewType}
+                    </span>
+                    <span className="text-xs font-semibold text-fg line-clamp-1 block">
+                      {previewTitle}
+                    </span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-chip bg-accent text-on-accent text-[10px] font-bold shrink-0">
+                    {lang === "ne" ? "जोडियो ✓" : "Linked ✓"}
+                  </span>
+                </div>
+              );
+            })()}
+          </div>
+
           <div className="flex items-center gap-2 pt-2">
             <button
               type="submit"
@@ -718,6 +814,13 @@ export function EventsTab({
                           >
                             {ev.status}
                           </span>
+
+                          {ev.galleryId && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent bg-accent-soft px-2 py-0.5 rounded-chip border border-accent/20">
+                              <Images size={12} weight="bold" />
+                              <span>{lang === "ne" ? "ग्यालरी जोडिएको" : "Gallery Linked"}</span>
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

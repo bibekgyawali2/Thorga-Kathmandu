@@ -524,6 +524,8 @@ export default function AdminPage() {
               {...baseTabProps}
               eventsList={eventsList}
               setEventsList={setEventsList}
+              galleryList={galleryList}
+              albumsList={albumsList}
               showAddModalInitial={eventModalInitialOpen}
             />
           )}

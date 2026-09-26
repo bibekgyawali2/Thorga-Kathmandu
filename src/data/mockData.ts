@@ -33,6 +33,7 @@ export interface EventItem {
   categoryEn: string;
   categoryNe: string;
   imageUrl: string;
+  galleryId?: string;
 }
 
 export interface Publication {

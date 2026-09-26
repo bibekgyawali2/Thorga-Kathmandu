@@ -717,6 +717,7 @@ export async function fetchEvents(): Promise<EventItem[]> {
           categoryEn: row.category_en ?? "",
           categoryNe: row.category_ne ?? "",
           imageUrl: row.image_url ?? "",
+          galleryId: row.gallery_id ?? "",
         }));
       }
     } catch (err) {
@@ -748,6 +749,7 @@ export async function fetchEvents(): Promise<EventItem[]> {
         categoryEn: row.category_en ?? "",
         categoryNe: row.category_ne ?? "",
         imageUrl: row.image_url ?? "",
+        galleryId: row.gallery_id ?? "",
       }));
     }
   } catch (err) {
@@ -763,8 +765,8 @@ export async function saveEventItem(item: EventItem): Promise<EventItem> {
   if (pg) {
     try {
       const res = await pg.query(
-        `INSERT INTO public.events (id, title_en, title_ne, date_en, date_ne, time_en, time_ne, location_en, location_ne, description_en, description_ne, status, category_en, category_ne, image_url, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+        `INSERT INTO public.events (id, title_en, title_ne, date_en, date_ne, time_en, time_ne, location_en, location_ne, description_en, description_ne, status, category_en, category_ne, image_url, gallery_id, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
          ON CONFLICT (id) DO UPDATE SET 
            title_en = EXCLUDED.title_en,
            title_ne = EXCLUDED.title_ne,
@@ -780,6 +782,7 @@ export async function saveEventItem(item: EventItem): Promise<EventItem> {
            category_en = EXCLUDED.category_en,
            category_ne = EXCLUDED.category_ne,
            image_url = EXCLUDED.image_url,
+           gallery_id = EXCLUDED.gallery_id,
            updated_at = NOW()
          RETURNING *;`,
         [
@@ -798,6 +801,7 @@ export async function saveEventItem(item: EventItem): Promise<EventItem> {
           item.categoryEn,
           item.categoryNe,
           item.imageUrl,
+          item.galleryId || null,
         ]
       );
       if (res.rows && res.rows.length > 0) {
@@ -818,6 +822,7 @@ export async function saveEventItem(item: EventItem): Promise<EventItem> {
           categoryEn: row.category_en ?? "",
           categoryNe: row.category_ne ?? "",
           imageUrl: row.image_url ?? "",
+          galleryId: row.gallery_id ?? "",
         };
       }
     } catch (err) {
@@ -844,6 +849,7 @@ export async function saveEventItem(item: EventItem): Promise<EventItem> {
       category_en: item.categoryEn,
       category_ne: item.categoryNe,
       image_url: item.imageUrl,
+      gallery_id: item.galleryId || null,
     };
     const { data } = await supabase.from("events").upsert(payload).select().single();
     if (data) {
@@ -863,6 +869,7 @@ export async function saveEventItem(item: EventItem): Promise<EventItem> {
         categoryEn: data.category_en ?? "",
         categoryNe: data.category_ne ?? "",
         imageUrl: data.image_url ?? "",
+        galleryId: data.gallery_id ?? "",
       };
     }
   } catch (err) {
