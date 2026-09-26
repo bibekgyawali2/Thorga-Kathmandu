@@ -237,6 +237,39 @@ export function SiteHeader({
     getServerBrandingSnapshot
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedMobileSections, setExpandedMobileSections] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    NAV_LINKS.forEach((link) => {
+      if (link.children && link.children.some((c) => c.href === pathname)) {
+        initial[link.href] = true;
+      }
+    });
+    return initial;
+  });
+
+  // Automatically close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Lock body scrolling when mobile menu is open to fix scroll conflicts
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [mobileMenuOpen]);
+
+  const toggleMobileSection = (href: string) => {
+    setExpandedMobileSections((prev) => ({
+      ...prev,
+      [href]: !prev[href],
+    }));
+  };
+
   const dateKey = useSyncExternalStore(subscribeDate, getDateSnapshot, getServerDateSnapshot);
 
   const today = dateKey
@@ -294,7 +327,7 @@ export function SiteHeader({
             {/* Name, motto and date */}
             <div className="min-w-0 text-left flex flex-col items-start justify-center space-y-1">
               <Link href="/" className="block group">
-                <div className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-[3.25rem] font-extrabold tracking-tight text-header-fg leading-tight sm:leading-tight group-hover:text-white/90 transition-colors">
+                <div className="text-xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-[3.25rem] font-extrabold tracking-tight text-header-fg leading-tight sm:leading-tight group-hover:text-white/90 transition-colors break-words">
                   {lang === "ne"
                     ? "थोर्गा काठमाडौं सम्पर्क तथा विकास मञ्च"
                     : "Thorga Kathmandu Liaison and Development Forum"}
@@ -344,15 +377,25 @@ export function SiteHeader({
             })}
           </nav>
 
-          {/* Brand strip shown once the identity band has scrolled away */}
+          {/* Brand logo in mobile menubar: text removed as requested */}
           <Link
             href="/"
-            className="xl:hidden flex items-center gap-2 py-2 min-w-0 flex-1 text-on-nav font-bold text-sm"
+            className="xl:hidden flex items-center py-1.5 text-on-nav hover:opacity-90 transition-opacity"
+            aria-label={lang === "ne" ? "गृहपृष्ठ" : "Home"}
           >
-            <Buildings size={20} weight="duotone" className="flex-shrink-0" />
-            <span className="truncate">
-              {lang === "ne" ? "थोर्गा काठमाडौं मञ्च" : "Thorga Kathmandu Forum"}
-            </span>
+            {branding.logoUrl ? (
+              <div className="w-8 h-8 rounded-full bg-white p-0.5 overflow-hidden flex items-center justify-center shadow-sm">
+                <Image
+                  src={branding.logoUrl}
+                  alt={lang === "ne" ? "गृहपृष्ठ" : "Home"}
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : (
+              <Buildings size={22} weight="duotone" />
+            )}
           </Link>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
@@ -419,57 +462,78 @@ export function SiteHeader({
         {mobileMenuOpen && (
           <div
             id="primary-mobile-nav"
-            className="xl:hidden border-t border-on-nav/15 bg-nav px-4 py-3 space-y-1"
+            className="xl:hidden border-t border-on-nav/15 bg-nav px-4 py-3 space-y-1 max-h-[calc(100dvh-54px)] overflow-y-auto overscroll-contain pb-12"
+            style={{ WebkitOverflowScrolling: "touch" }}
           >
-            {NAV_LINKS.map((link) =>
-              link.children ? (
-                <div key={link.href} className="py-1">
-                  <p className="px-3 py-1.5 text-[13px] font-bold text-on-nav/60">
-                    {lang === "ne" ? link.ne : link.en}
-                  </p>
-                  {link.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block py-2 pl-6 pr-3 rounded-control text-[14px] font-medium text-on-nav/90 hover:bg-on-nav/10 hover:text-on-nav transition-colors"
+            {NAV_LINKS.map((link) => {
+              if (link.children) {
+                const isExpanded = !!expandedMobileSections[link.href];
+                const isSectionActive = link.children.some((c) => pathname === c.href);
+                return (
+                  <div key={link.href} className="py-0.5">
+                    <button
+                      type="button"
+                      onClick={() => toggleMobileSection(link.href)}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-control text-[15px] font-semibold transition-colors ${
+                        isSectionActive || isExpanded
+                          ? "bg-on-nav/15 text-on-nav"
+                          : "text-on-nav/85 hover:bg-on-nav/10 hover:text-on-nav"
+                      }`}
+                      aria-expanded={isExpanded}
                     >
-                      {lang === "ne" ? child.ne : child.en}
-                    </Link>
-                  ))}
-                </div>
-              ) : (
+                      <span>{lang === "ne" ? link.ne : link.en}</span>
+                      <CaretDown
+                        size={14}
+                        weight="bold"
+                        className={`transition-transform duration-200 ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {isExpanded && (
+                      <div className="pl-3 pr-1 py-1 space-y-0.5 border-l-2 border-on-nav/20 ml-3 mt-1">
+                        {link.children.map((child) => {
+                          const active = pathname === child.href;
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className={`block py-2 px-3 rounded-control text-[14px] transition-colors ${
+                                active
+                                  ? "bg-on-nav/20 text-on-nav font-semibold"
+                                  : "text-on-nav/80 hover:bg-on-nav/10 hover:text-on-nav font-medium"
+                              }`}
+                            >
+                              {lang === "ne" ? child.ne : child.en}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              const isActive = !link.href.includes("#") && pathname === link.href;
+              return (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block py-2.5 px-3 rounded-control text-[15px] font-semibold text-on-nav/90 hover:bg-on-nav/10 hover:text-on-nav transition-colors"
+                  className={`block py-2.5 px-3 rounded-control text-[15px] font-semibold transition-colors ${
+                    isActive
+                      ? "bg-on-nav/20 text-on-nav"
+                      : "text-on-nav/90 hover:bg-on-nav/10 hover:text-on-nav"
+                  }`}
                 >
                   {lang === "ne" ? link.ne : link.en}
                 </Link>
-              )
-            )}
+              );
+            })}
 
             <div className="pt-2 mt-2 border-t border-on-nav/15 flex items-center justify-end gap-3">
-              {/* Language toggle commented out temporarily */}
-              {/* <div className="inline-flex rounded-control bg-on-nav/10 p-0.5 sm:hidden">
-                <button
-                  type="button"
-                  onClick={() => handleLangChange("ne")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-chip ${lang === "ne" ? "bg-on-nav text-nav" : "text-on-nav/80"
-                    }`}
-                >
-                  नेपाली
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleLangChange("en")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-chip ${lang === "en" ? "bg-on-nav text-nav" : "text-on-nav/80"
-                    }`}
-                >
-                  EN
-                </button>
-              </div> */}
               <Link
                 href="/admin"
                 onClick={() => setMobileMenuOpen(false)}
