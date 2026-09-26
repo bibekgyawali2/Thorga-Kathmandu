@@ -14,6 +14,11 @@ import {
   HeroContent,
   BrandingSettings,
   ContactSettings,
+  BusinessItem,
+  subscribeBusinesses,
+  getStoredBusinessesSnapshot,
+  getServerBusinessesSnapshot,
+  saveStoredBusinesses,
   getStoredLanguage,
   subscribeHeroContent,
   getStoredHeroSnapshot,
@@ -51,6 +56,7 @@ import { documentUrl } from "@/lib/documentUrl";
 import { PdfModalViewer } from "@/components/PdfModalViewer";
 import { DataStatus } from "@/components/DataStatus";
 import { HeroCarousel, type HeroSlide } from "@/components/HeroCarousel";
+import { BusinessCard } from "@/components/BusinessCard";
 import {
   isValidName,
   isValidPhone,
@@ -83,6 +89,7 @@ import {
   ArrowsOut,
   ArrowSquareOut,
   Images,
+  Storefront,
 } from "@phosphor-icons/react";
 import {
   isGoogleDriveUrl,
@@ -202,6 +209,11 @@ export default function MainPortal() {
     getStoredGallerySnapshot,
     getServerGallerySnapshot
   );
+  const businesses = useSyncExternalStore(
+    subscribeBusinesses,
+    getStoredBusinessesSnapshot,
+    getServerBusinessesSnapshot
+  );
   const heroContent = useSyncExternalStore(
     subscribeHeroContent,
     getStoredHeroSnapshot,
@@ -221,6 +233,7 @@ export default function MainPortal() {
   useRemoteData<EventItem[]>("/api/events", saveStoredEvents);
   useRemoteData<Publication[]>("/api/publications", saveStoredPublications);
   useRemoteData<GalleryItem[]>("/api/gallery", saveStoredGallery);
+  useRemoteData<BusinessItem[]>("/api/businesses", saveStoredBusinesses);
   const albums = useSyncExternalStore(
     subscribeGalleryAlbums,
     getStoredGalleryAlbumsSnapshot,
@@ -229,6 +242,7 @@ export default function MainPortal() {
   useRemoteData<GalleryAlbum[]>("/api/gallery/albums", saveStoredGalleryAlbums);
 
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
+  const [activeBusinessPdf, setActiveBusinessPdf] = useState<{ url: string; title: string } | null>(null);
   const [selectedEventModal, setSelectedEventModal] = useState<EventItem | null>(null);
   const [zoomedEventImageUrl, setZoomedEventImageUrl] = useState<{ url: string; title: string } | null>(null);
   const [contactSubmitted, setContactSubmitted] = useState(false);
@@ -354,6 +368,7 @@ export default function MainPortal() {
     ...events.filter((e) => e.status === "completed"),
     ...events.filter((e) => e.status === "upcoming"),
   ].slice(0, 2);
+  const businessesShowcase = businesses.slice(0, 3);
   const galleryShowcase = gallery.slice(0, 3);
 
   const heroSlides: HeroSlide[] = [
@@ -769,8 +784,64 @@ export default function MainPortal() {
         </div>
       </section>
 
-      {/* SECTION 6: PHOTO GALLERY SHOWCASE */}
-      <section className="py-16 sm:py-24 rule-soft bg-ground">
+      {/* SECTION 6: COMMUNITY BUSINESS & PROFESSION SHOWCASE */}
+      <section id="business" className="py-16 sm:py-24 rule-soft bg-ground">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="space-y-3">
+            <h2 className="type-section text-fg">
+              {lang === "ne" ? "पेशा तथा व्यवसाय" : "Community Businesses & Professions"}
+            </h2>
+            <p className="text-xs sm:text-sm font-semibold text-accent leading-relaxed max-w-2xl">
+              {lang === "ne"
+                ? "के तपाई कुनै सामान वा सेवा खरिदगर्दै हुनुहुन्छ ? आफ्नैलाई सम्झनुहोस।"
+                : "Looking to purchase goods or hire services? Prioritize our own community members."}
+            </p>
+          </div>
+
+          {businessesShowcase.length === 0 ? (
+            <div className="rounded-card border border-dashed border-line p-12 text-center space-y-2 bg-surface">
+              <Storefront size={32} className="text-accent mx-auto" weight="duotone" />
+              <p className="text-sm font-semibold text-fg">
+                {lang === "ne" ? "हाल कुनै व्यवसाय सूचीकृत गरिएको छैन" : "No community businesses listed yet"}
+              </p>
+              <p className="text-xs text-muted max-w-md mx-auto">
+                {lang === "ne"
+                  ? "समुदायका सदस्यहरूले आफ्ना व्यवसाय तथा पेशा यहाँ प्रवर्धन गर्न सक्नुहुनेछ।"
+                  : "Community members can promote their businesses and professional services here."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {businessesShowcase.map((item) => (
+                  <BusinessCard
+                    key={item.id}
+                    item={item}
+                    lang={lang}
+                    onPreviewPdf={setActiveBusinessPdf}
+                    onPreviewImage={setZoomedEventImageUrl}
+                  />
+                ))}
+              </div>
+
+              {/* Bottom See More Button */}
+              <div className="pt-4 flex justify-center">
+                <Link
+                  href="/business"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs sm:text-sm font-semibold shadow-e1 hover:shadow-e2 transition-all cursor-pointer"
+                >
+                  <Storefront size={18} weight="duotone" />
+                  <span>{lang === "ne" ? "थप व्यवसायहरू हेर्नुहोस्" : "See More Businesses"}</span>
+                  <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* SECTION 7: PHOTO GALLERY SHOWCASE */}
+      <section className="py-16 sm:py-24 rule-soft bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
@@ -789,7 +860,7 @@ export default function MainPortal() {
           </div>
 
           {galleryShowcase.length === 0 ? (
-            <div className="rounded-card border border-dashed border-line p-12 text-center space-y-2 bg-surface">
+            <div className="rounded-card border border-dashed border-line p-12 text-center space-y-2 bg-ground">
               <Sparkle size={32} className="text-accent mx-auto" weight="duotone" />
               <p className="text-sm font-semibold text-fg">
                 {lang === "ne" ? "हाल कुनै तस्बिर उपलब्ध छैन" : "No gallery photos uploaded yet"}
@@ -832,8 +903,8 @@ export default function MainPortal() {
         </div>
       </section>
 
-      {/* SECTION 7: CONTACT & LIAISON SECRETARIAT (Dynamically Configurable from Admin) */}
-      <section id="contact" className="py-16 sm:py-20 rule-soft bg-surface">
+      {/* SECTION 8: CONTACT & LIAISON SECRETARIAT (Dynamically Configurable from Admin) */}
+      <section id="contact" className="py-16 sm:py-20 rule-soft bg-ground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Top Section Header */}
           <div className="max-w-3xl space-y-3">
@@ -871,7 +942,7 @@ export default function MainPortal() {
                 <form
                   onSubmit={handleInquirySubmit}
                   noValidate
-                  className="rounded-card border border-line bg-ground p-6 sm:p-8 space-y-5 shadow-e1"
+                  className="rounded-card border border-line bg-surface p-6 sm:p-8 space-y-5 shadow-e1"
                 >
                   <div className="text-sm font-bold text-fg border-b border-line pb-3 flex items-center justify-between">
                     <span>{lang === "ne" ? "सम्पर्क फाराम" : "Online Inquiry Form"}</span>
@@ -1014,7 +1085,7 @@ export default function MainPortal() {
 
             {/* Right Column: Liaison Secretariat Card */}
             <div className="lg:col-span-5 space-y-4">
-              <div className="rounded-card border border-line bg-ground p-6 sm:p-7 space-y-5 shadow-e1 hover:border-accent transition-all">
+              <div className="rounded-card border border-line bg-surface p-6 sm:p-7 space-y-5 shadow-e1 hover:border-accent transition-all">
                 <div className="flex items-center gap-3.5">
                   <div className="w-11 h-11 rounded-control bg-accent-soft text-accent flex items-center justify-center flex-shrink-0">
                     <Buildings size={22} weight="duotone" />
@@ -1074,6 +1145,17 @@ export default function MainPortal() {
           fileSize={activePdfPreview.fileSize}
           lang={lang}
           onClose={() => setActivePdfPreview(null)}
+        />
+      )}
+
+      {/* BUSINESS PDF PREVIEW MODAL */}
+      {activeBusinessPdf && (
+        <PdfModalViewer
+          url={activeBusinessPdf.url}
+          title={activeBusinessPdf.title}
+          category={lang === "ne" ? "पेशा तथा व्यवसाय" : "Business Document"}
+          lang={lang}
+          onClose={() => setActiveBusinessPdf(null)}
         />
       )}
 
@@ -1389,6 +1471,11 @@ export default function MainPortal() {
               fill
               sizes="100vw"
               className="object-contain"
+              unoptimized={
+                isGoogleDriveUrl(zoomedEventImageUrl.url) ||
+                zoomedEventImageUrl.url.includes("googleusercontent.com") ||
+                zoomedEventImageUrl.url.includes("drive.google.com")
+              }
               priority
             />
           </div>
