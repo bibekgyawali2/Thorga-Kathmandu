@@ -818,7 +818,7 @@ export function EventsTab({
                           {ev.galleryId && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent bg-accent-soft px-2 py-0.5 rounded-chip border border-accent/20">
                               <Images size={12} weight="bold" />
-                              <span>{lang === "ne" ? "ग्यालरी जोडिएको" : "Gallery Linked"}</span>
+                              <span>{lang === "ne" ? "तस्बिर" : "Photos"}</span>
                             </span>
                           )}
                         </div>

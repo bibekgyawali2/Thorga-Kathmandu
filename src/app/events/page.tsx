@@ -180,20 +180,12 @@ export default function EventsPage() {
                     </p>
                   </div>
 
-                  <div className="pt-3 border-t border-line flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-                    <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1">
-                        <MapPin size={14} className="text-accent flex-shrink-0" />
-                        <span>{lang === "ne" ? event.locationNe : event.locationEn}</span>
-                      </span>
-                      {event.galleryId && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent bg-accent-soft px-2 py-0.5 rounded-chip border border-accent/20">
-                          <Images size={12} weight="bold" />
-                          <span>{lang === "ne" ? "ग्यालरी जोडिएको" : "Gallery Attached"}</span>
-                        </span>
-                      )}
-                    </div>
-                    <span className="inline-flex items-center gap-1 font-semibold text-accent group-hover:underline">
+                  <div className="pt-3 border-t border-line flex items-center justify-between gap-3 text-xs text-muted">
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <MapPin size={14} className="text-accent flex-shrink-0" />
+                      <span className="truncate">{lang === "ne" ? event.locationNe : event.locationEn}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-accent group-hover:underline flex-shrink-0 whitespace-nowrap">
                       <Eye size={14} />
                       <span>{lang === "ne" ? "विवरण हेर्नुहोस्" : "View Details"}</span>
                     </span>

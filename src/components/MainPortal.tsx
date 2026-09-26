@@ -751,20 +751,12 @@ export default function MainPortal() {
                       </p>
                     </div>
 
-                    <div className="pt-2 border-t border-line text-xs text-muted flex flex-wrap items-center justify-between gap-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1.5">
-                          <MapPin size={14} className="text-accent flex-shrink-0" />
-                          <span>{lang === "ne" ? event.locationNe : event.locationEn}</span>
-                        </span>
-                        {event.galleryId && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-accent bg-accent-soft px-2 py-0.5 rounded-chip border border-accent/20">
-                            <Images size={11} weight="bold" />
-                            <span>{lang === "ne" ? "ग्यालरी जोडिएको" : "Gallery Attached"}</span>
-                          </span>
-                        )}
-                      </div>
-                      <span className="inline-flex items-center gap-1 font-semibold text-accent group-hover:underline">
+                    <div className="pt-2 border-t border-line text-xs text-muted flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <MapPin size={14} className="text-accent flex-shrink-0" />
+                        <span className="truncate">{lang === "ne" ? event.locationNe : event.locationEn}</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 font-semibold text-accent group-hover:underline flex-shrink-0 whitespace-nowrap">
                         <Eye size={13} />
                         <span>{lang === "ne" ? "विवरण" : "Details"}</span>
                       </span>
