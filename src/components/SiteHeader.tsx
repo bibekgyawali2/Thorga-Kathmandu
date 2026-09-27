@@ -312,7 +312,7 @@ export function SiteHeader({
 
             {/* Right Spacer balancing the Left Logo for true center alignment */}
             <div
-              className="w-16 sm:w-22 lg:w-26 flex-shrink-0 hidden sm:block pointer-events-none"
+              className="w-16 sm:w-22 lg:w-26 flex-shrink-0 pointer-events-none"
               aria-hidden="true"
             />
           </div>
