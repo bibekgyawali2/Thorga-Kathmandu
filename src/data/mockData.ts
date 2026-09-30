@@ -110,13 +110,13 @@ export interface HeroContent {
 }
 
 export const initialHeroContent: HeroContent = {
-  badgeNe: "थोर्गा सम्पर्क मञ्च",
-  badgeEn: "Thorga Liaison Forum",
-  titleNe: "थोर्गाको पहिचान, काठमाडौँमा एकता र सेवाको अभियान",
-  titleEn: "Uniting Thorga Heritage, Advancing Community Welfare",
-  descriptionNe: "काठमाडौँ उपत्यकामा रहेका थोर्गाबासीहरुलाई एकताबद्ध गर्दै गाउँको शैक्षिक, स्वास्थ्य तथा पूर्वाधार विकासमा समर्पित गैरनाफामूलक सामाजिक संस्था।",
-  descriptionEn: "A dedicated non-profit forum connecting native families of Thorga in Kathmandu for mutual assistance, youth scholarships, and village development.",
-  imageUrl: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1000&q=80",
+  badgeNe: "संस्था परिचय • वि.सं. २०६६",
+  badgeEn: "About Organisation • Estd. 2009",
+  titleNe: "थोर्गा-काठमाडौं सम्पर्क तथा विकास मञ्च",
+  titleEn: "Thorga-Kathmandu Liaison & Development Forum",
+  descriptionNe: "राजधानी काठमाडौँमा छरिएर रहेका थोर्गेली बन्धुवान्धवहरू बीच सम्बन्ध विस्तार, आपसी सद्भाव र सहयोग अभिवृद्धि गर्ने उद्देश्यका साथ वि.सं. २०६६ मा स्थापित गैर-राजनीतिक सामाजिक संस्था। मञ्चले काठमाडौँमा रहेका थोर्गेलीहरूको एकता र संस्कृति संरक्षणका साथै जन्मभूमि थोर्गाको समग्र विकास, शैक्षिक उन्नयन, धार्मिक-सांस्कृतिक सम्पदाको संरक्षण तथा सामाजिक हितमा महत्त्वपूर्ण कार्यहरू निरन्तर गर्दै आएको छ।",
+  descriptionEn: "Established in 2066 BS (2009 AD), Thorga-Kathmandu Liaison & Development Forum is a representative, non-political social organization uniting native Thorga families in Kathmandu. Driven by mutual brotherhood and dedication to our birthplace, the forum actively advances community welfare in the capital alongside educational, cultural, and infrastructure development initiatives in our ancestral village of Thorga.",
+  imageUrl: "https://images.unsplash.com/photo-1600852468148-b01375a0d64e?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   imageBadgeNe: "आधिकारिक मञ्च",
   imageBadgeEn: "Official Forum",
   imageCaptionNe: "गुल्मी जिल्ला, रुरुक्षेत्र गाउँपालिका वडा नं. २ र ३ (साविक थोर्गा गा.वि.स.)",
@@ -794,5 +794,5 @@ export function saveStoredBusinesses(businesses: BusinessItem[]): void {
     _bizCacheRaw = undefined as unknown as string | null;
     _bizCache = businesses;
     businessSubscribers.forEach((s) => s());
-  } catch {}
+  } catch { }
 }

@@ -28,6 +28,7 @@ export interface BusinessCardProps {
   lang: Language;
   onPreviewPdf: (payload: { url: string; title: string }) => void;
   onPreviewImage: (payload: { url: string; title: string }) => void;
+  compact?: boolean;
 }
 
 export function BusinessCard({
@@ -35,6 +36,7 @@ export function BusinessCard({
   lang,
   onPreviewPdf,
   onPreviewImage,
+  compact = false,
 }: BusinessCardProps) {
   const isDrive = isGoogleDriveUrl(item.fileUrl);
   const isPdf = item.fileType === "pdf";
@@ -51,7 +53,7 @@ export function BusinessCard({
             onPreviewPdf({
               url: item.fileUrl,
               title:
-                item.title && item.title !== "."
+                item.title && item.title !== "." && item.title !== ","
                   ? item.title
                   : lang === "ne"
                   ? "कागजात"
@@ -63,7 +65,13 @@ export function BusinessCard({
           }
         }}
         className={`relative ${
-          hasBody ? "h-56 sm:h-60 border-b border-line" : "h-64 sm:h-72"
+          compact
+            ? hasBody
+              ? "h-36 sm:h-40 border-b border-line"
+              : "h-44 sm:h-48"
+            : hasBody
+            ? "h-56 sm:h-60 border-b border-line"
+            : "h-64 sm:h-72"
         } w-full bg-tint/60 overflow-hidden flex items-center justify-center p-2 cursor-pointer group/media`}
         role="button"
         tabIndex={0}
@@ -74,7 +82,7 @@ export function BusinessCard({
               onPreviewPdf({
                 url: item.fileUrl,
                 title:
-                  item.title && item.title !== "."
+                  item.title && item.title !== "." && item.title !== ","
                     ? item.title
                     : lang === "ne"
                     ? "कागजात"
@@ -90,9 +98,9 @@ export function BusinessCard({
       >
         {isPdf ? (
           /* PDF Document Card Frame */
-          <div className="relative z-10 w-full h-full flex flex-col items-center justify-center space-y-2 p-4 text-center">
-            <div className="w-14 h-14 rounded-control bg-danger/10 text-danger flex items-center justify-center shadow-xs">
-              <FilePdf size={36} weight="duotone" />
+          <div className={`relative z-10 w-full h-full flex flex-col items-center justify-center ${compact ? "space-y-1.5 p-3" : "space-y-2 p-4"} text-center`}>
+            <div className={`${compact ? "w-11 h-11" : "w-14 h-14"} rounded-control bg-danger/10 text-danger flex items-center justify-center shadow-xs`}>
+              <FilePdf size={compact ? 28 : 36} weight="duotone" />
             </div>
             <div className="space-y-1">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-chip bg-surface border border-line text-muted inline-block">
@@ -105,9 +113,9 @@ export function BusinessCard({
           <div className="relative w-full h-full flex items-center justify-center">
             <Image
               src={getGoogleDriveImageUrl(item.fileUrl)}
-              alt={item.title && item.title !== "." ? item.title : "Business"}
+              alt={item.title && item.title !== "." && item.title !== "," ? item.title : "Business"}
               fill
-              sizes="(max-width: 768px) 100vw, 33vw"
+              sizes={compact ? "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" : "(max-width: 768px) 100vw, 33vw"}
               className="object-contain group-hover:scale-105 transition-transform duration-200"
               unoptimized
             />
@@ -121,16 +129,16 @@ export function BusinessCard({
           <div className="relative w-full h-full flex items-center justify-center">
             <Image
               src={item.fileUrl}
-              alt={item.title && item.title !== "." ? item.title : "Business"}
+              alt={item.title && item.title !== "." && item.title !== "," ? item.title : "Business"}
               fill
-              sizes="(max-width: 768px) 100vw, 33vw"
+              sizes={compact ? "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" : "(max-width: 768px) 100vw, 33vw"}
               className="object-contain group-hover:scale-105 transition-transform duration-200"
             />
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center text-muted">
-            <ImageIcon size={36} />
-            <span className="text-[11px] mt-1 font-mono">Image</span>
+            <ImageIcon size={compact ? 30 : 36} />
+            <span className="text-[10px] mt-1 font-mono">Image</span>
           </div>
         )}
 
@@ -143,7 +151,7 @@ export function BusinessCard({
               onPreviewPdf({
                 url: item.fileUrl,
                 title:
-                  item.title && item.title !== "."
+                  item.title && item.title !== "." && item.title !== ","
                     ? item.title
                     : lang === "ne"
                     ? "कागजात"
@@ -154,30 +162,30 @@ export function BusinessCard({
               onPreviewImage({ url: imgUrl, title: item.title });
             }
           }}
-          className="absolute top-3 right-3 p-1.5 rounded-chip bg-surface/90 hover:bg-surface text-fg border border-line shadow-xs transition-colors cursor-pointer"
+          className={`absolute ${compact ? "top-2 right-2 p-1.5" : "top-3 right-3 p-1.5"} rounded-chip bg-surface/90 hover:bg-surface text-fg border border-line shadow-xs transition-colors cursor-pointer`}
           title={lang === "ne" ? "विस्तृत हेर्नुहोस्" : "Expand"}
         >
-          <ArrowsOut size={15} />
+          <ArrowsOut size={compact ? 13 : 15} />
         </button>
       </div>
 
       {/* Body Info */}
       {hasBody && (
-        <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+        <div className={`${compact ? "p-3 sm:p-3.5 space-y-2" : "p-4 sm:p-5 space-y-3"} flex-1 flex flex-col justify-between`}>
           {(item.description || item.contactPhone || item.contactEmail) && (
-            <div className="space-y-2">
+            <div className={compact ? "space-y-1.5" : "space-y-2"}>
               {item.description && (
-                <p className="text-xs leading-relaxed text-muted line-clamp-3">
+                <p className={`${compact ? "text-[11px] line-clamp-2" : "text-xs line-clamp-3"} leading-relaxed text-muted`}>
                   {item.description}
                 </p>
               )}
 
               {/* Contact metadata */}
               {(item.contactPhone || item.contactEmail) && (
-                <div className="pt-2 space-y-1.5 text-xs text-muted border-t border-line/60">
+                <div className={`${compact ? "pt-1.5 space-y-1 text-[11px]" : "pt-2 space-y-1.5 text-xs"} text-muted border-t border-line/60`}>
                   {item.contactPhone && (
-                    <div className="flex items-center gap-2 font-mono text-fg">
-                      <Phone size={14} className="text-accent flex-shrink-0" />
+                    <div className="flex items-center gap-1.5 font-mono text-fg">
+                      <Phone size={compact ? 12 : 14} className="text-accent flex-shrink-0" />
                       <a
                         href={`tel:${item.contactPhone}`}
                         className="hover:text-accent transition-colors"
@@ -187,8 +195,8 @@ export function BusinessCard({
                     </div>
                   )}
                   {item.contactEmail && (
-                    <div className="flex items-center gap-2 font-mono">
-                      <EnvelopeSimple size={14} className="text-accent flex-shrink-0" />
+                    <div className="flex items-center gap-1.5 font-mono">
+                      <EnvelopeSimple size={compact ? 12 : 14} className="text-accent flex-shrink-0" />
                       <a
                         href={`mailto:${item.contactEmail}`}
                         className="hover:text-accent transition-colors truncate"
@@ -204,7 +212,7 @@ export function BusinessCard({
 
           {/* Action Links */}
           {(isPdf || isDrive) && (
-            <div className="pt-3 border-t border-line flex items-center gap-2">
+            <div className={`${compact ? "pt-2 gap-1.5" : "pt-3 gap-2"} border-t border-line flex items-center`}>
               {isPdf && (
                 <>
                   <button
@@ -213,16 +221,16 @@ export function BusinessCard({
                       onPreviewPdf({
                         url: item.fileUrl,
                         title:
-                          item.title && item.title !== "."
+                          item.title && item.title !== "." && item.title !== ","
                             ? item.title
                             : lang === "ne"
                             ? "कागजात"
                             : "Document",
                       })
                     }
-                    className="flex-1 py-2 px-3 rounded-control text-xs font-semibold flex items-center justify-center gap-1.5 bg-tint hover:bg-accent-soft text-accent transition-colors cursor-pointer"
+                    className={`flex-1 ${compact ? "py-1.5 px-2 text-[11px]" : "py-2 px-3 text-xs"} rounded-control font-semibold flex items-center justify-center gap-1 bg-tint hover:bg-accent-soft text-accent transition-colors cursor-pointer`}
                   >
-                    <Eye size={15} />
+                    <Eye size={compact ? 13 : 15} />
                     <span>{lang === "ne" ? "PDF हेर्नुहोस्" : "View PDF"}</span>
                   </button>
                   <a
@@ -233,10 +241,10 @@ export function BusinessCard({
                     }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="py-2 px-3 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-e1"
+                    className={`${compact ? "py-1.5 px-2 text-[11px]" : "py-2 px-3 text-xs"} rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent font-semibold flex items-center justify-center gap-1 transition-colors shadow-e1`}
                     title={lang === "ne" ? "डाउनलोड" : "Download"}
                   >
-                    <Download size={15} />
+                    <Download size={compact ? 13 : 15} />
                   </a>
                 </>
               )}
@@ -246,12 +254,12 @@ export function BusinessCard({
                   href={getGoogleDriveViewUrl(item.fileUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`p-2 rounded-control border border-line bg-surface hover:bg-tint text-muted hover:text-fg transition-colors ${
-                    !isPdf ? "w-full justify-center flex items-center gap-1.5 text-xs font-medium" : ""
+                  className={`${compact ? "p-1.5 text-[11px]" : "p-2 text-xs"} rounded-control border border-line bg-surface hover:bg-tint text-muted hover:text-fg transition-colors ${
+                    !isPdf ? "w-full justify-center flex items-center gap-1.5 font-medium" : ""
                   }`}
                   title={lang === "ne" ? "गुगल ड्राइभमा खोल्नुहोस्" : "Open in Google Drive"}
                 >
-                  <ArrowSquareOut size={16} />
+                  <ArrowSquareOut size={compact ? 14 : 16} />
                   {!isPdf && (
                     <span>
                       {lang === "ne" ? "गुगल ड्राइभमा खोल्नुहोस्" : "Open in Google Drive"}

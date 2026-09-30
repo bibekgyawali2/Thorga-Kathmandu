@@ -15,6 +15,7 @@ import {
   BrandingSettings,
   ContactSettings,
   BusinessItem,
+  ContentPage,
   subscribeBusinesses,
   getStoredBusinessesSnapshot,
   getServerBusinessesSnapshot,
@@ -240,6 +241,9 @@ export default function MainPortal() {
     getServerGalleryAlbumsSnapshot
   );
   useRemoteData<GalleryAlbum[]>("/api/gallery/albums", saveStoredGalleryAlbums);
+  const [contentPages, setContentPages] = useState<ContentPage[]>([]);
+  useRemoteData<ContentPage[]>("/api/content-pages", setContentPages);
+  const organisationPage = contentPages.find((p) => p.slug === "organisation");
 
   const [activePdfPreview, setActivePdfPreview] = useState<Publication | null>(null);
   const [activeBusinessPdf, setActiveBusinessPdf] = useState<{ url: string; title: string } | null>(null);
@@ -368,7 +372,7 @@ export default function MainPortal() {
     ...events.filter((e) => e.status === "completed"),
     ...events.filter((e) => e.status === "upcoming"),
   ].slice(0, 2);
-  const businessesShowcase = businesses.slice(0, 3);
+  const businessesShowcase = businesses.slice(0, 8);
   const galleryShowcase = gallery.slice(0, 3);
 
   const heroSlides: HeroSlide[] = [
@@ -402,12 +406,13 @@ export default function MainPortal() {
       <SiteHeader lang={lang} setLang={setLang} />
       <DataStatus error={membersRemote.error} refetch={membersRemote.refetch} lang={lang} />
 
-      {/* SECTION 1: HERO CAROUSEL (full bleed, institutional portal style) */}
-      <HeroCarousel slides={heroSlides} lang={lang} />
-
-      <h1 className="sr-only">
-        {lang === "ne" ? heroContent.titleNe : heroContent.titleEn}
-      </h1>
+      {/* SECTION 1: HERO CAROUSEL (full bleed, institutional portal style with संस्था परिचय intro) */}
+      <HeroCarousel
+        slides={heroSlides}
+        lang={lang}
+        heroContent={heroContent}
+        organisationPage={organisationPage}
+      />
 
       {/* SECTION 2: OBJECTIVES & CORE PILLARS */}
       <section id="about" className="py-20 sm:py-28 rule-soft bg-ground">
@@ -812,12 +817,13 @@ export default function MainPortal() {
             </div>
           ) : (
             <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
                 {businessesShowcase.map((item) => (
                   <BusinessCard
                     key={item.id}
                     item={item}
                     lang={lang}
+                    compact
                     onPreviewPdf={setActiveBusinessPdf}
                     onPreviewImage={setZoomedEventImageUrl}
                   />
