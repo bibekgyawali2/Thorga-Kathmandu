@@ -56,6 +56,7 @@ import { useRemoteData } from "@/hooks/useRemoteData";
 import { documentUrl } from "@/lib/documentUrl";
 import { PdfModalViewer } from "@/components/PdfModalViewer";
 import { DataStatus } from "@/components/DataStatus";
+import { EventRelatedGallery } from "@/components/EventRelatedGallery";
 import { HeroCarousel, type HeroSlide } from "@/components/HeroCarousel";
 import { BusinessCard } from "@/components/BusinessCard";
 import {
@@ -1291,141 +1292,13 @@ export default function MainPortal() {
                 )}
 
                 {/* RELATED GALLERY SECTION */}
-                {(() => {
-                  const linkedItem = selectedEventModal.galleryId
-                    ? gallery.find((g) => g.id === selectedEventModal.galleryId)
-                    : null;
-                  const linkedAlbum = selectedEventModal.galleryId
-                    ? albums.find((a) => a.id === selectedEventModal.galleryId)
-                    : null;
-
-                  if (!linkedItem && !linkedAlbum) return null;
-
-                  return (
-                    <div className="space-y-3 pt-4 border-t border-line">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
-                          <Images size={16} className="text-accent" />
-                          <span>{lang === "ne" ? "सम्बन्धित ग्यालरी" : "Related Gallery"}</span>
-                        </h4>
-                        <Link
-                          href="/gallery"
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
-                        >
-                          <span>{lang === "ne" ? "ग्यालरीमा हेर्नुहोस्" : "View in Gallery"}</span>
-                          <ArrowSquareOut size={13} />
-                        </Link>
-                      </div>
-
-                      {linkedItem && (
-                        <div className="p-3.5 rounded-card bg-ground border border-line flex flex-col sm:flex-row items-center gap-4">
-                          {isValidImageSrc(linkedItem.imageUrl) && (
-                            <div
-                              onClick={() =>
-                                setZoomedEventImageUrl({
-                                  url: linkedItem.imageUrl,
-                                  title: lang === "ne" ? linkedItem.titleNe : linkedItem.titleEn,
-                                })
-                              }
-                              className="relative w-full sm:w-44 h-32 rounded-control overflow-hidden bg-tint flex-shrink-0 cursor-zoom-in group/gimg border border-line"
-                            >
-                              <Image
-                                src={linkedItem.imageUrl}
-                                alt={lang === "ne" ? linkedItem.titleNe : linkedItem.titleEn}
-                                fill
-                                sizes="(max-width: 640px) 100vw, 176px"
-                                className="object-cover group-hover/gimg:scale-105 transition-transform duration-200"
-                              />
-                              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/gimg:opacity-100 transition-opacity flex items-center justify-center text-white">
-                                <ArrowsOut size={20} />
-                              </div>
-                            </div>
-                          )}
-                          <div className="flex-1 space-y-1.5 min-w-0 w-full">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-chip bg-accent-soft text-accent">
-                                {lang === "ne" ? linkedItem.categoryNe : linkedItem.categoryEn}
-                              </span>
-                              <span className="text-[11px] text-muted font-mono">
-                                {lang === "ne" ? linkedItem.dateNe : linkedItem.dateEn}
-                              </span>
-                            </div>
-                            <div className="text-sm font-bold text-fg truncate">
-                              {lang === "ne" ? linkedItem.titleNe : linkedItem.titleEn}
-                            </div>
-                            <p className="text-xs text-muted">
-                              {lang === "ne"
-                                ? "यस गतिविधिसँग सम्बन्धित तस्बिर ग्यालरीमा उपलब्ध छ। पूर्ण आकारमा हेर्न तस्बिरमा थिच्नुहोस्।"
-                                : "Photo associated with this event is available in the gallery. Click image to expand."}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {linkedAlbum && (
-                        <div className="p-3.5 rounded-card bg-ground border border-line space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-0.5 min-w-0">
-                              <div className="text-sm font-bold text-fg truncate">
-                                {lang === "ne" ? linkedAlbum.titleNe : linkedAlbum.titleEn}
-                              </div>
-                              {Boolean(linkedAlbum.descriptionNe || linkedAlbum.descriptionEn) && (
-                                <p className="text-xs text-muted line-clamp-1">
-                                  {lang === "ne"
-                                    ? linkedAlbum.descriptionNe || linkedAlbum.descriptionEn
-                                    : linkedAlbum.descriptionEn || linkedAlbum.descriptionNe}
-                                </p>
-                              )}
-                            </div>
-                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-chip bg-accent-soft text-accent flex-shrink-0">
-                              {linkedAlbum.images?.length || 0} {lang === "ne" ? "तस्बिरहरू" : "photos"}
-                            </span>
-                          </div>
-
-                          {linkedAlbum.images && linkedAlbum.images.length > 0 && (
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                              {linkedAlbum.images.slice(0, 6).map((img, idx) => (
-                                <div
-                                  key={img.id || idx}
-                                  onClick={() =>
-                                    setZoomedEventImageUrl({
-                                      url: img.imageUrl,
-                                      title:
-                                        lang === "ne"
-                                          ? img.captionNe || linkedAlbum.titleNe
-                                          : img.captionEn || linkedAlbum.titleEn,
-                                    })
-                                  }
-                                  className="relative aspect-square rounded-control overflow-hidden bg-tint cursor-zoom-in group/aimg border border-line"
-                                >
-                                  <Image
-                                    src={img.imageUrl}
-                                    alt={
-                                      lang === "ne"
-                                        ? img.captionNe || linkedAlbum.titleNe
-                                        : img.captionEn || linkedAlbum.titleEn
-                                    }
-                                    fill
-                                    sizes="120px"
-                                    className="object-cover group-hover/aimg:scale-105 transition-transform duration-200"
-                                  />
-                                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover/aimg:opacity-100 transition-opacity flex items-center justify-center text-white">
-                                    <ArrowsOut size={16} />
-                                  </div>
-                                  {idx === 5 && linkedAlbum.images.length > 6 && (
-                                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white font-bold text-xs">
-                                      +{linkedAlbum.images.length - 6}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
+                <EventRelatedGallery
+                  galleryId={selectedEventModal.galleryId}
+                  lang={lang}
+                  albums={albums}
+                  gallery={gallery}
+                  onZoomImage={setZoomedEventImageUrl}
+                />
               </div>
 
               <div className="pt-4 border-t border-line flex justify-end">

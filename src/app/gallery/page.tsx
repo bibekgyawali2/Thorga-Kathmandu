@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore, useCallback } from "react";
+import React, { useState, useEffect, useSyncExternalStore, useCallback, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import {
@@ -32,9 +33,10 @@ import { isValidImageSrc } from "@/lib/validation";
 import { useRemoteData } from "@/hooks/useRemoteData";
 import { DataStatus } from "@/components/DataStatus";
 
-export default function GalleryPage() {
+function GalleryContent() {
   const [lang, setLang] = useState<Language>(() => getStoredLanguage());
-  
+  const searchParams = useSearchParams();
+
   const gallery = useSyncExternalStore(
     subscribeGallery,
     getStoredGallerySnapshot,
@@ -50,10 +52,131 @@ export default function GalleryPage() {
   const remoteGallery = useRemoteData<GalleryItem[]>("/api/gallery", saveStoredGallery);
   const remoteAlbums = useRemoteData<GalleryAlbum[]>("/api/gallery/albums", saveStoredGalleryAlbums);
 
-  const [activeTab, setActiveTab] = useState<"albums" | "photos">("photos");
+  const [activeTab, setActiveTab] = useState<"albums" | "photos">(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      if (sp.get("album") || sp.get("albumId") || sp.get("tab") === "albums") {
+        return "albums";
+      }
+    }
+    return "photos";
+  });
   const [selectedAlbum, setSelectedAlbum] = useState<GalleryAlbum | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [activeSinglePhoto, setActiveSinglePhoto] = useState<GalleryItem | null>(null);
+
+  // Sync URL query params with state
+  useEffect(() => {
+    const albumParam = searchParams.get("album") || searchParams.get("albumId");
+    const photoParam = searchParams.get("photo") || searchParams.get("photoId");
+    const tabParam = searchParams.get("tab");
+
+    if (albumParam) {
+      setActiveTab("albums");
+      if (albums.length > 0) {
+        const foundAlbum = albums.find((a) => a.id === albumParam);
+        if (foundAlbum && selectedAlbum?.id !== foundAlbum.id) {
+          setSelectedAlbum(foundAlbum);
+        }
+      }
+    } else if (photoParam) {
+      setActiveTab("photos");
+      if (gallery.length > 0) {
+        const foundPhoto = gallery.find((p) => p.id === photoParam);
+        if (foundPhoto && activeSinglePhoto?.id !== foundPhoto.id) {
+          setActiveSinglePhoto(foundPhoto);
+        }
+      }
+    } else if (tabParam === "albums") {
+      setActiveTab((prev) => (prev === "albums" ? prev : "albums"));
+    } else if (tabParam === "photos") {
+      setActiveTab((prev) => (prev === "photos" ? prev : "photos"));
+    }
+  }, [searchParams, albums, gallery, selectedAlbum?.id, activeSinglePhoto?.id]);
+
+  // Handle browser popstate navigation (Back / Forward buttons)
+  useEffect(() => {
+    const handlePopState = () => {
+      const sp = new URLSearchParams(window.location.search);
+      const albumId = sp.get("album") || sp.get("albumId");
+      const photoId = sp.get("photo") || sp.get("photoId");
+      const tab = sp.get("tab");
+
+      if (albumId) {
+        setActiveTab("albums");
+        const found = albums.find((a) => a.id === albumId);
+        if (found) setSelectedAlbum(found);
+      } else {
+        setSelectedAlbum(null);
+      }
+
+      if (photoId) {
+        setActiveTab("photos");
+        const found = gallery.find((g) => g.id === photoId);
+        if (found) setActiveSinglePhoto(found);
+      } else {
+        setActiveSinglePhoto(null);
+      }
+
+      if (tab === "albums" || tab === "photos") {
+        setActiveTab(tab);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [albums, gallery]);
+
+  const openAlbum = useCallback((album: GalleryAlbum) => {
+    setSelectedAlbum(album);
+    setLightboxIndex(null);
+    if (typeof window !== "undefined") {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set("album", album.id);
+      newUrl.searchParams.delete("albumId");
+      newUrl.searchParams.delete("photo");
+      newUrl.searchParams.delete("photoId");
+      newUrl.searchParams.set("tab", "albums");
+      window.history.pushState(null, "", newUrl.pathname + newUrl.search);
+    }
+  }, []);
+
+  const closeAlbumModal = useCallback(() => {
+    setSelectedAlbum(null);
+    setLightboxIndex(null);
+    if (typeof window !== "undefined") {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("album");
+      newUrl.searchParams.delete("albumId");
+      newUrl.searchParams.set("tab", "albums");
+      window.history.pushState(null, "", newUrl.pathname + newUrl.search);
+    }
+  }, []);
+
+  const openSinglePhoto = useCallback((item: GalleryItem) => {
+    setActiveSinglePhoto(item);
+    if (typeof window !== "undefined") {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set("photo", item.id);
+      newUrl.searchParams.delete("photoId");
+      newUrl.searchParams.delete("album");
+      newUrl.searchParams.delete("albumId");
+      newUrl.searchParams.set("tab", "photos");
+      window.history.pushState(null, "", newUrl.pathname + newUrl.search);
+    }
+  }, []);
+
+  const closeSinglePhoto = useCallback(() => {
+    setActiveSinglePhoto(null);
+    if (typeof window !== "undefined") {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("photo");
+      newUrl.searchParams.delete("photoId");
+      newUrl.searchParams.set("tab", "photos");
+      const searchStr = newUrl.searchParams.toString();
+      window.history.pushState(null, "", newUrl.pathname + (searchStr ? `?${searchStr}` : ""));
+    }
+  }, []);
 
   // Lightbox navigation helpers
   const handlePrevPhoto = useCallback(() => {
@@ -87,6 +210,8 @@ export default function GalleryPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lightboxIndex, handlePrevPhoto, handleNextPhoto]);
+
+  const requestedAlbumId = searchParams.get("album") || searchParams.get("albumId");
 
   return (
     <div className="min-h-screen bg-ground text-fg font-sans flex flex-col justify-between selection:bg-accent selection:text-on-accent">
@@ -132,7 +257,7 @@ export default function GalleryPage() {
                 type="button"
                 onClick={() => {
                   setActiveTab("photos");
-                  setSelectedAlbum(null);
+                  closeAlbumModal();
                 }}
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-chip text-xs font-bold transition-all ${
                   activeTab === "photos"
@@ -151,7 +276,7 @@ export default function GalleryPage() {
                 type="button"
                 onClick={() => {
                   setActiveTab("albums");
-                  setSelectedAlbum(null);
+                  closeAlbumModal();
                 }}
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-chip text-xs font-bold transition-all ${
                   activeTab === "albums"
@@ -169,6 +294,33 @@ export default function GalleryPage() {
           </div>
         </div>
 
+        {/* Loading / notice if specific album was requested via URL */}
+        {requestedAlbumId && !selectedAlbum && (
+          <div>
+            {remoteAlbums.loading ? (
+              <div className="p-4 rounded-card bg-surface border border-line flex items-center gap-3 text-xs text-muted">
+                <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                <span>{lang === "ne" ? "अनुरोध गरिएको एल्बम लोड हुँदैछ..." : "Loading requested album..."}</span>
+              </div>
+            ) : albums.length > 0 && !albums.some((a) => a.id === requestedAlbumId) ? (
+              <div className="p-4 rounded-card bg-surface border border-line flex items-center justify-between gap-4 text-xs">
+                <span className="text-muted">
+                  {lang === "ne"
+                    ? "खोजी गरिएको एल्बम फेला परेन। तल उपलब्ध एल्बमहरू हेर्न सक्नुहुन्छ:"
+                    : "Requested album could not be found. You can browse the available albums below:"}
+                </span>
+                <button
+                  type="button"
+                  onClick={closeAlbumModal}
+                  className="text-accent font-bold hover:underline shrink-0"
+                >
+                  {lang === "ne" ? "सबै एल्बमहरू" : "View All"}
+                </button>
+              </div>
+            ) : null}
+          </div>
+        )}
+
         {/* TAB 1: SINGLE PHOTOS VIEW */}
         {activeTab === "photos" && (
           <div>
@@ -184,7 +336,7 @@ export default function GalleryPage() {
                 {gallery.map((item) => (
                   <article
                     key={item.id}
-                    onClick={() => setActiveSinglePhoto(item)}
+                    onClick={() => openSinglePhoto(item)}
                     className="relative h-72 rounded-card overflow-hidden border border-line bg-black/90 cursor-pointer group shadow-e1 hover:border-accent transition-all flex items-center justify-center p-1"
                   >
                     {isValidImageSrc(item.imageUrl) ? (
@@ -249,7 +401,7 @@ export default function GalleryPage() {
                   return (
                     <article
                       key={album.id}
-                      onClick={() => setSelectedAlbum(album)}
+                      onClick={() => openAlbum(album)}
                       className="group rounded-card overflow-hidden border border-line bg-surface cursor-pointer shadow-e1 hover:shadow-e2 hover:border-accent transition-all flex flex-col"
                     >
                       {/* Album Cover */}
@@ -315,10 +467,7 @@ export default function GalleryPage() {
       {/* ALBUM DETAIL MODAL / GRID */}
       {selectedAlbum && (
         <div
-          onClick={() => {
-            setSelectedAlbum(null);
-            setLightboxIndex(null);
-          }}
+          onClick={closeAlbumModal}
           className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
         >
           <div
@@ -354,8 +503,8 @@ export default function GalleryPage() {
 
               <button
                 type="button"
-                onClick={() => setSelectedAlbum(null)}
-                className="p-2 rounded-chip bg-tint text-muted hover:text-fg hover:bg-line transition-colors flex-shrink-0"
+                onClick={closeAlbumModal}
+                className="p-2 rounded-chip bg-tint text-muted hover:text-fg hover:bg-line transition-colors flex-shrink-0 cursor-pointer"
                 aria-label="Close"
               >
                 <X size={20} />
@@ -441,16 +590,16 @@ export default function GalleryPage() {
             <button
               type="button"
               onClick={() => setLightboxIndex(null)}
-              className="p-2 rounded-chip bg-white/10 text-white hover:bg-white/20 transition-colors"
+              className="p-2 rounded-chip bg-white/10 text-white hover:bg-white/20 transition-colors cursor-pointer"
               aria-label="Close Lightbox"
             >
               <X size={22} />
             </button>
           </div>
 
-          {/* Central Image with Prev / Next Buttons */}
+          {/* Main Photo Area with Navigation */}
           <div
-            className="relative flex-1 w-full flex items-center justify-center p-2 sm:p-6"
+            className="relative flex-1 w-full flex items-center justify-center p-2 sm:p-4"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Prev Button */}
@@ -458,22 +607,23 @@ export default function GalleryPage() {
               <button
                 type="button"
                 onClick={handlePrevPhoto}
-                className="absolute left-2 sm:left-6 z-20 p-2.5 sm:p-3 rounded-full bg-black/60 text-white hover:bg-black/90 hover:scale-105 border border-white/20 transition-all"
+                className="absolute left-3 sm:left-6 z-10 p-3 rounded-full bg-black/60 text-white hover:bg-black/90 transition-all border border-white/20 cursor-pointer"
                 aria-label="Previous Photo"
               >
                 <CaretLeft size={24} weight="bold" />
               </button>
             )}
 
-            {/* Photo Container */}
-            <div className="relative w-full h-[65vh] sm:h-[72vh] flex items-center justify-center">
-              {isValidImageSrc(selectedAlbum.images[lightboxIndex].imageUrl) ? (
+            {/* Photo */}
+            <div className="relative w-full h-[70vh] sm:h-[75vh] flex items-center justify-center">
+              {isValidImageSrc(selectedAlbum.images[lightboxIndex]?.imageUrl) ? (
                 <Image
                   src={selectedAlbum.images[lightboxIndex].imageUrl}
                   alt={
-                    selectedAlbum.images[lightboxIndex].captionEn ||
-                    selectedAlbum.images[lightboxIndex].captionNe ||
-                    "Album Photo"
+                    (lang === "ne"
+                      ? selectedAlbum.images[lightboxIndex].captionNe
+                      : selectedAlbum.images[lightboxIndex].captionEn) ||
+                    `Photo ${lightboxIndex + 1}`
                   }
                   fill
                   sizes="100vw"
@@ -483,7 +633,7 @@ export default function GalleryPage() {
               ) : (
                 <div className="text-white/60 flex flex-col items-center gap-2">
                   <ImageIcon size={48} weight="duotone" />
-                  <span className="text-xs font-mono">No Image Preview</span>
+                  <span className="text-xs font-mono">Image Not Found</span>
                 </div>
               )}
             </div>
@@ -493,7 +643,7 @@ export default function GalleryPage() {
               <button
                 type="button"
                 onClick={handleNextPhoto}
-                className="absolute right-2 sm:right-6 z-20 p-2.5 sm:p-3 rounded-full bg-black/60 text-white hover:bg-black/90 hover:scale-105 border border-white/20 transition-all"
+                className="absolute right-3 sm:right-6 z-10 p-3 rounded-full bg-black/60 text-white hover:bg-black/90 transition-all border border-white/20 cursor-pointer"
                 aria-label="Next Photo"
               >
                 <CaretRight size={24} weight="bold" />
@@ -537,7 +687,7 @@ export default function GalleryPage() {
       {/* SINGLE PHOTO LIGHTBOX MODAL */}
       {activeSinglePhoto && (
         <div
-          onClick={() => setActiveSinglePhoto(null)}
+          onClick={closeSinglePhoto}
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
         >
           <div
@@ -546,8 +696,8 @@ export default function GalleryPage() {
           >
             <button
               type="button"
-              onClick={() => setActiveSinglePhoto(null)}
-              className="absolute top-4 right-4 z-10 p-2 rounded-chip bg-black/60 text-white hover:bg-black transition-colors"
+              onClick={closeSinglePhoto}
+              className="absolute top-4 right-4 z-10 p-2 rounded-chip bg-black/60 text-white hover:bg-black transition-colors cursor-pointer"
             >
               <X size={20} />
             </button>
@@ -590,5 +740,19 @@ export default function GalleryPage() {
 
       <SiteFooter lang={lang} />
     </div>
+  );
+}
+
+export default function GalleryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-ground text-fg flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
+        </div>
+      }
+    >
+      <GalleryContent />
+    </Suspense>
   );
 }
