@@ -15,7 +15,8 @@ export type AdminTab =
   | "branding"
   | "about"
   | "publication-pages"
-  | "businesses";
+  | "businesses"
+  | "member-special";
 
 export type CommitteeSection =
   | "current"

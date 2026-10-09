@@ -19,11 +19,16 @@ import type {
   ContentPage,
   PageDocument,
   BusinessItem,
+  MemberSpecialUser,
+  MemberSpecialRecord,
+  MemberSpecialFinance,
 } from "@/data/mockData";
 import {
   initialHeroContent,
   initialBrandingSettings,
   initialContactSettings,
+  initialMemberSpecialRecords,
+  initialMemberSpecialFinances,
 } from "@/data/mockData";
 
 let pool: Pool | null = null;
@@ -1852,4 +1857,445 @@ export async function deleteBusinessItem(id: string): Promise<void> {
     console.warn("[deleteBusinessItem] supabase delete failed:", err);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Member Special: Records (अभिलेख)
+// ---------------------------------------------------------------------------
+
+function mapMemberRecord(row: Record<string, unknown>): MemberSpecialRecord {
+  return {
+    id: String(row.id),
+    title: String(row.title),
+    driveUrl: String(row.drive_url),
+    category: (row.category as string) ?? "साधारण अभिलेख",
+    dateBs: (row.date_bs as string) ?? "",
+    description: (row.description as string) ?? "",
+    displayOrder: Number(row.display_order ?? 0),
+    createdAt: row.created_at as string | undefined,
+    updatedAt: row.updated_at as string | undefined,
+  };
+}
+
+export async function fetchMemberSpecialRecords(): Promise<MemberSpecialRecord[]> {
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        "SELECT id, title, drive_url, category, date_bs, description, display_order, created_at, updated_at FROM public.member_special_records ORDER BY display_order ASC, created_at DESC"
+      );
+      if (res.rows && res.rows.length > 0) {
+        return res.rows.map(mapMemberRecord);
+      }
+    } catch (err) {
+      console.warn("[fetchMemberSpecialRecords] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("member_special_records")
+      .select("*")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      return data.map(mapMemberRecord);
+    }
+  } catch (err) {
+    console.warn("[fetchMemberSpecialRecords] supabase query failed:", err);
+  }
+
+  return initialMemberSpecialRecords;
+}
+
+export async function saveMemberSpecialRecord(
+  item: MemberSpecialRecord
+): Promise<MemberSpecialRecord> {
+  const isNew = !item.id || item.id.startsWith("rec-");
+  const finalId = isNew ? crypto.randomUUID() : item.id;
+  const pg = getPgPool();
+
+  if (pg) {
+    try {
+      const res = await pg.query(
+        `INSERT INTO public.member_special_records (
+          id, title, drive_url, category, date_bs, description, display_order, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          title = EXCLUDED.title,
+          drive_url = EXCLUDED.drive_url,
+          category = EXCLUDED.category,
+          date_bs = EXCLUDED.date_bs,
+          description = EXCLUDED.description,
+          display_order = EXCLUDED.display_order,
+          updated_at = NOW()
+        RETURNING *`,
+        [
+          finalId,
+          item.title,
+          item.driveUrl,
+          item.category ?? "साधारण अभिलेख",
+          item.dateBs ?? "",
+          item.description ?? "",
+          item.displayOrder ?? 0,
+        ]
+      );
+      if (res.rows && res.rows.length > 0) return mapMemberRecord(res.rows[0]);
+    } catch (err) {
+      console.warn("[saveMemberSpecialRecord] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("member_special_records")
+      .upsert({
+        id: finalId,
+        title: item.title,
+        drive_url: item.driveUrl,
+        category: item.category ?? "साधारण अभिलेख",
+        date_bs: item.dateBs ?? "",
+        description: item.description ?? "",
+        display_order: item.displayOrder ?? 0,
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (!error && data) return mapMemberRecord(data);
+  } catch (err) {
+    console.warn("[saveMemberSpecialRecord] supabase upsert failed:", err);
+  }
+
+  throw new Error("Could not save member special record.");
+}
+
+export async function deleteMemberSpecialRecord(id: string): Promise<void> {
+  if (!id) return;
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      await pg.query("DELETE FROM public.member_special_records WHERE id::text = $1", [id]);
+      return;
+    } catch (err) {
+      console.warn("[deleteMemberSpecialRecord] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    await supabase.from("member_special_records").delete().eq("id", id);
+  } catch (err) {
+    console.warn("[deleteMemberSpecialRecord] supabase delete failed:", err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Member Special: Finances (आम्दानी / खर्च)
+// ---------------------------------------------------------------------------
+
+function mapMemberFinance(row: Record<string, unknown>): MemberSpecialFinance {
+  return {
+    id: String(row.id),
+    title: String(row.title),
+    type: row.type as "income" | "expense",
+    amount: Number(row.amount ?? 0),
+    fiscalYear: (row.fiscal_year as string) ?? "",
+    dateBs: (row.date_bs as string) ?? "",
+    category: (row.category as string) ?? "विविध",
+    documentUrl: (row.document_url as string) ?? "",
+    remarks: (row.remarks as string) ?? "",
+    displayOrder: Number(row.display_order ?? 0),
+    createdAt: row.created_at as string | undefined,
+    updatedAt: row.updated_at as string | undefined,
+  };
+}
+
+export async function fetchMemberSpecialFinances(): Promise<MemberSpecialFinance[]> {
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        "SELECT id, title, type, amount, fiscal_year, date_bs, category, document_url, remarks, display_order, created_at, updated_at FROM public.member_special_finances ORDER BY fiscal_year DESC, date_bs DESC, created_at DESC"
+      );
+      if (res.rows && res.rows.length > 0) {
+        return res.rows.map(mapMemberFinance);
+      }
+    } catch (err) {
+      console.warn("[fetchMemberSpecialFinances] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("member_special_finances")
+      .select("*")
+      .order("fiscal_year", { ascending: false })
+      .order("date_bs", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      return data.map(mapMemberFinance);
+    }
+  } catch (err) {
+    console.warn("[fetchMemberSpecialFinances] supabase query failed:", err);
+  }
+
+  return initialMemberSpecialFinances;
+}
+
+export async function saveMemberSpecialFinance(
+  item: MemberSpecialFinance
+): Promise<MemberSpecialFinance> {
+  const isNew = !item.id || item.id.startsWith("fin-");
+  const finalId = isNew ? crypto.randomUUID() : item.id;
+  const pg = getPgPool();
+
+  if (pg) {
+    try {
+      const res = await pg.query(
+        `INSERT INTO public.member_special_finances (
+          id, title, type, amount, fiscal_year, date_bs, category, document_url, remarks, display_order, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          title = EXCLUDED.title,
+          type = EXCLUDED.type,
+          amount = EXCLUDED.amount,
+          fiscal_year = EXCLUDED.fiscal_year,
+          date_bs = EXCLUDED.date_bs,
+          category = EXCLUDED.category,
+          document_url = EXCLUDED.document_url,
+          remarks = EXCLUDED.remarks,
+          display_order = EXCLUDED.display_order,
+          updated_at = NOW()
+        RETURNING *`,
+        [
+          finalId,
+          item.title,
+          item.type,
+          item.amount,
+          item.fiscalYear ?? "",
+          item.dateBs ?? "",
+          item.category ?? "विविध",
+          item.documentUrl ?? "",
+          item.remarks ?? "",
+          item.displayOrder ?? 0,
+        ]
+      );
+      if (res.rows && res.rows.length > 0) return mapMemberFinance(res.rows[0]);
+    } catch (err) {
+      console.warn("[saveMemberSpecialFinance] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("member_special_finances")
+      .upsert({
+        id: finalId,
+        title: item.title,
+        type: item.type,
+        amount: item.amount,
+        fiscal_year: item.fiscalYear ?? "",
+        date_bs: item.dateBs ?? "",
+        category: item.category ?? "विविध",
+        document_url: item.documentUrl ?? "",
+        remarks: item.remarks ?? "",
+        display_order: item.displayOrder ?? 0,
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (!error && data) return mapMemberFinance(data);
+  } catch (err) {
+    console.warn("[saveMemberSpecialFinance] supabase upsert failed:", err);
+  }
+
+  throw new Error("Could not save member special financial record.");
+}
+
+export async function deleteMemberSpecialFinance(id: string): Promise<void> {
+  if (!id) return;
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      await pg.query("DELETE FROM public.member_special_finances WHERE id::text = $1", [id]);
+      return;
+    } catch (err) {
+      console.warn("[deleteMemberSpecialFinance] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    await supabase.from("member_special_finances").delete().eq("id", id);
+  } catch (err) {
+    console.warn("[deleteMemberSpecialFinance] supabase delete failed:", err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Member Special: Users (सदस्य पहुँच खाता)
+// ---------------------------------------------------------------------------
+
+function mapMemberUser(row: Record<string, unknown>): MemberSpecialUser {
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    username: String(row.username),
+    password: row.password as string | undefined,
+    phone: (row.phone as string) ?? "",
+    notes: (row.notes as string) ?? "",
+    isActive: Boolean(row.is_active),
+    createdAt: row.created_at as string | undefined,
+    updatedAt: row.updated_at as string | undefined,
+    lastLoginAt: row.last_login_at as string | undefined,
+    hasPassword: Boolean(row.password),
+  };
+}
+
+export async function fetchMemberSpecialUsers(): Promise<MemberSpecialUser[]> {
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        "SELECT id, name, username, password, phone, notes, is_active, created_at, updated_at, last_login_at FROM public.member_special_users ORDER BY created_at DESC"
+      );
+      if (res.rows) {
+        return res.rows.map(mapMemberUser);
+      }
+    } catch (err) {
+      console.warn("[fetchMemberSpecialUsers] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("member_special_users")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      return data.map(mapMemberUser);
+    }
+  } catch (err) {
+    console.warn("[fetchMemberSpecialUsers] supabase query failed:", err);
+  }
+
+  return [];
+}
+
+export async function saveMemberSpecialUser(
+  user: MemberSpecialUser
+): Promise<MemberSpecialUser> {
+  const isNew = !user.id || user.id.startsWith("muser-");
+  const finalId = isNew ? crypto.randomUUID() : user.id;
+  const pg = getPgPool();
+
+  if (pg) {
+    try {
+      const res = await pg.query(
+        `INSERT INTO public.member_special_users (
+          id, name, username, password, phone, notes, is_active, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
+          username = EXCLUDED.username,
+          password = CASE WHEN EXCLUDED.password != '' THEN EXCLUDED.password ELSE public.member_special_users.password END,
+          phone = EXCLUDED.phone,
+          notes = EXCLUDED.notes,
+          is_active = EXCLUDED.is_active,
+          updated_at = NOW()
+        RETURNING *`,
+        [
+          finalId,
+          user.name.trim(),
+          user.username.trim().toLowerCase(),
+          user.password || "",
+          user.phone ?? "",
+          user.notes ?? "",
+          user.isActive !== false,
+        ]
+      );
+      if (res.rows && res.rows.length > 0) return mapMemberUser(res.rows[0]);
+    } catch (err) {
+      console.warn("[saveMemberSpecialUser] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const payload: Record<string, unknown> = {
+      id: finalId,
+      name: user.name.trim(),
+      username: user.username.trim().toLowerCase(),
+      phone: user.phone ?? "",
+      notes: user.notes ?? "",
+      is_active: user.isActive !== false,
+      updated_at: new Date().toISOString(),
+    };
+    if (user.password) {
+      payload.password = user.password;
+    }
+    const { data, error } = await supabase
+      .from("member_special_users")
+      .upsert(payload)
+      .select()
+      .single();
+
+    if (!error && data) return mapMemberUser(data);
+  } catch (err) {
+    console.warn("[saveMemberSpecialUser] supabase upsert failed:", err);
+  }
+
+  throw new Error("Could not save member special user account.");
+}
+
+export async function deleteMemberSpecialUser(id: string): Promise<void> {
+  if (!id) return;
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      await pg.query("DELETE FROM public.member_special_users WHERE id::text = $1", [id]);
+      return;
+    } catch (err) {
+      console.warn("[deleteMemberSpecialUser] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    await supabase.from("member_special_users").delete().eq("id", id);
+  } catch (err) {
+    console.warn("[deleteMemberSpecialUser] supabase delete failed:", err);
+  }
+}
+
+export async function updateMemberSpecialLastLogin(id: string): Promise<void> {
+  if (!id) return;
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      await pg.query(
+        "UPDATE public.member_special_users SET last_login_at = NOW() WHERE id::text = $1",
+        [id]
+      );
+      return;
+    } catch {}
+  }
+  try {
+    const supabase = makeAdminClient();
+    await supabase
+      .from("member_special_users")
+      .update({ last_login_at: new Date().toISOString() })
+      .eq("id", id);
+  } catch {}
+}
+
 

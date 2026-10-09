@@ -58,8 +58,10 @@ export function AdminHeader({
         return t.inquiries;
       case "settings":
         return t.settings;
-      case "branding":
-        return t.branding;
+      case "businesses":
+        return t.businesses;
+      case "member-special":
+        return t.memberSpecial;
       case "access":
         return t.adminAccess;
       default:

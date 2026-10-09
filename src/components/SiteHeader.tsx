@@ -68,6 +68,7 @@ export const NAV_LINKS: NavLink[] = [
   { href: "/events", ne: "गतिविधिहरू", en: "Activities" },
   { href: "/business", ne: "पेशा तथा व्यवसाय", en: "Businesses" },
   { href: "/gallery", ne: "तस्बिरहरू", en: "Gallery" },
+  { href: "/sadashya-bisesh", ne: "सदस्य विशेष", en: "Sadashya Bisesh" },
   { href: "/#contact", ne: "सम्पर्क", en: "Contact" },
 ];
 

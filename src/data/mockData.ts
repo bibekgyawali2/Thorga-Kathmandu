@@ -796,3 +796,149 @@ export function saveStoredBusinesses(businesses: BusinessItem[]): void {
     businessSubscribers.forEach((s) => s());
   } catch { }
 }
+
+// ---------------------------------------------------------------------------
+// Member Special (सदस्य विशेष)
+// ---------------------------------------------------------------------------
+
+export interface MemberSpecialUser {
+  id: string;
+  name: string;
+  username: string;
+  password?: string;
+  phone?: string;
+  notes?: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
+  hasPassword?: boolean;
+}
+
+export interface MemberSpecialRecord {
+  id: string;
+  title: string;
+  driveUrl: string;
+  category?: string;
+  dateBs?: string;
+  description?: string;
+  displayOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MemberSpecialFinance {
+  id: string;
+  title: string;
+  type: "income" | "expense";
+  amount: number;
+  fiscalYear?: string;
+  dateBs?: string;
+  category?: string;
+  documentUrl?: string;
+  remarks?: string;
+  displayOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const initialMemberSpecialRecords: MemberSpecialRecord[] = [];
+
+export const initialMemberSpecialFinances: MemberSpecialFinance[] = [];
+
+const MEMBER_RECORDS_STORAGE_KEY = "thorga_member_records_list";
+let memberRecordsSubscribers: Array<() => void> = [];
+let _recordsCacheRaw: string | null = undefined as unknown as string | null;
+let _recordsCache: MemberSpecialRecord[] = initialMemberSpecialRecords;
+
+export function subscribeMemberRecords(callback: () => void) {
+  memberRecordsSubscribers.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === MEMBER_RECORDS_STORAGE_KEY) {
+      _recordsCacheRaw = undefined as unknown as string | null;
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
+  return () => {
+    memberRecordsSubscribers = memberRecordsSubscribers.filter((s) => s !== callback);
+    if (typeof window !== "undefined") window.removeEventListener("storage", handleStorage);
+  };
+}
+
+export function getStoredMemberRecordsSnapshot(): MemberSpecialRecord[] {
+  if (typeof window === "undefined") return initialMemberSpecialRecords;
+  try {
+    const raw = localStorage.getItem(MEMBER_RECORDS_STORAGE_KEY);
+    if (!raw) return initialMemberSpecialRecords;
+    if (raw === _recordsCacheRaw) return _recordsCache;
+    _recordsCacheRaw = raw;
+    _recordsCache = JSON.parse(raw);
+    return _recordsCache;
+  } catch {
+    return initialMemberSpecialRecords;
+  }
+}
+
+export function getServerMemberRecordsSnapshot(): MemberSpecialRecord[] {
+  return initialMemberSpecialRecords;
+}
+
+export function saveStoredMemberRecords(records: MemberSpecialRecord[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(MEMBER_RECORDS_STORAGE_KEY, JSON.stringify(records));
+    _recordsCacheRaw = undefined as unknown as string | null;
+    _recordsCache = records;
+    memberRecordsSubscribers.forEach((s) => s());
+  } catch {}
+}
+
+const MEMBER_FINANCES_STORAGE_KEY = "thorga_member_finances_list";
+let memberFinancesSubscribers: Array<() => void> = [];
+let _financesCacheRaw: string | null = undefined as unknown as string | null;
+let _financesCache: MemberSpecialFinance[] = initialMemberSpecialFinances;
+
+export function subscribeMemberFinances(callback: () => void) {
+  memberFinancesSubscribers.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === MEMBER_FINANCES_STORAGE_KEY) {
+      _financesCacheRaw = undefined as unknown as string | null;
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
+  return () => {
+    memberFinancesSubscribers = memberFinancesSubscribers.filter((s) => s !== callback);
+    if (typeof window !== "undefined") window.removeEventListener("storage", handleStorage);
+  };
+}
+
+export function getStoredMemberFinancesSnapshot(): MemberSpecialFinance[] {
+  if (typeof window === "undefined") return initialMemberSpecialFinances;
+  try {
+    const raw = localStorage.getItem(MEMBER_FINANCES_STORAGE_KEY);
+    if (!raw) return initialMemberSpecialFinances;
+    if (raw === _financesCacheRaw) return _financesCache;
+    _financesCacheRaw = raw;
+    _financesCache = JSON.parse(raw);
+    return _financesCache;
+  } catch {
+    return initialMemberSpecialFinances;
+  }
+}
+
+export function getServerMemberFinancesSnapshot(): MemberSpecialFinance[] {
+  return initialMemberSpecialFinances;
+}
+
+export function saveStoredMemberFinances(finances: MemberSpecialFinance[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(MEMBER_FINANCES_STORAGE_KEY, JSON.stringify(finances));
+    _financesCacheRaw = undefined as unknown as string | null;
+    _financesCache = finances;
+    memberFinancesSubscribers.forEach((s) => s());
+  } catch {}
+}
+

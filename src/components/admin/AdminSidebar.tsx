@@ -22,6 +22,7 @@ import {
   ArrowSquareOut,
   X,
   Storefront,
+  LockKey,
 } from "@phosphor-icons/react";
 
 interface AdminSidebarProps {
@@ -144,6 +145,20 @@ export function AdminSidebar({
           }`}
         >
           {counts.businesses ?? 0}
+        </span>
+      ),
+    },
+    {
+      tab: "member-special",
+      label: t.memberSpecial,
+      icon: <LockKey size={18} />,
+      badge: (
+        <span
+          className={`text-xs font-mono px-2 py-0.5 rounded-chip ${
+            activeTab === "member-special" ? "bg-black/20 text-white" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
+          }`}
+        >
+          {lang === "ne" ? "गोप्य" : "VIP"}
         </span>
       ),
     },

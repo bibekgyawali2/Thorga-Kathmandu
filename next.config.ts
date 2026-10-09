@@ -67,6 +67,11 @@ const nextConfig: NextConfig = {
         destination: "/about/former-office-bearers",
         permanent: true,
       },
+      {
+        source: "/members-special",
+        destination: "/sadashya-bisesh",
+        permanent: false,
+      },
     ];
   },
   async headers() {

@@ -66,6 +66,7 @@ import { InquiriesTab } from "@/components/admin/tabs/InquiriesTab";
 import { SettingsTab } from "@/components/admin/tabs/SettingsTab";
 import { BrandingTab } from "@/components/admin/tabs/BrandingTab";
 import { AccessTab } from "@/components/admin/tabs/AccessTab";
+import { MemberSpecialTab } from "@/components/admin/tabs/MemberSpecialTab";
 
 function subscribeTheme(callback: () => void) {
   if (typeof document === "undefined") return () => {};
@@ -546,6 +547,10 @@ export default function AdminPage() {
               businessesList={businessesList}
               setBusinessesList={setBusinessesList}
             />
+          )}
+
+          {activeTab === "member-special" && (
+            <MemberSpecialTab {...baseTabProps} />
           )}
 
           {activeTab === "publication-pages" && (
