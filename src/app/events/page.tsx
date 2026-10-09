@@ -97,22 +97,20 @@ export default function EventsPage() {
             <button
               type="button"
               onClick={() => setStatusFilter("completed")}
-              className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${
-                statusFilter === "completed"
+              className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${statusFilter === "completed"
                   ? "bg-accent text-on-accent shadow-e1"
                   : "bg-surface border border-line text-fg hover:bg-tint"
-              }`}
+                }`}
             >
               {lang === "ne" ? "सम्पन्न गतिविधिहरू" : "Completed Activities"}
             </button>
             <button
               type="button"
               onClick={() => setStatusFilter("upcoming")}
-              className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${
-                statusFilter === "upcoming"
+              className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${statusFilter === "upcoming"
                   ? "bg-accent text-on-accent shadow-e1"
                   : "bg-surface border border-line text-fg hover:bg-tint"
-              }`}
+                }`}
             >
               {lang === "ne" ? "आगामी गतिविधिहरू" : "Upcoming Activities"}
             </button>
@@ -152,10 +150,10 @@ export default function EventsPage() {
                     event.categoryNe !== "साधारण सभा" &&
                     event.categoryEn !== "General Assembly"
                   ) && (
-                    <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface/95 text-[11px] font-bold text-accent shadow-e1">
-                      {lang === "ne" ? event.categoryNe : event.categoryEn}
-                    </div>
-                  )}
+                      <div className="absolute top-3 left-3 px-2 py-0.5 rounded-chip bg-surface/95 text-[11px] font-bold text-accent shadow-e1">
+                        {lang === "ne" ? event.categoryNe : event.categoryEn}
+                      </div>
+                    )}
                   {Boolean(event.galleryId) && (
                     <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded-chip bg-surface/95 text-[11px] font-bold text-accent shadow-e1 flex items-center gap-1">
                       <Images size={13} weight="fill" />
@@ -270,16 +268,15 @@ export default function EventsPage() {
                     selectedEvent.categoryNe !== "साधारण सभा" &&
                     selectedEvent.categoryEn !== "General Assembly"
                   ) && (
-                    <span className="px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-bold">
-                      {lang === "ne" ? selectedEvent.categoryNe : selectedEvent.categoryEn}
-                    </span>
-                  )}
+                      <span className="px-3 py-1 rounded-chip bg-accent-soft text-accent text-xs font-bold">
+                        {lang === "ne" ? selectedEvent.categoryNe : selectedEvent.categoryEn}
+                      </span>
+                    )}
                   <span
-                    className={`px-3 py-1 rounded-chip text-xs font-bold ${
-                      selectedEvent.status === "upcoming"
+                    className={`px-3 py-1 rounded-chip text-xs font-bold ${selectedEvent.status === "upcoming"
                         ? "bg-accent text-on-accent"
                         : "bg-tint text-muted"
-                    }`}
+                      }`}
                   >
                     {selectedEvent.status === "upcoming"
                       ? lang === "ne" ? "आयोजना हुने" : "Scheduled"
@@ -354,6 +351,7 @@ export default function EventsPage() {
           </div>
         </div>
       )}
+
 
       {/* FULLSCREEN IMAGE LIGHTBOX */}
       {zoomedImageUrl && isValidImageSrc(zoomedImageUrl.url) && (
