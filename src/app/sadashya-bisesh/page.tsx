@@ -201,10 +201,10 @@ export default function SadashyaBiseshPage() {
     return Array.from(set).sort().reverse();
   }, [cachedFinances]);
 
-  // Filtered finances
-  const filteredFinances = useMemo(() => {
+  // Filtered income (Left Section - Trial Balance)
+  const filteredIncome = useMemo(() => {
     return cachedFinances.filter((f) => {
-      if (financeType !== "all" && f.type !== financeType) return false;
+      if (f.type !== "income") return false;
       if (financeFiscalYear !== "all" && f.fiscalYear !== financeFiscalYear) return false;
       if (financeSearch.trim()) {
         const q = financeSearch.toLowerCase();
@@ -215,7 +215,31 @@ export default function SadashyaBiseshPage() {
       }
       return true;
     });
-  }, [cachedFinances, financeType, financeFiscalYear, financeSearch]);
+  }, [cachedFinances, financeFiscalYear, financeSearch]);
+
+  // Filtered expense (Right Section - Trial Balance)
+  const filteredExpenses = useMemo(() => {
+    return cachedFinances.filter((f) => {
+      if (f.type !== "expense") return false;
+      if (financeFiscalYear !== "all" && f.fiscalYear !== financeFiscalYear) return false;
+      if (financeSearch.trim()) {
+        const q = financeSearch.toLowerCase();
+        const tMatch = f.title.toLowerCase().includes(q);
+        const cMatch = f.category?.toLowerCase().includes(q);
+        const rMatch = f.remarks?.toLowerCase().includes(q);
+        if (!tMatch && !cMatch && !rMatch) return false;
+      }
+      return true;
+    });
+  }, [cachedFinances, financeFiscalYear, financeSearch]);
+
+  const filteredIncomeTotal = useMemo(() => {
+    return filteredIncome.reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+  }, [filteredIncome]);
+
+  const filteredExpenseTotal = useMemo(() => {
+    return filteredExpenses.reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+  }, [filteredExpenses]);
 
   // Financial calculations
   const totalIncome = useMemo(() => {
@@ -242,12 +266,8 @@ export default function SadashyaBiseshPage() {
         <div className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 mb-2">
-                <ShieldCheck size={14} weight="fill" />
-                <span>अधिकृत सदस्य पोर्टल</span>
-              </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-fg">
-                सदस्य विशेष (Sadashya Bisesh)
+                सदस्य विशेष
               </h1>
               <p className="text-sm text-muted mt-1 max-w-2xl">
                 थोर्गा-काठमाडौं सम्पर्क तथा विकास मञ्चका आन्तरिक अभिलेख, निर्णय तथा पारदर्शी आम्दानी-खर्च विवरण।
@@ -417,12 +437,6 @@ export default function SadashyaBiseshPage() {
                   <span>आम्दानी / खर्च</span>
                 </button>
               </div>
-
-              {/* Status summary pill */}
-              <div className="text-xs text-muted flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>आन्तरिक प्रमाणीकरण सक्रिय</span>
-              </div>
             </div>
 
             {/* ========================================================= */}
@@ -463,7 +477,7 @@ export default function SadashyaBiseshPage() {
                             <span className="p-2 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
                               <FilePdf size={20} weight="fill" />
                             </span>
-                            <span className="text-xs font-medium text-muted">आधिकारिक कागजात (PDF)</span>
+                            <span className="text-xs font-medium text-muted">PDF कागजात</span>
                           </div>
 
                           <h3 className="text-base font-bold text-fg group-hover:text-accent transition-colors leading-snug">
@@ -520,61 +534,67 @@ export default function SadashyaBiseshPage() {
               <div className="space-y-6">
                 {/* Financial Summary Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+                  <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                        कुल आम्दानी (Total Income)
+                      <span className="text-xs font-medium text-muted">
+                        कुल आम्दानी
                       </span>
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                         <TrendUp size={18} weight="bold" />
                       </div>
                     </div>
-                    <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400 tracking-tight">
+                    <div className="text-2xl font-bold text-fg tracking-tight">
                       रु. {totalIncome.toLocaleString("ne-NP")}
                     </div>
-                    <div className="text-[11px] text-muted mt-1">
-                      {financeFiscalYear === "all" ? "सबै आर्थिक वर्षको आम्दानी" : `आ.व. ${financeFiscalYear}`}
-                    </div>
+                    {financeFiscalYear !== "all" && (
+                      <div className="text-[11px] text-muted mt-1">
+                        आ.व. {financeFiscalYear}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-5">
+                  <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">
-                        कुल खर्च (Total Expense)
+                      <span className="text-xs font-medium text-muted">
+                        कुल खर्च
                       </span>
-                      <div className="w-8 h-8 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
                         <TrendDown size={18} weight="bold" />
                       </div>
                     </div>
-                    <div className="text-2xl font-black text-rose-700 dark:text-rose-400 tracking-tight">
+                    <div className="text-2xl font-bold text-fg tracking-tight">
                       रु. {totalExpense.toLocaleString("ne-NP")}
                     </div>
-                    <div className="text-[11px] text-muted mt-1">
-                      {financeFiscalYear === "all" ? "सबै आर्थिक वर्षको खर्च" : `आ.व. ${financeFiscalYear}`}
-                    </div>
+                    {financeFiscalYear !== "all" && (
+                      <div className="text-[11px] text-muted mt-1">
+                        आ.व. {financeFiscalYear}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="rounded-2xl border border-accent/20 bg-accent-soft/30 p-5">
+                  <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-accent">
-                        मौज्दात बचत (Net Balance)
+                      <span className="text-xs font-medium text-muted">
+                        मौज्दात बचत
                       </span>
-                      <div className="w-8 h-8 rounded-full bg-accent-soft text-accent flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-lg bg-accent-soft text-accent flex items-center justify-center">
                         <Coins size={18} weight="bold" />
                       </div>
                     </div>
-                    <div className={`text-2xl font-black tracking-tight ${netBalance >= 0 ? "text-accent" : "text-rose-600"}`}>
+                    <div className={`text-2xl font-bold tracking-tight ${netBalance >= 0 ? "text-accent" : "text-rose-600"}`}>
                       रु. {netBalance.toLocaleString("ne-NP")}
                     </div>
-                    <div className="text-[11px] text-muted mt-1">
-                      {netBalance >= 0 ? "सकारात्मक मौज्दात बचत" : "ऋणात्मक मौज्दात"}
-                    </div>
+                    {financeFiscalYear !== "all" && (
+                      <div className="text-[11px] text-muted mt-1">
+                        आ.व. {financeFiscalYear}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Filter and search bar */}
                 <div className="flex flex-wrap gap-3 items-center justify-between bg-surface p-4 rounded-2xl border border-line">
-                  {/* Type Filters */}
+                  {/* View Mode Switcher */}
                   <div className="inline-flex p-1 rounded-control bg-bg border border-line">
                     <button
                       onClick={() => setFinanceType("all")}
@@ -584,13 +604,13 @@ export default function SadashyaBiseshPage() {
                           : "text-muted hover:text-fg"
                       }`}
                     >
-                      सबै विवरण
+                      सन्तुलन खाता
                     </button>
                     <button
                       onClick={() => setFinanceType("income")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      className={`px-3 py-1.5 rounded-control text-xs font-semibold transition-all cursor-pointer ${
                         financeType === "income"
-                          ? "bg-emerald-600 text-white shadow-xs"
+                          ? "btn-fill bg-accent text-on-accent shadow-e1"
                           : "text-muted hover:text-fg"
                       }`}
                     >
@@ -598,9 +618,9 @@ export default function SadashyaBiseshPage() {
                     </button>
                     <button
                       onClick={() => setFinanceType("expense")}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      className={`px-3 py-1.5 rounded-control text-xs font-semibold transition-all cursor-pointer ${
                         financeType === "expense"
-                          ? "bg-rose-600 text-white shadow-xs"
+                          ? "btn-fill bg-accent text-on-accent shadow-e1"
                           : "text-muted hover:text-fg"
                       }`}
                     >
@@ -632,15 +652,14 @@ export default function SadashyaBiseshPage() {
                         onChange={(e) => setFinanceSearch(e.target.value)}
                         placeholder="विवरण वा शीर्षक खोज्नुहोस्..."
                         className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-line bg-bg text-fg text-xs placeholder:text-muted focus:outline-hidden"
-                      >
-                      </input>
+                      />
                       <MagnifyingGlass size={14} className="absolute left-2.5 top-2 text-muted" />
                     </div>
                   </div>
                 </div>
 
-                {/* Finance List */}
-                {filteredFinances.length === 0 ? (
+                {/* Trial Balance Main Container */}
+                {filteredIncome.length === 0 && filteredExpenses.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-line bg-surface/50 p-12 text-center">
                     <Receipt size={40} className="mx-auto text-muted mb-3" weight="duotone" />
                     <h3 className="text-sm font-semibold text-fg">कुनै आर्थिक विवरण फेला परेन</h3>
@@ -649,101 +668,267 @@ export default function SadashyaBiseshPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-line bg-surface overflow-hidden shadow-xs">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="border-b border-line bg-tint/60 text-muted uppercase font-mono tracking-wider text-[11px]">
-                            <th className="py-3 px-4">मिति / आ.व.</th>
-                            <th className="py-3 px-4">शीर्षक / विवरण</th>
-                            <th className="py-3 px-4">प्रकार</th>
-                            <th className="py-3 px-4">वर्गीकरण</th>
-                            <th className="py-3 px-4 text-right">रकम (रु.)</th>
-                            <th className="py-3 px-4 text-center">प्रमाण / बिल</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-line">
-                          {filteredFinances.map((item) => (
-                            <tr
-                              key={item.id}
-                              className="hover:bg-tint/40 transition-colors"
-                            >
-                              <td className="py-3.5 px-4 font-mono text-muted whitespace-nowrap">
-                                <div>{item.dateBs || "—"}</div>
-                                {item.fiscalYear && (
-                                  <div className="text-[10px] text-accent font-bold">आ.व. {item.fiscalYear}</div>
-                                )}
-                              </td>
+                  <div className="space-y-6">
+                    {/* Two-Column Trial Balance Grid (Left: Income, Right: Expense) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                      {/* =================================================== */}
+                      {/* LEFT SECTION: आम्दानी                                */}
+                      {/* =================================================== */}
+                      {(financeType === "all" || financeType === "income") && (
+                        <div className="rounded-2xl border border-line bg-surface overflow-hidden shadow-xs flex flex-col">
+                          {/* Left Header */}
+                          <div className="bg-tint/40 border-b border-line px-4 py-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                                <TrendUp size={16} weight="bold" />
+                              </div>
+                              <h3 className="text-sm font-bold text-fg">आम्दानी</h3>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                रु. {filteredIncomeTotal.toLocaleString("ne-NP")}
+                              </div>
+                              <span className="text-[10px] text-muted">{filteredIncome.length} प्रविष्टि</span>
+                            </div>
+                          </div>
 
-                              <td className="py-3.5 px-4">
-                                <div className="font-semibold text-fg text-sm">{item.title}</div>
-                                {item.remarks && (
-                                  <div className="text-muted text-[11px] mt-0.5">{item.remarks}</div>
-                                )}
-                              </td>
+                          {/* Left Table */}
+                          {filteredIncome.length === 0 ? (
+                            <div className="p-8 text-center text-muted">
+                              <TrendUp size={30} className="mx-auto text-emerald-500/40 mb-2" />
+                              <p className="text-xs font-medium">यस अवधिमा कुनै आम्दानी प्रविष्टि छैन</p>
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                  <tr className="border-b border-line bg-tint/40 text-muted uppercase font-mono tracking-wider text-[10px]">
+                                    <th className="py-2.5 px-3">मिति</th>
+                                    <th className="py-2.5 px-3">विवरण / शीर्षक</th>
+                                    <th className="py-2.5 px-2 text-center">बिल</th>
+                                    <th className="py-2.5 px-3 text-right">रकम (रु.)</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-line">
+                                  {filteredIncome.map((item) => (
+                                    <tr key={item.id} className="hover:bg-tint/30 transition-colors">
+                                      <td className="py-2.5 px-3 font-mono text-muted whitespace-nowrap text-[11px]">
+                                        <div>{item.dateBs || "—"}</div>
+                                        {item.fiscalYear && (
+                                          <div className="text-[9px] text-accent font-semibold">{item.fiscalYear}</div>
+                                        )}
+                                      </td>
+                                      <td className="py-2.5 px-3">
+                                        <div className="font-semibold text-fg text-xs">{item.title}</div>
+                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium">
+                                            {item.category || "आम्दानी"}
+                                          </span>
+                                          {item.remarks && (
+                                            <span className="text-[10px] text-muted truncate max-w-[140px]" title={item.remarks}>
+                                              {item.remarks}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="py-2.5 px-2 text-center whitespace-nowrap">
+                                        {item.documentUrl ? (
+                                          <button
+                                            onClick={() => {
+                                              setPreviewDocUrl(item.documentUrl!);
+                                              setPreviewDocTitle(item.title);
+                                            }}
+                                            className="inline-flex items-center gap-1 p-1 rounded-md text-accent hover:bg-accent-soft transition-colors cursor-pointer"
+                                            title="बिल / भौचर हेर्नुहोस्"
+                                          >
+                                            <FilePdf size={14} weight="fill" className="text-rose-500" />
+                                            <span className="text-[10px] font-semibold">हेर्नुहोस्</span>
+                                          </button>
+                                        ) : (
+                                          <span className="text-muted text-[10px]">—</span>
+                                        )}
+                                      </td>
+                                      <td className="py-2.5 px-3 text-right font-mono font-bold text-xs whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                                        रु. {Number(item.amount).toLocaleString("ne-NP")}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                                <tfoot>
+                                  <tr className="border-t-2 border-line bg-tint/30 font-semibold">
+                                    <td colSpan={3} className="py-2.5 px-3 text-xs text-fg">
+                                      जम्मा आम्दानी:
+                                    </td>
+                                    <td className="py-2.5 px-3 text-right font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                                      रु. {filteredIncomeTotal.toLocaleString("ne-NP")}
+                                    </td>
+                                  </tr>
+                                </tfoot>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                              <td className="py-3.5 px-4 whitespace-nowrap">
-                                <span
-                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                                    item.type === "income"
-                                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                                      : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                                  }`}
-                                >
-                                  {item.type === "income" ? (
-                                    <>
-                                      <TrendUp size={12} weight="bold" />
-                                      <span>आम्दानी</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <TrendDown size={12} weight="bold" />
-                                      <span>खर्च</span>
-                                    </>
-                                  )}
-                                </span>
-                              </td>
+                      {/* =================================================== */}
+                      {/* RIGHT SECTION: खर्च                                 */}
+                      {/* =================================================== */}
+                      {(financeType === "all" || financeType === "expense") && (
+                        <div className="rounded-2xl border border-line bg-surface overflow-hidden shadow-xs flex flex-col">
+                          {/* Right Header */}
+                          <div className="bg-tint/40 border-b border-line px-4 py-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
+                                <TrendDown size={16} weight="bold" />
+                              </div>
+                              <h3 className="text-sm font-bold text-fg">खर्च</h3>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs font-mono font-bold text-rose-600 dark:text-rose-400">
+                                रु. {filteredExpenseTotal.toLocaleString("ne-NP")}
+                              </div>
+                              <span className="text-[10px] text-muted">{filteredExpenses.length} प्रविष्टि</span>
+                            </div>
+                          </div>
 
-                              <td className="py-3.5 px-4 text-muted whitespace-nowrap">
-                                {item.category || "विविध"}
-                              </td>
-
-                              <td className="py-3.5 px-4 text-right font-mono font-bold text-sm whitespace-nowrap">
-                                <span
-                                  className={
-                                    item.type === "income"
-                                      ? "text-emerald-600 dark:text-emerald-400"
-                                      : "text-rose-600 dark:text-rose-400"
-                                  }
-                                >
-                                  {item.type === "income" ? "+ " : "- "}
-                                  रु. {Number(item.amount).toLocaleString("ne-NP")}
-                                </span>
-                              </td>
-
-                              <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                {item.documentUrl ? (
-                                  <button
-                                    onClick={() => {
-                                      setPreviewDocUrl(item.documentUrl!);
-                                      setPreviewDocTitle(item.title);
-                                    }}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-tint hover:bg-tint/80 text-fg transition-colors"
-                                  >
-                                    <FilePdf size={13} weight="fill" className="text-rose-500" />
-                                    <span>हेर्नुहोस्</span>
-                                  </button>
-                                ) : (
-                                  <span className="text-muted text-[11px]">—</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          {/* Right Table */}
+                          {filteredExpenses.length === 0 ? (
+                            <div className="p-8 text-center text-muted">
+                              <TrendDown size={30} className="mx-auto text-rose-500/40 mb-2" />
+                              <p className="text-xs font-medium">यस अवधिमा कुनै खर्च प्रविष्टि छैन</p>
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                  <tr className="border-b border-line bg-tint/40 text-muted uppercase font-mono tracking-wider text-[10px]">
+                                    <th className="py-2.5 px-3">मिति</th>
+                                    <th className="py-2.5 px-3">विवरण / शीर्षक</th>
+                                    <th className="py-2.5 px-2 text-center">बिल</th>
+                                    <th className="py-2.5 px-3 text-right">रकम (रु.)</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-line">
+                                  {filteredExpenses.map((item) => (
+                                    <tr key={item.id} className="hover:bg-tint/30 transition-colors">
+                                      <td className="py-2.5 px-3 font-mono text-muted whitespace-nowrap text-[11px]">
+                                        <div>{item.dateBs || "—"}</div>
+                                        {item.fiscalYear && (
+                                          <div className="text-[9px] text-accent font-semibold">{item.fiscalYear}</div>
+                                        )}
+                                      </td>
+                                      <td className="py-2.5 px-3">
+                                        <div className="font-semibold text-fg text-xs">{item.title}</div>
+                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-700 dark:text-rose-400 font-medium">
+                                            {item.category || "खर्च"}
+                                          </span>
+                                          {item.remarks && (
+                                            <span className="text-[10px] text-muted truncate max-w-[140px]" title={item.remarks}>
+                                              {item.remarks}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="py-2.5 px-2 text-center whitespace-nowrap">
+                                        {item.documentUrl ? (
+                                          <button
+                                            onClick={() => {
+                                              setPreviewDocUrl(item.documentUrl!);
+                                              setPreviewDocTitle(item.title);
+                                            }}
+                                            className="inline-flex items-center gap-1 p-1 rounded-md text-accent hover:bg-accent-soft transition-colors cursor-pointer"
+                                            title="बिल / भौचर हेर्नुहोस्"
+                                          >
+                                            <FilePdf size={14} weight="fill" className="text-rose-500" />
+                                            <span className="text-[10px] font-semibold">हेर्नुहोस्</span>
+                                          </button>
+                                        ) : (
+                                          <span className="text-muted text-[10px]">—</span>
+                                        )}
+                                      </td>
+                                      <td className="py-2.5 px-3 text-right font-mono font-bold text-xs whitespace-nowrap text-rose-600 dark:text-rose-400">
+                                        रु. {Number(item.amount).toLocaleString("ne-NP")}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                                <tfoot>
+                                  <tr className="border-t-2 border-line bg-tint/30 font-semibold">
+                                    <td colSpan={3} className="py-2.5 px-3 text-xs text-fg">
+                                      जम्मा खर्च:
+                                    </td>
+                                    <td className="py-2.5 px-3 text-right font-mono font-bold text-xs text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                                      रु. {filteredExpenseTotal.toLocaleString("ne-NP")}
+                                    </td>
+                                  </tr>
+                                </tfoot>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
+
+                    {/* =================================================== */}
+                    {/* TRIAL BALANCE RECONCILIATION SUMMARY FOOTER         */}
+                    {/* =================================================== */}
+                    {financeType === "all" && (
+                      <div className="rounded-2xl border border-line bg-surface p-4 shadow-xs">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-accent-soft text-accent flex items-center justify-center shrink-0">
+                              <Coins size={20} weight="bold" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold text-fg">सन्तुलन सारांश</h4>
+                              <p className="text-[11px] text-muted">
+                                {financeFiscalYear === "all"
+                                  ? "सबै आर्थिक वर्ष"
+                                  : `आर्थिक वर्ष ${financeFiscalYear}`}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono">
+                            <div className="px-3 py-1.5 rounded-control bg-tint/60 border border-line">
+                              <span className="text-muted mr-1.5 font-sans">आम्दानी:</span>
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                रु. {filteredIncomeTotal.toLocaleString("ne-NP")}
+                              </span>
+                            </div>
+
+                            <div className="px-3 py-1.5 rounded-control bg-tint/60 border border-line">
+                              <span className="text-muted mr-1.5 font-sans">खर्च:</span>
+                              <span className="font-bold text-rose-600 dark:text-rose-400">
+                                रु. {filteredExpenseTotal.toLocaleString("ne-NP")}
+                              </span>
+                            </div>
+
+                            <div
+                              className={`px-3 py-1.5 rounded-control border font-bold ${
+                                filteredIncomeTotal - filteredExpenseTotal >= 0
+                                  ? "bg-accent-soft/40 border-accent/30 text-accent"
+                                  : "bg-rose-500/10 border-rose-500/30 text-rose-600"
+                              }`}
+                            >
+                              <span className="mr-1.5 font-sans">
+                                {filteredIncomeTotal - filteredExpenseTotal >= 0
+                                  ? "बचत मौज्दात:"
+                                  : "घाटा:"}
+                              </span>
+                              <span>
+                                रु.{" "}
+                                {Math.abs(filteredIncomeTotal - filteredExpenseTotal).toLocaleString("ne-NP")}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
+
               </div>
             )}
           </div>

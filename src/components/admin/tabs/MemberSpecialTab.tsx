@@ -246,15 +246,16 @@ export function MemberSpecialTab({
   // 2. FINANCE (आम्दानी / खर्च) ACTIONS
   // ---------------------------------------------------------------------------
 
-  const handleOpenAddFinance = () => {
+  const handleOpenAddFinance = (typeOrEvent?: "income" | "expense" | React.MouseEvent) => {
+    const defaultType: "income" | "expense" = typeOrEvent === "expense" ? "expense" : "income";
     setEditingFinance(null);
     setFinanceForm({
       title: "",
-      type: "income",
+      type: defaultType,
       amount: "",
       fiscalYear: "२०८१/०८२",
       dateBs: "",
-      category: "सदस्यता शुल्क",
+      category: defaultType === "income" ? "सदस्यता शुल्क" : "कार्यक्रम खर्च",
       documentUrl: "",
       remarks: "",
     });
@@ -506,6 +507,8 @@ export function MemberSpecialTab({
     () => finances.filter((f) => f.type === "expense").reduce((s, f) => s + (Number(f.amount) || 0), 0),
     [finances]
   );
+  const incomeFinances = useMemo(() => finances.filter((f) => f.type === "income"), [finances]);
+  const expenseFinances = useMemo(() => finances.filter((f) => f.type === "expense"), [finances]);
 
   return (
     <div className="space-y-6">
@@ -514,10 +517,6 @@ export function MemberSpecialTab({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-fg">सदस्य विशेष व्यवस्थापन</h2>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <ShieldCheck size={13} weight="fill" />
-              <span>सुरक्षित पृष्ठ</span>
-            </span>
           </div>
           <p className="text-xs text-muted mt-1">
             अधिकृत सदस्यहरूका लागि आन्तरिक अभिलेख (Google Drive PDF), आय-व्यय विवरण, र सदस्य लगइन पहुँच नियन्त्रण।
@@ -822,113 +821,330 @@ export function MemberSpecialTab({
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs text-muted font-medium">
-                      कुल {finances.length} आय-व्यय प्रविष्टिहरू उपलब्ध छन्।
+              <div className="space-y-4">
+                {/* Header Action Bar with specific Add Income & Add Expense buttons */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-surface p-3.5 rounded-xl border border-line">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-fg">सन्तुलन खाता:</span>
+                    <span className="text-xs text-muted">
+                      आम्दानी {incomeFinances.length} र खर्च {expenseFinances.length} प्रविष्टि
                     </span>
-                    <button
-                      type="button"
-                      onClick={handleOpenAddFinance}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1 transition-colors cursor-pointer"
-                    >
-                      <Plus size={14} weight="bold" />
-                      <span>+ नयाँ विवरण</span>
-                    </button>
                   </div>
 
-                  <div className="rounded-xl border border-line bg-surface overflow-hidden shadow-xs">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-line bg-tint/60 text-muted uppercase font-mono tracking-wider text-[11px]">
-                          <th className="py-3 px-4">मिति / आ.व.</th>
-                          <th className="py-3 px-4">विवरण / शीर्षक</th>
-                          <th className="py-3 px-4">प्रकार</th>
-                          <th className="py-3 px-4">वर्गीकरण</th>
-                          <th className="py-3 px-4 text-right">रकम (रु.)</th>
-                          <th className="py-3 px-4 text-center">प्रमाण</th>
-                          <th className="py-3 px-4 text-right">कार्यहरू</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-line">
-                        {finances.map((f) => (
-                          <tr key={f.id} className="hover:bg-tint/40 transition-colors">
-                            <td className="py-3.5 px-4 font-mono text-muted whitespace-nowrap">
-                              <div>{f.dateBs || "—"}</div>
-                              {f.fiscalYear && (
-                                <div className="text-[10px] text-accent font-bold">आ.व. {f.fiscalYear}</div>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <div className="font-semibold text-fg text-sm">{f.title}</div>
-                              {f.remarks && <div className="text-muted text-[11px] mt-0.5">{f.remarks}</div>}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                                  f.type === "income"
-                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                                    : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                                }`}
-                              >
-                                {f.type === "income" ? "+ आम्दानी" : "- खर्च"}
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-4 text-muted whitespace-nowrap">
-                              {f.category || "विविध"}
-                            </td>
-                            <td className="py-3.5 px-4 text-right font-mono font-bold whitespace-nowrap">
-                              <span
-                                className={
-                                  f.type === "income"
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : "text-rose-600 dark:text-rose-400"
-                                }
-                              >
-                                रु. {Number(f.amount).toLocaleString("ne-NP")}
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                              {f.documentUrl ? (
-                                <button
-                                  onClick={() => {
-                                    setPreviewDocUrl(f.documentUrl!);
-                                    setPreviewDocTitle(f.title);
-                                  }}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] bg-tint hover:bg-tint/80 text-fg"
-                                >
-                                  <Eye size={12} />
-                                  <span>हेर्नुहोस्</span>
-                                </button>
-                              ) : (
-                                <span className="text-muted text-[11px]">—</span>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                              <div className="inline-flex items-center gap-1">
-                                <button
-                                  onClick={() => handleOpenEditFinance(f)}
-                                  className="p-1.5 rounded-lg text-muted hover:text-accent hover:bg-accent-soft transition-colors"
-                                >
-                                  <PencilSimple size={15} />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteFinance(f)}
-                                  className="p-1.5 rounded-lg text-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
-                                >
-                                  <Trash size={15} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAddFinance("income")}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control btn-fill bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-e1 transition-colors cursor-pointer"
+                    >
+                      <Plus size={14} weight="bold" />
+                      <span>+ नयाँ आम्दानी</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenAddFinance("expense")}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control btn-fill bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-e1 transition-colors cursor-pointer"
+                    >
+                      <Plus size={14} weight="bold" />
+                      <span>+ नयाँ खर्च</span>
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
+
+                {/* Two-Column Trial Balance Grid (Left: Income, Right: Expense) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+                  {/* =================================================== */}
+                  {/* LEFT COLUMN: आम्दानी (INCOME)                        */}
+                  {/* =================================================== */}
+                  <div className="rounded-xl border border-line bg-surface overflow-hidden shadow-xs flex flex-col">
+                    <div className="bg-tint/40 border-b border-line px-3.5 py-2.5 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                          <TrendUp size={14} weight="bold" />
+                        </div>
+                        <h4 className="text-xs font-bold text-fg">आम्दानी</h4>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          रु. {totalIncome.toLocaleString("ne-NP")}
+                        </div>
+                        <span className="text-[10px] text-muted">{incomeFinances.length} प्रविष्टि</span>
+                      </div>
+                    </div>
+
+                    {incomeFinances.length === 0 ? (
+                      <div className="p-8 text-center text-muted">
+                        <TrendUp size={26} className="mx-auto text-emerald-500/40 mb-1.5" />
+                        <p className="text-xs font-medium">कुनै आम्दानी प्रविष्टि छैन</p>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAddFinance("income")}
+                          className="mt-2 text-xs text-emerald-600 hover:underline font-semibold"
+                        >
+                          + आम्दानी थप्नुहोस्
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-line bg-tint/40 text-muted uppercase font-mono tracking-wider text-[10px]">
+                              <th className="py-2 px-3">मिति</th>
+                              <th className="py-2 px-3">विवरण</th>
+                              <th className="py-2 px-1 text-center">बिल</th>
+                              <th className="py-2 px-3 text-right">रकम (रु.)</th>
+                              <th className="py-2 px-2 text-right">कार्य</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {incomeFinances.map((f) => (
+                              <tr key={f.id} className="hover:bg-tint/30 transition-colors">
+                                <td className="py-2.5 px-3 font-mono text-muted whitespace-nowrap text-[11px]">
+                                  <div>{f.dateBs || "—"}</div>
+                                  {f.fiscalYear && (
+                                    <div className="text-[9px] text-accent font-semibold">{f.fiscalYear}</div>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <div className="font-semibold text-fg text-xs">{f.title}</div>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                                      {f.category || "विविध"}
+                                    </span>
+                                    {f.remarks && (
+                                      <span className="text-[10px] text-muted truncate max-w-[120px]" title={f.remarks}>
+                                        {f.remarks}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-1 text-center whitespace-nowrap">
+                                  {f.documentUrl ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPreviewDocUrl(f.documentUrl!);
+                                        setPreviewDocTitle(f.title);
+                                      }}
+                                      className="p-1 rounded text-accent hover:bg-accent-soft transition-colors cursor-pointer"
+                                      title="प्रमाण हेर्नुहोस्"
+                                    >
+                                      <Eye size={13} />
+                                    </button>
+                                  ) : (
+                                    <span className="text-muted text-[10px]">—</span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-mono font-bold text-xs whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                                  रु. {Number(f.amount).toLocaleString("ne-NP")}
+                                </td>
+                                <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                                  <div className="inline-flex items-center gap-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditFinance(f)}
+                                      className="p-1 rounded-md text-muted hover:text-accent hover:bg-accent-soft transition-colors"
+                                      title="सम्पादन गर्नुहोस्"
+                                    >
+                                      <PencilSimple size={14} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteFinance(f)}
+                                      className="p-1 rounded-md text-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                                      title="मेटाउनुहोस्"
+                                    >
+                                      <Trash size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="border-t-2 border-line bg-tint/30 font-semibold">
+                              <td colSpan={3} className="py-2 px-3 text-xs text-fg">
+                                कुल आम्दानी:
+                              </td>
+                              <td className="py-2 px-3 text-right font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                                रु. {totalIncome.toLocaleString("ne-NP")}
+                              </td>
+                              <td></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* =================================================== */}
+                  {/* RIGHT COLUMN: खर्च (EXPENSE)                        */}
+                  {/* =================================================== */}
+                  <div className="rounded-xl border border-line bg-surface overflow-hidden shadow-xs flex flex-col">
+                    <div className="bg-tint/40 border-b border-line px-3.5 py-2.5 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
+                          <TrendDown size={14} weight="bold" />
+                        </div>
+                        <h4 className="text-xs font-bold text-fg">खर्च</h4>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-mono font-bold text-rose-600 dark:text-rose-400">
+                          रु. {totalExpense.toLocaleString("ne-NP")}
+                        </div>
+                        <span className="text-[10px] text-muted">{expenseFinances.length} प्रविष्टि</span>
+                      </div>
+                    </div>
+
+                    {expenseFinances.length === 0 ? (
+                      <div className="p-8 text-center text-muted">
+                        <TrendDown size={26} className="mx-auto text-rose-500/40 mb-1.5" />
+                        <p className="text-xs font-medium">कुनै खर्च प्रविष्टि छैन</p>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAddFinance("expense")}
+                          className="mt-2 text-xs text-rose-600 hover:underline font-semibold"
+                        >
+                          + खर्च थप्नुहोस्
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-line bg-tint/40 text-muted uppercase font-mono tracking-wider text-[10px]">
+                              <th className="py-2 px-3">मिति</th>
+                              <th className="py-2 px-3">विवरण</th>
+                              <th className="py-2 px-1 text-center">बिल</th>
+                              <th className="py-2 px-3 text-right">रकम (रु.)</th>
+                              <th className="py-2 px-2 text-right">कार्य</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-line">
+                            {expenseFinances.map((f) => (
+                              <tr key={f.id} className="hover:bg-tint/30 transition-colors">
+                                <td className="py-2.5 px-3 font-mono text-muted whitespace-nowrap text-[11px]">
+                                  <div>{f.dateBs || "—"}</div>
+                                  {f.fiscalYear && (
+                                    <div className="text-[9px] text-accent font-semibold">{f.fiscalYear}</div>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <div className="font-semibold text-fg text-xs">{f.title}</div>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-700 dark:text-rose-400">
+                                      {f.category || "विविध"}
+                                    </span>
+                                    {f.remarks && (
+                                      <span className="text-[10px] text-muted truncate max-w-[120px]" title={f.remarks}>
+                                        {f.remarks}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-1 text-center whitespace-nowrap">
+                                  {f.documentUrl ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPreviewDocUrl(f.documentUrl!);
+                                        setPreviewDocTitle(f.title);
+                                      }}
+                                      className="p-1 rounded text-accent hover:bg-accent-soft transition-colors cursor-pointer"
+                                      title="प्रमाण हेर्नुहोस्"
+                                    >
+                                      <Eye size={13} />
+                                    </button>
+                                  ) : (
+                                    <span className="text-muted text-[10px]">—</span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-mono font-bold text-xs whitespace-nowrap text-rose-600 dark:text-rose-400">
+                                  रु. {Number(f.amount).toLocaleString("ne-NP")}
+                                </td>
+                                <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                                  <div className="inline-flex items-center gap-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditFinance(f)}
+                                      className="p-1 rounded-md text-muted hover:text-accent hover:bg-accent-soft transition-colors"
+                                      title="सम्पादन गर्नुहोस्"
+                                    >
+                                      <PencilSimple size={14} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteFinance(f)}
+                                      className="p-1 rounded-md text-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                                      title="मेटाउनुहोस्"
+                                    >
+                                      <Trash size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="border-t-2 border-line bg-tint/30 font-semibold">
+                              <td colSpan={3} className="py-2 px-3 text-xs text-fg">
+                                कुल खर्च:
+                              </td>
+                              <td className="py-2 px-3 text-right font-mono font-bold text-xs text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                                रु. {totalExpense.toLocaleString("ne-NP")}
+                              </td>
+                              <td></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bottom Trial Balance Summary Bar */}
+                <div className="rounded-xl border border-line bg-surface p-3.5 shadow-xs">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
+                    <div className="flex items-center gap-2">
+                      <Coins size={16} className="text-accent" weight="bold" />
+                      <span className="font-bold text-fg font-sans text-xs">सन्तुलन सारांश:</span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <div className="px-2.5 py-1 rounded-control bg-tint/60 border border-line">
+                        <span className="text-muted mr-1 font-sans">आम्दानी:</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                          रु. {totalIncome.toLocaleString("ne-NP")}
+                        </span>
+                      </div>
+
+                      <div className="px-2.5 py-1 rounded-control bg-tint/60 border border-line">
+                        <span className="text-muted mr-1 font-sans">खर्च:</span>
+                        <span className="font-bold text-rose-600 dark:text-rose-400">
+                          रु. {totalExpense.toLocaleString("ne-NP")}
+                        </span>
+                      </div>
+
+                      <div
+                        className={`px-2.5 py-1 rounded-control border font-bold ${
+                          totalIncome - totalExpense >= 0
+                            ? "bg-accent-soft/40 border-accent/30 text-accent"
+                            : "bg-rose-500/10 border-rose-500/30 text-rose-600"
+                        }`}
+                      >
+                        <span className="mr-1 font-sans">
+                          {totalIncome - totalExpense >= 0 ? "बचत मौज्दात:" : "घाटा:"}
+                        </span>
+                        <span>रु. {Math.abs(totalIncome - totalExpense).toLocaleString("ne-NP")}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
 
           {/* ================================================================= */}
           {/* SUBTAB 3: USERS (सदस्य पहुँच खाता व्यवस्थापन)                      */}
