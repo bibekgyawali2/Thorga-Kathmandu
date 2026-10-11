@@ -6,8 +6,10 @@ import {
   MemberSpecialRecord,
   MemberSpecialFinance,
   MemberSpecialUser,
+  PreviousYearSaving,
   saveStoredMemberRecords,
   saveStoredMemberFinances,
+  saveStoredMemberPreviousSavings,
 } from "@/data/mockData";
 import {
   isGoogleDriveUrl,
@@ -57,9 +59,17 @@ export function MemberSpecialTab({
   const [records, setRecords] = useState<MemberSpecialRecord[]>([]);
   const [finances, setFinances] = useState<MemberSpecialFinance[]>([]);
   const [users, setUsers] = useState<MemberSpecialUser[]>([]);
+  const [savings, setSavings] = useState<PreviousYearSaving[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals state
+  const [showSavingsModal, setShowSavingsModal] = useState(false);
+  const [savingsForm, setSavingsForm] = useState({
+    id: "",
+    fiscalYear: "२०८०/०८१",
+    amount: "",
+    remarks: "",
+  });
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState<MemberSpecialRecord | null>(null);
   const [recordForm, setRecordForm] = useState({
@@ -101,10 +111,11 @@ export function MemberSpecialTab({
   // Load all initial data
   const loadAll = React.useCallback(async () => {
     try {
-      const [rRes, fRes, uRes] = await Promise.all([
+      const [rRes, fRes, uRes, sRes] = await Promise.all([
         adminFetch("/api/member-special/records"),
         adminFetch("/api/member-special/finances"),
         adminFetch("/api/member-special/users"),
+        adminFetch("/api/member-special/savings"),
       ]);
 
       if (rRes.ok) {
@@ -120,6 +131,12 @@ export function MemberSpecialTab({
       if (uRes.ok) {
         const uData = await uRes.json();
         setUsers(uData);
+      }
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        const arr = Array.isArray(sData) ? sData : [];
+        setSavings(arr);
+        saveStoredMemberPreviousSavings(arr);
       }
     } catch (err) {
       console.error("[MemberSpecialTab] load error:", err);
@@ -510,6 +527,65 @@ export function MemberSpecialTab({
   const incomeFinances = useMemo(() => finances.filter((f) => f.type === "income"), [finances]);
   const expenseFinances = useMemo(() => finances.filter((f) => f.type === "expense"), [finances]);
 
+  const currentSavings = savings[0] || null;
+  const currentSavingsAmount = currentSavings ? Number(currentSavings.amount) || 0 : 0;
+  const adminNetBalance = currentSavingsAmount + totalIncome - totalExpense;
+
+  const handleOpenEditSavings = () => {
+    setSavingsForm({
+      id: currentSavings?.id || "",
+      fiscalYear: currentSavings?.fiscalYear || "२०८०/०८१",
+      amount: currentSavings ? String(currentSavings.amount) : "",
+      remarks: currentSavings?.remarks || "",
+    });
+    setShowSavingsModal(true);
+  };
+
+  const handleSaveSavings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(savingsForm.amount);
+    if (isNaN(amt) || amt < 0) {
+      dialogAlert({
+        title: "रकम अमान्य",
+        description: "कृपया वैध बचत रकम प्रविष्ट गर्नुहोस्।",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        id: savingsForm.id || undefined,
+        fiscalYear: savingsForm.fiscalYear.trim() || "२०८०/०८१",
+        amount: amt,
+        remarks: savingsForm.remarks.trim(),
+      };
+
+      const res = await adminFetch("/api/member-special/savings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "सुरक्षित गर्न सकिएन।");
+      }
+
+      toast.success("गत वर्षको बचत मौज्दात सुरक्षित भयो।");
+      setShowSavingsModal(false);
+      loadAll();
+    } catch (err) {
+      dialogAlert({
+        title: "त्रुटि",
+        description: (err as Error).message,
+        type: "danger",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner & Main Action Bar */}
@@ -773,33 +849,42 @@ export function MemberSpecialTab({
           {/* ================================================================= */}
           {subTab === "finances" && (
             <div className="space-y-4">
-              {/* Financial mini-stats */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
-                  <div className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
-                    कुल आम्दानी (Total Income)
+              {/* Top Card: गत वर्षको बचत (Previous Year Savings) */}
+              <div className="rounded-xl border border-line bg-surface p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-tint border border-line text-emerald-950 dark:text-emerald-300 flex items-center justify-center font-bold shrink-0">
+                    <Coins size={22} weight="bold" />
                   </div>
-                  <div className="text-xl font-black text-emerald-700 dark:text-emerald-400 mt-1">
-                    रु. {totalIncome.toLocaleString("ne-NP")}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-fg">गत वर्षको बचत (Previous Year Savings)</h3>
+                      {currentSavings?.fiscalYear && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-tint border border-line text-muted font-mono font-medium">
+                          आ.व. {currentSavings.fiscalYear}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted mt-0.5">
+                      {currentSavings?.remarks || "अघिल्लो आर्थिक वर्षबाट जिम्मेवारी सरेको बचत मौज्दात"}
+                    </p>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl border border-rose-500/20 bg-rose-500/5">
-                  <div className="text-[11px] text-rose-700 dark:text-rose-400 font-semibold">
-                    कुल खर्च (Total Expense)
+                <div className="flex items-center gap-4">
+                  <div className="text-left sm:text-right">
+                    <div className="text-[10px] text-muted font-medium">गत वर्षको मौज्दात रकम</div>
+                    <div className="font-mono font-black text-base sm:text-lg text-emerald-950 dark:text-emerald-300">
+                      रु. {currentSavingsAmount.toLocaleString("ne-NP")}
+                    </div>
                   </div>
-                  <div className="text-xl font-black text-rose-700 dark:text-rose-400 mt-1">
-                    रु. {totalExpense.toLocaleString("ne-NP")}
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl border border-accent/20 bg-accent-soft/30">
-                  <div className="text-[11px] text-accent font-semibold">
-                    कुल मौज्दात (Net Balance)
-                  </div>
-                  <div className="text-xl font-black text-accent mt-1">
-                    रु. {(totalIncome - totalExpense).toLocaleString("ne-NP")}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenEditSavings}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  >
+                    <PencilSimple size={14} weight="bold" />
+                    <span>{currentSavings ? "सम्पादन गर्नुहोस्" : "बचत प्रविष्ट गर्नुहोस्"}</span>
+                  </button>
                 </div>
               </div>
 
@@ -859,27 +944,22 @@ export function MemberSpecialTab({
                   <div className="rounded-xl border border-line bg-surface overflow-hidden shadow-xs flex flex-col">
                     <div className="bg-tint/40 border-b border-line px-3.5 py-2.5 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                        <div className="w-6 h-6 rounded-md bg-tint border border-line text-emerald-950 dark:text-emerald-300 flex items-center justify-center font-bold">
                           <TrendUp size={14} weight="bold" />
                         </div>
                         <h4 className="text-xs font-bold text-fg">आम्दानी</h4>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          रु. {totalIncome.toLocaleString("ne-NP")}
-                        </div>
-                        <span className="text-[10px] text-muted">{incomeFinances.length} प्रविष्टि</span>
-                      </div>
+                      <span className="text-xs text-muted font-medium">{incomeFinances.length} प्रविष्टि</span>
                     </div>
 
                     {incomeFinances.length === 0 ? (
                       <div className="p-8 text-center text-muted">
-                        <TrendUp size={26} className="mx-auto text-emerald-500/40 mb-1.5" />
+                        <TrendUp size={26} className="mx-auto text-emerald-800/40 dark:text-emerald-400/40 mb-1.5" />
                         <p className="text-xs font-medium">कुनै आम्दानी प्रविष्टि छैन</p>
                         <button
                           type="button"
                           onClick={() => handleOpenAddFinance("income")}
-                          className="mt-2 text-xs text-emerald-600 hover:underline font-semibold"
+                          className="mt-2 text-xs text-emerald-950 dark:text-emerald-400 hover:underline font-semibold"
                         >
                           + आम्दानी थप्नुहोस्
                         </button>
@@ -908,7 +988,7 @@ export function MemberSpecialTab({
                                 <td className="py-2.5 px-3">
                                   <div className="font-semibold text-fg text-xs">{f.title}</div>
                                   <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-tint border border-line text-fg font-medium">
                                       {f.category || "विविध"}
                                     </span>
                                     {f.remarks && (
@@ -935,7 +1015,7 @@ export function MemberSpecialTab({
                                     <span className="text-muted text-[10px]">—</span>
                                   )}
                                 </td>
-                                <td className="py-2.5 px-3 text-right font-mono font-bold text-xs whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                                <td className="py-2.5 px-3 text-right font-mono font-bold text-xs whitespace-nowrap text-emerald-950 dark:text-emerald-300">
                                   रु. {Number(f.amount).toLocaleString("ne-NP")}
                                 </td>
                                 <td className="py-2.5 px-2 text-right whitespace-nowrap">
@@ -966,7 +1046,7 @@ export function MemberSpecialTab({
                               <td colSpan={3} className="py-2 px-3 text-xs text-fg">
                                 कुल आम्दानी:
                               </td>
-                              <td className="py-2 px-3 text-right font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                              <td className="py-2 px-3 text-right font-mono font-black text-xs text-emerald-950 dark:text-emerald-300 whitespace-nowrap">
                                 रु. {totalIncome.toLocaleString("ne-NP")}
                               </td>
                               <td></td>
@@ -988,12 +1068,7 @@ export function MemberSpecialTab({
                         </div>
                         <h4 className="text-xs font-bold text-fg">खर्च</h4>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs font-mono font-bold text-rose-600 dark:text-rose-400">
-                          रु. {totalExpense.toLocaleString("ne-NP")}
-                        </div>
-                        <span className="text-[10px] text-muted">{expenseFinances.length} प्रविष्टि</span>
-                      </div>
+                      <span className="text-xs text-muted font-medium">{expenseFinances.length} प्रविष्टि</span>
                     </div>
 
                     {expenseFinances.length === 0 ? (
@@ -1110,32 +1185,20 @@ export function MemberSpecialTab({
                       <span className="font-bold text-fg font-sans text-xs">सन्तुलन सारांश:</span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <div className="px-2.5 py-1 rounded-control bg-tint/60 border border-line">
-                        <span className="text-muted mr-1 font-sans">आम्दानी:</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                          रु. {totalIncome.toLocaleString("ne-NP")}
-                        </span>
-                      </div>
-
-                      <div className="px-2.5 py-1 rounded-control bg-tint/60 border border-line">
-                        <span className="text-muted mr-1 font-sans">खर्च:</span>
-                        <span className="font-bold text-rose-600 dark:text-rose-400">
-                          रु. {totalExpense.toLocaleString("ne-NP")}
-                        </span>
-                      </div>
-
+                    <div className="flex items-center">
                       <div
-                        className={`px-2.5 py-1 rounded-control border font-bold ${
-                          totalIncome - totalExpense >= 0
-                            ? "bg-accent-soft/40 border-accent/30 text-accent"
-                            : "bg-rose-500/10 border-rose-500/30 text-rose-600"
+                        className={`px-3 py-1.5 rounded-control border font-bold flex items-center gap-2 ${
+                          adminNetBalance >= 0
+                            ? "bg-tint/70 border-line text-emerald-950 dark:text-emerald-300"
+                            : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
                         }`}
                       >
-                        <span className="mr-1 font-sans">
-                          {totalIncome - totalExpense >= 0 ? "बचत मौज्दात:" : "घाटा:"}
+                        <span className="font-sans font-semibold">
+                          {adminNetBalance >= 0 ? "बचत मौज्दात:" : "घाटा मौज्दात:"}
                         </span>
-                        <span>रु. {Math.abs(totalIncome - totalExpense).toLocaleString("ne-NP")}</span>
+                        <span className="font-black text-sm">
+                          रु. {Math.abs(adminNetBalance).toLocaleString("ne-NP")}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1597,6 +1660,97 @@ export function MemberSpecialTab({
                 >
                   {isSubmitting && <CircleNotch size={14} className="animate-spin" />}
                   <span>सुरक्षित गर्नुहोस्</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------------------------------------------------------- */}
+      {/* MODAL 4: गत वर्षको बचत प्रविष्ट / सम्पादन                           */}
+      {/* ----------------------------------------------------------------- */}
+      {showSavingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-md bg-surface rounded-2xl border border-line shadow-2xl p-6">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-line">
+              <div className="flex items-center gap-2">
+                <Coins size={20} className="text-accent" weight="bold" />
+                <h3 className="text-base font-bold text-fg">गत वर्षको बचत मौज्दात</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSavingsModal(false)}
+                className="p-1 rounded-lg text-muted hover:text-fg hover:bg-tint transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSavings} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-fg mb-1.5">
+                  बचत रकम (रु.) *
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  required
+                  value={savingsForm.amount}
+                  onChange={(e) => setSavingsForm({ ...savingsForm, amount: e.target.value })}
+                  placeholder="उदा: 50000"
+                  className="w-full px-3.5 py-2 rounded-control border border-line bg-bg text-fg text-sm font-mono placeholder:text-muted focus:outline-hidden focus:ring-2 focus:ring-accent/40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-fg mb-1.5">
+                  आर्थिक वर्ष (Fiscal Year)
+                </label>
+                <input
+                  type="text"
+                  value={savingsForm.fiscalYear}
+                  onChange={(e) => setSavingsForm({ ...savingsForm, fiscalYear: e.target.value })}
+                  placeholder="उदा: २०८०/०८१"
+                  className="w-full px-3.5 py-2 rounded-control border border-line bg-bg text-fg text-sm placeholder:text-muted focus:outline-hidden focus:ring-2 focus:ring-accent/40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-fg mb-1.5">
+                  कैफियत / विवरण (वैकल्पिक)
+                </label>
+                <textarea
+                  rows={2}
+                  value={savingsForm.remarks}
+                  onChange={(e) => setSavingsForm({ ...savingsForm, remarks: e.target.value })}
+                  placeholder="उदा: गत वर्षको अन्तिम लेखापरीक्षण अनुसारको बचत मौज्दात"
+                  className="w-full px-3.5 py-2 rounded-control border border-line bg-bg text-fg text-sm placeholder:text-muted focus:outline-hidden focus:ring-2 focus:ring-accent/40"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
+                <button
+                  type="button"
+                  onClick={() => setShowSavingsModal(false)}
+                  className="px-4 py-2 rounded-control text-xs font-semibold text-muted hover:text-fg hover:bg-tint transition-colors cursor-pointer"
+                >
+                  रद्द गर्नुहोस्
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 rounded-control btn-fill bg-accent hover:bg-accent-hover text-on-accent text-xs font-semibold shadow-e1 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <CircleNotch size={14} className="animate-spin" />
+                      <span>सुरक्षित गर्दै...</span>
+                    </>
+                  ) : (
+                    <span>सुरक्षित गर्नुहोस्</span>
+                  )}
                 </button>
               </div>
             </form>

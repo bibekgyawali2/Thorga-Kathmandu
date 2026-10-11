@@ -22,6 +22,7 @@ import type {
   MemberSpecialUser,
   MemberSpecialRecord,
   MemberSpecialFinance,
+  PreviousYearSaving,
 } from "@/data/mockData";
 import {
   initialHeroContent,
@@ -29,6 +30,7 @@ import {
   initialContactSettings,
   initialMemberSpecialRecords,
   initialMemberSpecialFinances,
+  initialMemberPreviousSavings,
 } from "@/data/mockData";
 
 let pool: Pool | null = null;
@@ -2138,6 +2140,25 @@ export async function deleteMemberSpecialFinance(id: string): Promise<void> {
     console.warn("[deleteMemberSpecialFinance] supabase delete failed:", err);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Member Special: Previous Year Savings (गत वर्षको बचत)
+// ---------------------------------------------------------------------------
+
+export async function fetchMemberSpecialPreviousSavings(): Promise<PreviousYearSaving[]> {
+  return fetchSiteSetting<PreviousYearSaving[]>(
+    "member_special_previous_savings",
+    initialMemberPreviousSavings
+  );
+}
+
+export async function saveMemberSpecialPreviousSavings(
+  savings: PreviousYearSaving[]
+): Promise<PreviousYearSaving[]> {
+  await saveSiteSetting<PreviousYearSaving[]>("member_special_previous_savings", savings);
+  return savings;
+}
+
 
 // ---------------------------------------------------------------------------
 // Member Special: Users (सदस्य पहुँच खाता)

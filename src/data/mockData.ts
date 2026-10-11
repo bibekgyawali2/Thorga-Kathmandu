@@ -942,3 +942,62 @@ export function saveStoredMemberFinances(finances: MemberSpecialFinance[]): void
   } catch {}
 }
 
+export interface PreviousYearSaving {
+  id: string;
+  fiscalYear: string;
+  amount: number;
+  remarks?: string;
+  updatedAt?: string;
+}
+
+export const initialMemberPreviousSavings: PreviousYearSaving[] = [];
+
+const MEMBER_SAVINGS_STORAGE_KEY = "thorga_member_savings_list";
+let memberSavingsSubscribers: Array<() => void> = [];
+let _savingsCacheRaw: string | null = undefined as unknown as string | null;
+let _savingsCache: PreviousYearSaving[] = initialMemberPreviousSavings;
+
+export function subscribeMemberPreviousSavings(callback: () => void) {
+  memberSavingsSubscribers.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === MEMBER_SAVINGS_STORAGE_KEY) {
+      _savingsCacheRaw = undefined as unknown as string | null;
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
+  return () => {
+    memberSavingsSubscribers = memberSavingsSubscribers.filter((s) => s !== callback);
+    if (typeof window !== "undefined") window.removeEventListener("storage", handleStorage);
+  };
+}
+
+export function getStoredMemberPreviousSavingsSnapshot(): PreviousYearSaving[] {
+  if (typeof window === "undefined") return initialMemberPreviousSavings;
+  try {
+    const raw = localStorage.getItem(MEMBER_SAVINGS_STORAGE_KEY);
+    if (!raw) return initialMemberPreviousSavings;
+    if (raw === _savingsCacheRaw) return _savingsCache;
+    _savingsCacheRaw = raw;
+    _savingsCache = JSON.parse(raw);
+    return _savingsCache;
+  } catch {
+    return initialMemberPreviousSavings;
+  }
+}
+
+export function getServerMemberPreviousSavingsSnapshot(): PreviousYearSaving[] {
+  return initialMemberPreviousSavings;
+}
+
+export function saveStoredMemberPreviousSavings(savings: PreviousYearSaving[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(MEMBER_SAVINGS_STORAGE_KEY, JSON.stringify(savings));
+    _savingsCacheRaw = undefined as unknown as string | null;
+    _savingsCache = savings;
+    memberSavingsSubscribers.forEach((s) => s());
+  } catch {}
+}
+
+

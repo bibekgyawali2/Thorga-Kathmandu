@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import {
   MemberSpecialRecord,
   MemberSpecialFinance,
+  PreviousYearSaving,
   Language,
   getStoredLanguage,
   subscribeMemberRecords,
@@ -17,6 +18,10 @@ import {
   getStoredMemberFinancesSnapshot,
   getServerMemberFinancesSnapshot,
   saveStoredMemberFinances,
+  subscribeMemberPreviousSavings,
+  getStoredMemberPreviousSavingsSnapshot,
+  getServerMemberPreviousSavingsSnapshot,
+  saveStoredMemberPreviousSavings,
 } from "@/data/mockData";
 import {
   getMemberSession,
@@ -89,6 +94,11 @@ export default function SadashyaBiseshPage() {
     getStoredMemberFinancesSnapshot,
     getServerMemberFinancesSnapshot
   );
+  const cachedPreviousSavings = useSyncExternalStore(
+    subscribeMemberPreviousSavings,
+    getStoredMemberPreviousSavingsSnapshot,
+    getServerMemberPreviousSavingsSnapshot
+  );
 
   // Remote data hooks (only active when logged in)
   const isAuthenticated = Boolean(session?.isAuthenticated || isAdminLoggedIn);
@@ -100,6 +110,11 @@ export default function SadashyaBiseshPage() {
   const remoteFinances = useRemoteData<MemberSpecialFinance[]>(
     "/api/member-special/finances",
     saveStoredMemberFinances,
+    isAuthenticated
+  );
+  const remotePreviousSavings = useRemoteData<PreviousYearSaving[]>(
+    "/api/member-special/savings",
+    saveStoredMemberPreviousSavings,
     isAuthenticated
   );
 
@@ -241,20 +256,20 @@ export default function SadashyaBiseshPage() {
     return filteredExpenses.reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
   }, [filteredExpenses]);
 
-  // Financial calculations
-  const totalIncome = useMemo(() => {
-    return cachedFinances
-      .filter((f) => f.type === "income" && (financeFiscalYear === "all" || f.fiscalYear === financeFiscalYear))
-      .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
-  }, [cachedFinances, financeFiscalYear]);
+  // Active previous year saving based on selected fiscal year
+  const activePreviousSaving = useMemo(() => {
+    if (!cachedPreviousSavings || cachedPreviousSavings.length === 0) return null;
+    if (financeFiscalYear !== "all") {
+      const match = cachedPreviousSavings.find((s) => s.fiscalYear === financeFiscalYear);
+      if (match) return match;
+    }
+    return cachedPreviousSavings[0];
+  }, [cachedPreviousSavings, financeFiscalYear]);
 
-  const totalExpense = useMemo(() => {
-    return cachedFinances
-      .filter((f) => f.type === "expense" && (financeFiscalYear === "all" || f.fiscalYear === financeFiscalYear))
-      .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
-  }, [cachedFinances, financeFiscalYear]);
+  const previousSavingAmount = activePreviousSaving ? Number(activePreviousSaving.amount) || 0 : 0;
+  const netSavingsBalance = previousSavingAmount + filteredIncomeTotal - filteredExpenseTotal;
 
-  const netBalance = totalIncome - totalExpense;
+
 
   return (
     <div className="min-h-screen flex flex-col bg-bg text-fg">
@@ -532,63 +547,32 @@ export default function SadashyaBiseshPage() {
             {/* ========================================================= */}
             {activeTab === "finances" && (
               <div className="space-y-6">
-                {/* Financial Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-muted">
-                        कुल आम्दानी
-                      </span>
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                        <TrendUp size={18} weight="bold" />
-                      </div>
+                {/* Top Section: गत वर्षको बचत (Previous Year Savings) */}
+                <div className="rounded-2xl border border-line bg-surface p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-tint border border-line text-emerald-950 dark:text-emerald-300 flex items-center justify-center font-bold shrink-0">
+                      <Coins size={22} weight="bold" />
                     </div>
-                    <div className="text-2xl font-bold text-fg tracking-tight">
-                      रु. {totalIncome.toLocaleString("ne-NP")}
-                    </div>
-                    {financeFiscalYear !== "all" && (
-                      <div className="text-[11px] text-muted mt-1">
-                        आ.व. {financeFiscalYear}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-fg">गत वर्षको बचत</h3>
+                        {activePreviousSaving?.fiscalYear && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-tint border border-line text-muted font-mono font-medium">
+                            आ.व. {activePreviousSaving.fiscalYear}
+                          </span>
+                        )}
                       </div>
-                    )}
+                      <p className="text-xs text-muted mt-0.5">
+                        {activePreviousSaving?.remarks || "अघिल्लो आर्थिक वर्षबाट जिम्मेवारी सरेको बचत मौज्दात"}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-muted">
-                        कुल खर्च
-                      </span>
-                      <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-                        <TrendDown size={18} weight="bold" />
-                      </div>
+                  <div className="sm:text-right">
+                    <div className="text-[11px] text-muted font-medium mb-0.5">गत वर्षको मौज्दात रकम</div>
+                    <div className="font-mono font-black text-lg sm:text-xl text-emerald-950 dark:text-emerald-300">
+                      रु. {previousSavingAmount.toLocaleString("ne-NP")}
                     </div>
-                    <div className="text-2xl font-bold text-fg tracking-tight">
-                      रु. {totalExpense.toLocaleString("ne-NP")}
-                    </div>
-                    {financeFiscalYear !== "all" && (
-                      <div className="text-[11px] text-muted mt-1">
-                        आ.व. {financeFiscalYear}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-muted">
-                        मौज्दात बचत
-                      </span>
-                      <div className="w-8 h-8 rounded-lg bg-accent-soft text-accent flex items-center justify-center">
-                        <Coins size={18} weight="bold" />
-                      </div>
-                    </div>
-                    <div className={`text-2xl font-bold tracking-tight ${netBalance >= 0 ? "text-accent" : "text-rose-600"}`}>
-                      रु. {netBalance.toLocaleString("ne-NP")}
-                    </div>
-                    {financeFiscalYear !== "all" && (
-                      <div className="text-[11px] text-muted mt-1">
-                        आ.व. {financeFiscalYear}
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -679,23 +663,18 @@ export default function SadashyaBiseshPage() {
                           {/* Left Header */}
                           <div className="bg-tint/40 border-b border-line px-4 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                              <div className="w-7 h-7 rounded-lg bg-tint border border-line text-emerald-950 dark:text-emerald-300 flex items-center justify-center font-bold">
                                 <TrendUp size={16} weight="bold" />
                               </div>
                               <h3 className="text-sm font-bold text-fg">आम्दानी</h3>
                             </div>
-                            <div className="text-right">
-                              <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                रु. {filteredIncomeTotal.toLocaleString("ne-NP")}
-                              </div>
-                              <span className="text-[10px] text-muted">{filteredIncome.length} प्रविष्टि</span>
-                            </div>
+                            <span className="text-xs text-muted font-medium">{filteredIncome.length} प्रविष्टि</span>
                           </div>
 
                           {/* Left Table */}
                           {filteredIncome.length === 0 ? (
                             <div className="p-8 text-center text-muted">
-                              <TrendUp size={30} className="mx-auto text-emerald-500/40 mb-2" />
+                              <TrendUp size={30} className="mx-auto text-emerald-800/40 dark:text-emerald-400/40 mb-2" />
                               <p className="text-xs font-medium">यस अवधिमा कुनै आम्दानी प्रविष्टि छैन</p>
                             </div>
                           ) : (
@@ -721,7 +700,7 @@ export default function SadashyaBiseshPage() {
                                       <td className="py-2.5 px-3">
                                         <div className="font-semibold text-fg text-xs">{item.title}</div>
                                         <div className="flex items-center gap-1.5 mt-0.5">
-                                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-medium">
+                                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-tint border border-line text-fg font-medium">
                                             {item.category || "आम्दानी"}
                                           </span>
                                           {item.remarks && (
@@ -748,7 +727,7 @@ export default function SadashyaBiseshPage() {
                                           <span className="text-muted text-[10px]">—</span>
                                         )}
                                       </td>
-                                      <td className="py-2.5 px-3 text-right font-mono font-bold text-xs whitespace-nowrap text-emerald-600 dark:text-emerald-400">
+                                      <td className="py-2.5 px-3 text-right font-mono font-bold text-xs whitespace-nowrap text-emerald-950 dark:text-emerald-300">
                                         रु. {Number(item.amount).toLocaleString("ne-NP")}
                                       </td>
                                     </tr>
@@ -759,7 +738,7 @@ export default function SadashyaBiseshPage() {
                                     <td colSpan={3} className="py-2.5 px-3 text-xs text-fg">
                                       जम्मा आम्दानी:
                                     </td>
-                                    <td className="py-2.5 px-3 text-right font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                                    <td className="py-2.5 px-3 text-right font-mono font-black text-xs text-emerald-950 dark:text-emerald-300 whitespace-nowrap">
                                       रु. {filteredIncomeTotal.toLocaleString("ne-NP")}
                                     </td>
                                   </tr>
@@ -783,12 +762,7 @@ export default function SadashyaBiseshPage() {
                               </div>
                               <h3 className="text-sm font-bold text-fg">खर्च</h3>
                             </div>
-                            <div className="text-right">
-                              <div className="text-xs font-mono font-bold text-rose-600 dark:text-rose-400">
-                                रु. {filteredExpenseTotal.toLocaleString("ne-NP")}
-                              </div>
-                              <span className="text-[10px] text-muted">{filteredExpenses.length} प्रविष्टि</span>
-                            </div>
+                            <span className="text-xs text-muted font-medium">{filteredExpenses.length} प्रविष्टि</span>
                           </div>
 
                           {/* Right Table */}
@@ -890,36 +864,19 @@ export default function SadashyaBiseshPage() {
                             </div>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono">
-                            <div className="px-3 py-1.5 rounded-control bg-tint/60 border border-line">
-                              <span className="text-muted mr-1.5 font-sans">आम्दानी:</span>
-                              <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                                रु. {filteredIncomeTotal.toLocaleString("ne-NP")}
-                              </span>
-                            </div>
-
-                            <div className="px-3 py-1.5 rounded-control bg-tint/60 border border-line">
-                              <span className="text-muted mr-1.5 font-sans">खर्च:</span>
-                              <span className="font-bold text-rose-600 dark:text-rose-400">
-                                रु. {filteredExpenseTotal.toLocaleString("ne-NP")}
-                              </span>
-                            </div>
-
+                          <div className="flex items-center text-xs font-mono">
                             <div
-                              className={`px-3 py-1.5 rounded-control border font-bold ${
-                                filteredIncomeTotal - filteredExpenseTotal >= 0
-                                  ? "bg-accent-soft/40 border-accent/30 text-accent"
-                                  : "bg-rose-500/10 border-rose-500/30 text-rose-600"
+                              className={`px-3.5 py-2 rounded-control border font-bold flex items-center gap-2 ${
+                                netSavingsBalance >= 0
+                                  ? "bg-tint/70 border-line text-emerald-950 dark:text-emerald-300"
+                                  : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
                               }`}
                             >
-                              <span className="mr-1.5 font-sans">
-                                {filteredIncomeTotal - filteredExpenseTotal >= 0
-                                  ? "बचत मौज्दात:"
-                                  : "घाटा:"}
+                              <span className="font-sans font-semibold">
+                                {netSavingsBalance >= 0 ? "बचत मौज्दात:" : "घाटा मौज्दात:"}
                               </span>
-                              <span>
-                                रु.{" "}
-                                {Math.abs(filteredIncomeTotal - filteredExpenseTotal).toLocaleString("ne-NP")}
+                              <span className="font-black text-sm">
+                                रु. {Math.abs(netSavingsBalance).toLocaleString("ne-NP")}
                               </span>
                             </div>
                           </div>
