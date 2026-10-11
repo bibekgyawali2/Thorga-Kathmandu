@@ -98,8 +98,8 @@ export default function EventsPage() {
               type="button"
               onClick={() => setStatusFilter("completed")}
               className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${statusFilter === "completed"
-                  ? "bg-accent text-on-accent shadow-e1"
-                  : "bg-surface border border-line text-fg hover:bg-tint"
+                ? "bg-accent text-on-accent shadow-e1"
+                : "bg-surface border border-line text-fg hover:bg-tint"
                 }`}
             >
               {lang === "ne" ? "सम्पन्न गतिविधिहरू" : "Completed Activities"}
@@ -108,8 +108,8 @@ export default function EventsPage() {
               type="button"
               onClick={() => setStatusFilter("upcoming")}
               className={`px-4 py-2.5 rounded-control text-xs font-semibold transition-colors ${statusFilter === "upcoming"
-                  ? "bg-accent text-on-accent shadow-e1"
-                  : "bg-surface border border-line text-fg hover:bg-tint"
+                ? "bg-accent text-on-accent shadow-e1"
+                : "bg-surface border border-line text-fg hover:bg-tint"
                 }`}
             >
               {lang === "ne" ? "आगामी गतिविधिहरू" : "Upcoming Activities"}
@@ -274,8 +274,8 @@ export default function EventsPage() {
                     )}
                   <span
                     className={`px-3 py-1 rounded-chip text-xs font-bold ${selectedEvent.status === "upcoming"
-                        ? "bg-accent text-on-accent"
-                        : "bg-tint text-muted"
+                      ? "bg-accent text-on-accent"
+                      : "bg-tint text-muted"
                       }`}
                   >
                     {selectedEvent.status === "upcoming"
@@ -375,6 +375,7 @@ export default function EventsPage() {
               <X size={22} />
             </button>
           </div>
+
           <div
             className="relative flex-1 w-full h-[82vh] flex items-center justify-center p-2"
             onClick={() => setZoomedImageUrl(null)}
