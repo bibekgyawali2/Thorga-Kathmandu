@@ -79,100 +79,92 @@ export default function BusinessShowcasePage() {
       <SiteHeader lang={lang} setLang={setLang} />
       <DataStatus error={remote.error} refetch={remote.refetch} lang={lang} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-10">
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-accent transition-colors"
-          >
-            <ArrowLeft size={16} />
-            <span>{lang === "ne" ? "मुख्य पृष्ठमा फर्कनुहोस्" : "Back to Home"}</span>
-          </Link>
-          <div className="text-xs font-mono text-muted flex items-center gap-1.5">
-            <Handshake size={14} className="text-accent" />
-            <span>{lang === "ne" ? "आफ्नै समुदाय, आफ्नै व्यवसाय" : "Community Business Showcase"}</span>
-          </div>
-        </div>
-
-        {/* Page Hero Header with Authentic Nepali Slogan */}
-        <div className="rounded-card border border-line bg-surface p-6 sm:p-10 shadow-e1 relative overflow-hidden">
-          <div className="absolute -right-12 -bottom-12 w-64 h-64 rounded-full bg-accent-soft/40 pointer-events-none blur-2xl" />
-
-          <div className="max-w-3xl space-y-4 relative z-10">
-
-            <h1 className="type-section text-2xl sm:text-4xl font-extrabold text-fg">
-              {lang === "ne" ? "पेशा तथा व्यवसाय" : "Professions & Community Businesses"}
-            </h1>
-
-            {/* Slogan from user sketch */}
-            <p className="text-base sm:text-lg font-semibold text-accent leading-relaxed">
-              {lang === "ne"
-                ? "के तपाई कुनै सामान वा सेवा खरिदगर्दै हुनुहुन्छ ? आफ्नैलाई सम्झनुहोस।"
-                : "Looking to purchase goods or hire services? Prioritize our own community members."}
-            </p>
-
-          </div>
-        </div>
-
-        {/* Search & Category Filter Controls */}
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Search Input */}
-            <div className="relative w-full md:w-80">
-              <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={lang === "ne" ? "व्यवसाय वा सेवा खोज्नुहोस्..." : "Search business, service, or category..."}
-                className="w-full pl-9 pr-4 py-2.5 rounded-control border border-line bg-surface text-fg text-xs focus:border-accent"
-              />
-            </div>
-
-            <div className="text-xs font-mono text-muted flex items-center gap-2">
-              <span>{lang === "ne" ? "कुल प्रविष्टिहरू:" : "Total listings:"}</span>
-              <span className="font-bold text-accent px-2 py-0.5 rounded-chip bg-accent-soft">
-                {filteredBusinesses.length}
-              </span>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5 sm:space-y-6">
+        {/* Minimal Header Section */}
+        <div className="border-b border-line pb-4 space-y-2.5">
+          {/* Breadcrumb Navigation & Slogan Badge */}
+          <div className="flex items-center justify-between gap-4">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-accent transition-colors"
+            >
+              <ArrowLeft size={14} />
+              <span>{lang === "ne" ? "मुख्य पृष्ठमा फर्कनुहोस्" : "Back to Home"}</span>
+            </Link>
+            <div className="text-[11px] font-mono text-muted flex items-center gap-1.5">
+              <Handshake size={13} className="text-accent" />
+              <span>{lang === "ne" ? "आफ्नै समुदाय, आफ्नै व्यवसाय" : "Community Business Showcase"}</span>
             </div>
           </div>
 
-          {/* Category Filter Pills (Derived from sketch categories) */}
-          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-2">
+          {/* Small Title Section & Slogan */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pt-1">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-fg">
+                {lang === "ne" ? "पेशा तथा व्यवसाय" : "Professions & Community Businesses"}
+              </h1>
+              <p className="text-xs sm:text-sm font-medium text-accent mt-0.5">
+                {lang === "ne"
+                  ? "के तपाई कुनै सामान वा सेवा खरिदगर्दै हुनुहुन्छ ? आफ्नैलाई सम्झनुहोस।"
+                  : "Looking to purchase goods or hire services? Prioritize our own community members."}
+              </p>
+            </div>
+            <div className="text-xs font-mono text-muted shrink-0">
+              <span>{lang === "ne" ? "कुल प्रविष्टि:" : "Total listings:"} </span>
+              <span className="font-bold text-fg">{filteredBusinesses.length}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Minimal Search & Category Filter Controls */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Category Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
               onClick={() => setSelectedCategory("all")}
-              className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-control text-sm sm:text-base font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-control text-xs font-semibold transition-colors cursor-pointer ${
                 selectedCategory === "all"
-                  ? "bg-accent text-on-accent shadow-e1"
-                  : "bg-surface border border-line text-fg hover:bg-tint hover:border-accent/40"
+                  ? "bg-accent text-on-accent shadow-xs"
+                  : "bg-surface border border-line text-muted hover:text-fg hover:bg-tint"
               }`}
             >
-              {lang === "ne" ? "सबै वर्गहरू" : "All Categories"}
+              {lang === "ne" ? "सबै" : "All"}
             </button>
             {BUSINESS_CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-control text-sm sm:text-base font-semibold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-control text-xs font-semibold transition-colors cursor-pointer ${
                   selectedCategory === cat
-                    ? "bg-accent text-on-accent shadow-e1"
-                    : "bg-surface border border-line text-fg hover:bg-tint hover:border-accent/40"
+                    ? "bg-accent text-on-accent shadow-xs"
+                    : "bg-surface border border-line text-muted hover:text-fg hover:bg-tint"
                 }`}
               >
                 {cat}
               </button>
             ))}
           </div>
+
+          {/* Search Input */}
+          <div className="relative w-full lg:w-64 shrink-0">
+            <MagnifyingGlass size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={lang === "ne" ? "व्यवसाय वा सेवा खोज्नुहोस्..." : "Search..."}
+              className="w-full pl-8 pr-3 py-1.5 rounded-control border border-line bg-surface text-fg text-xs placeholder:text-muted focus:outline-hidden focus:border-accent"
+            />
+          </div>
         </div>
 
         {/* Business Showcase Listings Grid */}
         {filteredBusinesses.length === 0 ? (
-          <div className="p-16 text-center space-y-4 rounded-card border border-dashed border-line bg-surface">
-            <Storefront size={40} className="text-accent mx-auto" weight="duotone" />
-            <div className="text-base font-bold text-fg">
+          <div className="p-10 text-center space-y-3 rounded-2xl border border-dashed border-line bg-surface/50">
+            <Storefront size={32} className="text-accent mx-auto" weight="duotone" />
+            <div className="text-sm font-bold text-fg">
               {lang === "ne" ? "यस वर्गमा कुनै व्यवसाय फेला परेन" : "No business listings found"}
             </div>
             <p className="text-xs text-muted max-w-md mx-auto">
@@ -182,12 +174,13 @@ export default function BusinessShowcasePage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredBusinesses.map((item) => (
               <BusinessCard
                 key={item.id}
                 item={item}
                 lang={lang}
+                compact
                 onPreviewPdf={setActivePdf}
                 onPreviewImage={setActiveImage}
               />
