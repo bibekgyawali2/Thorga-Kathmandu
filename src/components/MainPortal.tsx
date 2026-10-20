@@ -651,9 +651,15 @@ export default function MainPortal() {
 
                   <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
                     <div className="space-y-1.5">
-                      <div className="text-[11px] font-bold text-accent">
-                        {lang === "ne" ? pub.categoryNe : pub.categoryEn}
-                      </div>
+                      {(() => {
+                        const cat = lang === "ne" ? pub.categoryNe || pub.categoryEn : pub.categoryEn || pub.categoryNe;
+                        if (!cat || cat === "स्मारिका") return null;
+                        return (
+                          <div className="text-[11px] font-bold text-accent">
+                            {cat}
+                          </div>
+                        );
+                      })()}
                       <h3 className="text-base font-bold text-fg leading-snug">
                         {lang === "ne" ? pub.titleNe : pub.titleEn}
                       </h3>

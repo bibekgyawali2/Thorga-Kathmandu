@@ -1000,4 +1000,70 @@ export function saveStoredMemberPreviousSavings(savings: PreviousYearSaving[]): 
   } catch {}
 }
 
+// ---------------------------------------------------------------------------
+// Bibhid / Miscellaneous (विविध)
+// ---------------------------------------------------------------------------
 
+export interface BibhidItem {
+  id: string;
+  titleEn: string;
+  titleNe: string;
+  driveUrl: string;
+  descriptionEn?: string;
+  descriptionNe?: string;
+  categoryEn?: string;
+  categoryNe?: string;
+  displayOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const initialBibhidItems: BibhidItem[] = [];
+
+const BIBHID_STORAGE_KEY = "thorga_bibhid_list";
+let bibhidSubscribers: Array<() => void> = [];
+let _bibhidCacheRaw: string | null = undefined as unknown as string | null;
+let _bibhidCache: BibhidItem[] = initialBibhidItems;
+
+export function subscribeBibhid(callback: () => void) {
+  bibhidSubscribers.push(callback);
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === BIBHID_STORAGE_KEY) {
+      _bibhidCacheRaw = undefined as unknown as string | null;
+      callback();
+    }
+  };
+  if (typeof window !== "undefined") window.addEventListener("storage", handleStorage);
+  return () => {
+    bibhidSubscribers = bibhidSubscribers.filter((s) => s !== callback);
+    if (typeof window !== "undefined") window.removeEventListener("storage", handleStorage);
+  };
+}
+
+export function getStoredBibhidSnapshot(): BibhidItem[] {
+  if (typeof window === "undefined") return initialBibhidItems;
+  try {
+    const raw = localStorage.getItem(BIBHID_STORAGE_KEY);
+    if (!raw) return initialBibhidItems;
+    if (raw === _bibhidCacheRaw) return _bibhidCache;
+    _bibhidCacheRaw = raw;
+    _bibhidCache = JSON.parse(raw);
+    return _bibhidCache;
+  } catch {
+    return initialBibhidItems;
+  }
+}
+
+export function getServerBibhidSnapshot(): BibhidItem[] {
+  return initialBibhidItems;
+}
+
+export function saveStoredBibhid(items: BibhidItem[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(BIBHID_STORAGE_KEY, JSON.stringify(items));
+    _bibhidCacheRaw = undefined as unknown as string | null;
+    _bibhidCache = items;
+    bibhidSubscribers.forEach((s) => s());
+  } catch {}
+}

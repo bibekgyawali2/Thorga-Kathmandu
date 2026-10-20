@@ -50,8 +50,8 @@ export function PublicationsTab({
   const [pubForm, setPubForm] = useState({
     titleEn: "",
     titleNe: "",
-    categoryEn: "Souvenir",
-    categoryNe: "स्मारिका",
+    categoryEn: "",
+    categoryNe: "",
     publishedYearEn: "2081 BS (2024)",
     publishedYearNe: "२०८१",
     descriptionEn: "",
@@ -80,8 +80,8 @@ export function PublicationsTab({
     setPubForm({
       titleEn: pub.titleEn || "",
       titleNe: pub.titleNe || "",
-      categoryEn: pub.categoryEn || "Souvenir",
-      categoryNe: pub.categoryNe || "स्मारिका",
+      categoryEn: pub.categoryEn || pub.categoryNe || "",
+      categoryNe: pub.categoryNe || pub.categoryEn || "",
       publishedYearEn: pub.publishedYearEn || "",
       publishedYearNe: pub.publishedYearNe || "",
       descriptionEn: pub.descriptionEn || "",
@@ -157,8 +157,8 @@ export function PublicationsTab({
         setPubForm({
           titleEn: "",
           titleNe: "",
-          categoryEn: "Souvenir",
-          categoryNe: "स्मारिका",
+          categoryEn: "",
+          categoryNe: "",
           publishedYearEn: "2081 BS (2024)",
           publishedYearNe: "२०८१",
           descriptionEn: "",
@@ -219,8 +219,8 @@ export function PublicationsTab({
       setPubForm({
         titleEn: "",
         titleNe: "",
-        categoryEn: "Souvenir",
-        categoryNe: "स्मारिका",
+        categoryEn: "",
+        categoryNe: "",
         publishedYearEn: "2081 BS (2024)",
         publishedYearNe: "२०८१",
         descriptionEn: "",
@@ -331,8 +331,8 @@ export function PublicationsTab({
               setPubForm({
                 titleEn: "",
                 titleNe: "",
-                categoryEn: "Souvenir",
-                categoryNe: "स्मारिका",
+                categoryEn: "",
+                categoryNe: "",
                 publishedYearEn: "2081 BS (2024)",
                 publishedYearNe: "२०८१",
                 descriptionEn: "",
@@ -413,11 +413,15 @@ export function PublicationsTab({
               <label className="text-xs font-semibold text-fg">Category</label>
               <input
                 type="text"
-                value={pubForm.categoryEn}
+                value={pubForm.categoryEn || pubForm.categoryNe}
                 onChange={(e) =>
-                  setPubForm({ ...pubForm, categoryEn: e.target.value })
+                  setPubForm({
+                    ...pubForm,
+                    categoryEn: e.target.value,
+                    categoryNe: e.target.value,
+                  })
                 }
-                placeholder="Souvenir"
+                placeholder="e.g. क्यालेण्डर, Dairy, Souvenir"
                 className="w-full px-3 py-2 rounded-control border border-line bg-ground text-fg text-xs"
               />
             </div>

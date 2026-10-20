@@ -148,9 +148,15 @@ export default function PublicationsPage() {
 
                 <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                   <div className="space-y-2">
-                    <div className="text-xs font-semibold text-accent">
-                      {lang === "ne" ? pub.categoryNe : pub.categoryEn}
-                    </div>
+                    {(() => {
+                      const cat = lang === "ne" ? pub.categoryNe || pub.categoryEn : pub.categoryEn || pub.categoryNe;
+                      if (!cat || cat === "स्मारिका") return null;
+                      return (
+                        <div className="text-xs font-semibold text-accent">
+                          {cat}
+                        </div>
+                      );
+                    })()}
                     <h3 className="text-base font-bold text-fg leading-snug">
                       {lang === "ne" ? pub.titleNe : pub.titleEn}
                     </h3>

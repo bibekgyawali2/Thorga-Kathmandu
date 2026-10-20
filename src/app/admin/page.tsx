@@ -33,6 +33,9 @@ import {
   BusinessItem,
   getStoredBusinessesSnapshot,
   saveStoredBusinesses,
+  BibhidItem,
+  getStoredBibhidSnapshot,
+  saveStoredBibhid,
 } from "@/data/mockData";
 import {
   AdminUser,
@@ -67,6 +70,7 @@ import { SettingsTab } from "@/components/admin/tabs/SettingsTab";
 import { BrandingTab } from "@/components/admin/tabs/BrandingTab";
 import { AccessTab } from "@/components/admin/tabs/AccessTab";
 import { MemberSpecialTab } from "@/components/admin/tabs/MemberSpecialTab";
+import { BibhidTab } from "@/components/admin/tabs/BibhidTab";
 
 function subscribeTheme(callback: () => void) {
   if (typeof document === "undefined") return () => {};
@@ -110,6 +114,7 @@ export default function AdminPage() {
   const [galleryList, setGalleryList] = useState<GalleryItem[]>(() => getStoredGallerySnapshot());
   const [albumsList, setAlbumsList] = useState<GalleryAlbum[]>(() => getStoredGalleryAlbumsSnapshot());
   const [businessesList, setBusinessesList] = useState<BusinessItem[]>(() => getStoredBusinessesSnapshot());
+  const [bibhidList, setBibhidList] = useState<BibhidItem[]>(() => getStoredBibhidSnapshot());
   const [inquiriesList, setInquiriesList] = useState<Inquiry[]>([]);
   const [inquiriesLoading, setInquiriesLoading] = useState(true);
   const [inquiriesError, setInquiriesError] = useState(false);
@@ -306,6 +311,16 @@ export default function AdminPage() {
       })
       .catch(() => {});
 
+    fetch("/api/bibhid", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          setBibhidList(data);
+          saveStoredBibhid(data);
+        }
+      })
+      .catch(() => {});
+
     const currentSession = getAdminSession();
     const userHeaders: Record<string, string> = {};
     if (currentSession?.token) {
@@ -463,6 +478,7 @@ export default function AdminPage() {
     inquiries: inquiriesList.length,
     adminUsers: adminUsersList.length,
     businesses: businessesList.length,
+    bibhid: bibhidList.length,
   };
 
   return (
@@ -546,6 +562,14 @@ export default function AdminPage() {
               {...baseTabProps}
               businessesList={businessesList}
               setBusinessesList={setBusinessesList}
+            />
+          )}
+
+          {activeTab === "bibhid" && (
+            <BibhidTab
+              {...baseTabProps}
+              bibhidList={bibhidList}
+              setBibhidList={setBibhidList}
             />
           )}
 

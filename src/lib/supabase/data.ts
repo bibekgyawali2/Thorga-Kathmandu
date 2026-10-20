@@ -23,6 +23,7 @@ import type {
   MemberSpecialRecord,
   MemberSpecialFinance,
   PreviousYearSaving,
+  BibhidItem,
 } from "@/data/mockData";
 import {
   initialHeroContent,
@@ -31,6 +32,7 @@ import {
   initialMemberSpecialRecords,
   initialMemberSpecialFinances,
   initialMemberPreviousSavings,
+  initialBibhidItems,
 } from "@/data/mockData";
 
 let pool: Pool | null = null;
@@ -2319,4 +2321,138 @@ export async function updateMemberSpecialLastLogin(id: string): Promise<void> {
   } catch {}
 }
 
+// ---------------------------------------------------------------------------
+// Bibhid / Miscellaneous (विविध)
+// ---------------------------------------------------------------------------
 
+function mapBibhidItem(row: Record<string, unknown>): BibhidItem {
+  return {
+    id: String(row.id),
+    titleEn: String(row.title_en ?? ""),
+    titleNe: String(row.title_ne ?? ""),
+    driveUrl: String(row.drive_url ?? ""),
+    descriptionEn: row.description_en ? String(row.description_en) : "",
+    descriptionNe: row.description_ne ? String(row.description_ne) : "",
+    categoryEn: row.category_en ? String(row.category_en) : "",
+    categoryNe: row.category_ne ? String(row.category_ne) : "",
+    displayOrder: Number(row.display_order ?? 0),
+    createdAt: row.created_at ? new Date(row.created_at as string).toISOString() : undefined,
+    updatedAt: row.updated_at ? new Date(row.updated_at as string).toISOString() : undefined,
+  };
+}
+
+export async function fetchBibhidItems(): Promise<BibhidItem[]> {
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        "SELECT * FROM public.bibhid ORDER BY display_order ASC, created_at DESC"
+      );
+      if (res.rows) return res.rows.map(mapBibhidItem);
+    } catch (err) {
+      console.warn("[fetchBibhidItems] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("bibhid")
+      .select("*")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false });
+
+    if (!error && data) return data.map(mapBibhidItem);
+  } catch (err) {
+    console.warn("[fetchBibhidItems] supabase query failed:", err);
+  }
+
+  return initialBibhidItems;
+}
+
+export async function saveBibhidItem(item: BibhidItem): Promise<BibhidItem> {
+  const finalId = isValidUUID(item.id) ? item.id : generateUUID();
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      const res = await pg.query(
+        `INSERT INTO public.bibhid (
+           id, title_en, title_ne, drive_url, description_en, description_ne,
+           category_en, category_ne, display_order, updated_at
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+         ON CONFLICT (id) DO UPDATE SET
+           title_en = EXCLUDED.title_en,
+           title_ne = EXCLUDED.title_ne,
+           drive_url = EXCLUDED.drive_url,
+           description_en = EXCLUDED.description_en,
+           description_ne = EXCLUDED.description_ne,
+           category_en = EXCLUDED.category_en,
+           category_ne = EXCLUDED.category_ne,
+           display_order = EXCLUDED.display_order,
+           updated_at = NOW()
+         RETURNING *;`,
+        [
+          finalId,
+          item.titleEn,
+          item.titleNe,
+          item.driveUrl,
+          item.descriptionEn ?? "",
+          item.descriptionNe ?? "",
+          item.categoryEn ?? "",
+          item.categoryNe ?? "",
+          item.displayOrder ?? 0,
+        ]
+      );
+      if (res.rows && res.rows.length > 0) return mapBibhidItem(res.rows[0]);
+    } catch (err) {
+      console.warn("[saveBibhidItem] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    const { data, error } = await supabase
+      .from("bibhid")
+      .upsert({
+        id: finalId,
+        title_en: item.titleEn,
+        title_ne: item.titleNe,
+        drive_url: item.driveUrl,
+        description_en: item.descriptionEn ?? "",
+        description_ne: item.descriptionNe ?? "",
+        category_en: item.categoryEn ?? "",
+        category_ne: item.categoryNe ?? "",
+        display_order: item.displayOrder ?? 0,
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (!error && data) return mapBibhidItem(data);
+  } catch (err) {
+    console.warn("[saveBibhidItem] supabase upsert failed:", err);
+  }
+
+  return { ...item, id: finalId };
+}
+
+export async function deleteBibhidItem(id: string): Promise<void> {
+  if (!id) return;
+  const pg = getPgPool();
+  if (pg) {
+    try {
+      await pg.query("DELETE FROM public.bibhid WHERE id::text = $1", [id]);
+      return;
+    } catch (err) {
+      console.warn("[deleteBibhidItem] pg query failed:", err);
+    }
+  }
+
+  try {
+    const supabase = makeAdminClient();
+    await supabase.from("bibhid").delete().eq("id", id);
+  } catch (err) {
+    console.warn("[deleteBibhidItem] supabase delete failed:", err);
+  }
+}

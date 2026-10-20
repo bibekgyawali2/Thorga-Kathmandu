@@ -23,6 +23,7 @@ import {
   X,
   Storefront,
   LockKey,
+  Files,
 } from "@phosphor-icons/react";
 
 interface AdminSidebarProps {
@@ -40,6 +41,7 @@ interface AdminSidebarProps {
     inquiries: number;
     adminUsers: number;
     businesses?: number;
+    bibhid?: number;
   };
 }
 
@@ -145,6 +147,20 @@ export function AdminSidebar({
           }`}
         >
           {counts.businesses ?? 0}
+        </span>
+      ),
+    },
+    {
+      tab: "bibhid",
+      label: t.bibhid,
+      icon: <Files size={18} />,
+      badge: (
+        <span
+          className={`text-xs font-mono px-2 py-0.5 rounded-chip ${
+            activeTab === "bibhid" ? "bg-black/20 text-white" : "bg-tint text-muted"
+          }`}
+        >
+          {counts.bibhid ?? 0}
         </span>
       ),
     },

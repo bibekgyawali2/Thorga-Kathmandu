@@ -19,6 +19,7 @@ export const ADMIN_I18N = {
     events: "गतिविधिहरू",
     gallery: "तस्बिरहरू",
     businesses: "पेशा तथा व्यवसाय",
+    bibhid: "विविध",
     memberSpecial: "सदस्य विशेष",
     inquiries: "सम्पर्क सन्देश",
     settings: "सम्पर्क सेटिङ्स",
@@ -105,6 +106,7 @@ export const ADMIN_I18N = {
     events: "Events",
     gallery: "Gallery",
     businesses: "Business Showcase",
+    bibhid: "Bibidh (Misc)",
     memberSpecial: "Member Special",
     inquiries: "Inquiries",
     settings: "Settings",
@@ -195,6 +197,7 @@ export async function revalidateCollection(
     | "contact"
     | "settings"
     | "businesses"
+    | "bibhid"
 ) {
   try {
     await fetch(`/api/revalidate?tag=${tag}`, {
